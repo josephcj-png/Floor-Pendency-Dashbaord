@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <script>
-  // Paste your Apps Script web app URL here (Deploy > Manage deployments > Web app URL)
+  // Apps Script web app URL (Deploy > Manage deployments > Web app URL)
   window.API_URL = 'https://script.google.com/macros/s/AKfycbyvsaK6-u6mBOoXocEGhCebunDlJz2A9rCkCaTWXsDB_xOflPB4W20ULU8mpEPfAJ0PCQ/exec';
 </script>
 <title>Shadowfax Pendency Dashboard</title>
@@ -100,6 +100,7 @@ table.pt{border-collapse:separate;border-spacing:0;font-size:12.5px;font-variant
 .pt tbody tr:hover td{box-shadow:inset 0 0 0 999px rgba(0,98,79,.06)}
 .pt tbody tr:hover td:first-child{background:var(--teal-soft)}
 .pt td.hot{color:#fff}
+.pt td[data-l]{cursor:pointer}.pt td[data-l]:hover{outline:2px solid var(--teal-deep);outline-offset:-2px}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .note{font-size:12px;color:var(--muted)}
 
@@ -191,6 +192,40 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .codebox{display:flex;flex-direction:column;gap:6px}
 .codebox code{font-size:18px;font-weight:700;letter-spacing:.12em;background:var(--panel);padding:2px 8px;border-radius:6px;border:1px solid var(--line-strong)}
 .pm-row{grid-template-columns:minmax(0,240px) minmax(0,1fr) minmax(0,auto)}
+.modal-bg{position:fixed;inset:0;background:rgba(15,47,41,.35);z-index:70;display:grid;place-items:center;padding:16px}
+.modal{background:var(--panel);border-radius:14px;box-shadow:0 24px 60px rgba(15,47,41,.25);width:min(980px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:18px 20px 22px;box-sizing:border-box}
+.modal h2{font-family:var(--font-display);font-size:20px;margin:4px 0 0}
+.modal .dh{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.modal h4{margin:18px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:8px;margin:12px 0}
+.kt{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--panel)}
+.kt span{display:block;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kt b{display:block;font-family:var(--font-display);font-size:21px;font-variant-numeric:tabular-nums;margin-top:2px}
+.kt small{color:var(--muted);font-size:11.5px}
+.kt.warn b{color:var(--bad)}.kt.ok b{color:var(--teal-deep)}
+.sbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--bg);min-width:120px}
+.sbar i{display:block;height:100%}
+.sbar .o{background:#F2B33D}.sbar .w{background:#2F74C0}.sbar .c{background:var(--teal)}
+.ov{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.ov th,.ov td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ov th{background:#E9EFED;font-weight:600}.ov th:first-child,.ov td:first-child{text-align:left}
+.ov td.l{text-align:left}.ov tr.click{cursor:pointer}.ov tr.click:hover td{background:var(--teal-soft)}
+.ov tr.sel td{background:var(--teal-soft)}
+.ov td.warn{color:var(--bad);font-weight:700}
+.legend2{display:flex;gap:12px;font-size:11.5px;color:var(--muted);margin:6px 0 0}.legend2 i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.tl{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:6px}
+.tl .ev{position:relative;padding:4px 0 12px 16px}
+.tl .ev::before{content:"";position:absolute;left:-7px;top:8px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--teal)}
+.tl .ev.re::before{border-color:#2F74C0}.tl .ev.as::before{border-color:var(--muted)}
+.tl .eh{font-size:12.5px;color:var(--muted)}.tl .eh b{color:var(--ink)}
+.tl p{margin:4px 0 0;white-space:pre-wrap;font-size:13.5px}
+.picker2{border:1px solid var(--line-strong);border-radius:12px;padding:12px;background:#F9FBFA;display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.picker2 .plist{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.picker2 .pg{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:8px 10px 4px;background:#F4F8F6;position:sticky;top:0}
+.picker2 label.pp{display:flex;gap:8px;align-items:flex-start;padding:6px 10px;cursor:pointer;font-size:13px}
+.picker2 label.pp:hover{background:var(--teal-soft)}
+.picker2 label.pp small{display:block;color:var(--muted);font-size:11.5px}
+.picker2 input[type=search],.picker2 textarea{font:13px var(--font-ui);border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px;width:100%;box-sizing:border-box;background:var(--panel);color:var(--ink)}
 .avatar{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--teal-deep);color:#fff;font-weight:700;font-size:12px}
 .uploadcard{display:flex;flex-direction:column}
 .drop{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;border:2px dashed var(--line-strong);border-radius:12px;padding:28px 16px;cursor:pointer;background:var(--bg)}
@@ -489,8 +524,13 @@ const RUN_MIN=3,SPIKE_MIN=5,SPIKE_X=3;
 function runsOf(m){const days=[...m.keys()].filter(d=>m.get(d)>0).sort((a,b)=>a-b);const out=[];let cur=null;
   for(const d of days){if(cur&&d===cur.e+1){cur.e=d;cur.n+=m.get(d)}else{cur={s:d,e:d,n:m.get(d)};out.push(cur)}}
   return out.filter(r=>r.e-r.s+1>=RUN_MIN).sort((a,b)=>(b.e-b.s)-(a.e-a.s)||b.n-a.n)}
-function spikeOf(m){const arr=[...m].filter(x=>x[1]>0),tot=arr.reduce((s,x)=>s+x[1],0);let best=null;
-  for(const [d,n] of arr){const o=arr.length-1,avg=o?(tot-n)/o:0;if(n>=SPIKE_MIN&&n>=SPIKE_X*avg&&(!best||n>best.n))best={d,n,avg}}return best}
+function spikeOf(m){ // average of the DC's other active days, with spike days removed (recomputed until stable)
+  const arr=[...m].filter(x=>x[1]>0);let cand=new Set(),avg=0;
+  for(let it=0;it<6;it++){const base=arr.filter(([d])=>!cand.has(d));avg=base.length?base.reduce((s,x)=>s+x[1],0)/base.length:0;
+    const nc=new Set(arr.filter(([d,n])=>n>=SPIKE_MIN&&n>=SPIKE_X*Math.max(avg,0.5)&&arr.length>1).map(x=>x[0]));
+    if(nc.size===cand.size&&[...nc].every(d=>cand.has(d)))break;cand=nc}
+  if(!cand.size){const only=arr.length===1&&arr[0][1]>=SPIKE_MIN?arr[0]:null;return only?{d:only[0],n:only[1],avg:0}:null}
+  let best=null;cand.forEach(d=>{const n=m.get(d);if(!best||n>best.n)best={d,n,avg}});return best}
 function brsnr(brO,brD,brOL){
   let lo=1e9,hi=0;brD.forEach(m=>m.forEach((n,d)=>{if(d<lo)lo=d;if(d>hi)hi=d}));
   if(hi<lo)return '<div class="empty">No BRSNR shipments for these filters.</div>';
@@ -513,7 +553,7 @@ function brsnr(brO,brD,brOL){
   <div class="tblbox"><div class="tblhead"><h3>DCs with a continuous trend or single-day spike <span>· ${Dd.length} of ${brD.size} DCs</span></h3></div>
   ${tbl(Dd,'Current location',()=>'',x=>[x.runs.length?runPill(x):'',x.sp?spPill(x):''].filter(Boolean).join('<br>'))}
   <div class="legend"><span><i style="background:rgb(0,135,113)"></i>Day inside a continuous run</span><span><i style="background:rgb(180,50,31)"></i>Spike day</span><span><i style="background:rgb(90,112,107)"></i>Other days with BRSNR</span><span>Strip runs from day ${lo} to ${hi}; darker means more AWBs.</span></div>
-  <p class="note" style="margin:8px 0 0">Continuous trend: BRSNR pendency on ${RUN_MIN} or more consecutive ageing days. Spike: one day with at least ${SPIKE_MIN} AWBs and ${SPIKE_X}× the DC's average across its other days.</p></div>`;
+  <p class="note" style="margin:8px 0 0">Continuous trend: BRSNR pendency on ${RUN_MIN} or more consecutive ageing days. Spike: one day with at least ${SPIKE_MIN} AWBs and ${SPIKE_X}× the DC's normal daily average (averages leave out the spike days).</p></div>`;
 }
 const TBL={};
 function table(pi,kind,map,ageSet,title,sub,f){
@@ -523,9 +563,9 @@ function table(pi,kind,map,ageSet,title,sub,f){
   let mx=0;rows.forEach(x=>ages.forEach(k=>{if((x.r[k]||0)>mx)mx=x.r[k]}));
   const colT=ages.map(k=>rows.reduce((s,x)=>s+(x.r[k]||0),0)),gt=rows.reduce((s,x)=>s+x.t,0);
   const base=kind==='hov'?'212,208,38':'0,135,113';
-  const cell=v=>{if(!v)return '<td></td>';const t=Math.sqrt(v/mx);const a=(0.08+t*0.85).toFixed(2);const hot=kind!=='hov'&&t>0.62;return `<td style="background:rgba(${base},${a})"${hot?' class="hot"':''}>${f(v)}</td>`};
+  const cell=(v,l,k)=>{if(!v)return '<td></td>';const t=Math.sqrt(v/mx);const a=(0.08+t*0.85).toFixed(2);const hot=kind!=='hov'&&t>0.62;return `<td style="background:rgba(${base},${a})"${hot?' class="hot"':''} data-l="${l}" data-k="${k}">${f(v)}</td>`};
   const key=pi+kind;TBL[key]={ages,rows,colT,gt,title:pl(dims.pivot[pi])+' · '+title};
-  return `<div class="tblbox"><div class="tblhead"><h3>${title} <span>· ${sub}</span></h3><button class="mini" type="button" data-copy="${key}">Copy table</button></div><div class="scroll"><table class="pt"><thead><tr><th>Current location</th>${ages.map(k=>`<th>${k==='NA'?'Blank':k}</th>`).join('')}<th class="gt">Grand Total</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(dims.loc[x.l])}</td>${ages.map(k=>cell(x.r[k]||0)).join('')}<td class="gt">${f(x.t)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Grand Total</td>${colT.map(v=>`<td>${v?f(v):''}</td>`).join('')}<td class="gt">${f(gt)}</td></tr></tfoot></table></div></div>`;
+  return `<div class="tblbox"><div class="tblhead"><h3>${title} <span>· ${sub}</span></h3><button class="mini" type="button" data-copy="${key}">Copy table</button></div><div class="scroll"><table class="pt" data-pv="${pi}" data-kind="${kind}" data-key="${key}" title="Double-click a number for details"><thead><tr><th>Current location</th>${ages.map(k=>`<th>${k==='NA'?'Blank':k}</th>`).join('')}<th class="gt">Grand Total</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(dims.loc[x.l])}</td>${ages.map(k=>cell(x.r[k]||0,x.l,k)).join('')}<td class="gt"${x.t?` data-l="${x.l}" data-k="all"`:''}>${f(x.t)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Grand Total</td>${colT.map(v=>`<td>${v?f(v):''}</td>`).join('')}<td class="gt">${f(gt)}</td></tr></tfoot></table></div></div>`;
 }
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)}
 function copyTable(b){
@@ -580,6 +620,12 @@ let sideInit=matchMedia('(max-width:760px)').matches;try{const v=localStorage.ge
 setSide(sideInit);
 addEventListener('hashchange',()=>setTab(location.hash.slice(1)));
 setTab(location.hash.slice(1));
+document.getElementById('pivots').addEventListener('dblclick',e=>{
+  const td=e.target.closest('td[data-l]');if(!td)return;const tb=td.closest('table.pt');const T=TBL[tb.dataset.key];if(!T)return;
+  const pi=+tb.dataset.pv,l=+td.dataset.l,k=td.dataset.k;const ages=k==='all'?T.ages.slice():[k];
+  window.getSelection&&window.getSelection().removeAllRanges();
+  window.SFX.onCell&&window.SFX.onCell({pivot:dims.pivot[pi],pivotLabel:pl(dims.pivot[pi]),loc:dims.loc[l],ages,ageLabel:k==='all'?(ages.length>1?'Days '+ages[0]+' to '+ages[ages.length-1]:'Day '+ages[0]):'Day '+k,hold:[...S.hold].map(i=>dims.hold[i]),hovOnly:tb.dataset.kind==='hov',count:td.textContent});
+});
 drawButtons();render();
 window.SFX=Object.assign(window.SFX||{},{esc,fmt,rs,toast,dims,D,
   setScope(sc){
@@ -724,10 +770,17 @@ function build(rows,COL,planRows,opts){
   const byloc=new Map();for(const r of d){const l=s(g(r,'Current_location'));if(!byloc.has(l))byloc.set(l,[]);byloc.get(l).push(r)}
   for(const [loc,rs] of byloc){
     const cnt=count(rs.filter(r=>age(r)<=20),r=>Math.trunc(age(r)));let tot=0;cnt.forEach(v=>tot+=v);
-    const cand=new Set([...cnt].filter(([day,n])=>n>=SP_MIN&&n>=SP_X*Math.max((tot-n)/15,0.5)).map(x=>x[0]));
+    // baseline = average of days 5-20 with the spike days themselves removed (recomputed until stable)
+    let cand=new Set(),avgBase=tot/16;
+    for(let it=0;it<6;it++){
+      let sN=0;cand.forEach(d=>sN+=cnt.get(d)||0);avgBase=(tot-sN)/Math.max(16-cand.size,1);
+      const nc=new Set([...cnt].filter(([day,n])=>n>=SP_MIN&&n>=SP_X*Math.max(avgBase,0.5)).map(x=>x[0]));
+      if(nc.size===cand.size&&[...nc].every(d=>cand.has(d))){cand=nc;break}cand=nc;
+    }
+    {let sN=0;cand.forEach(d=>sN+=cnt.get(d)||0);avgBase=(tot-sN)/Math.max(16-cand.size,1)}
     const ac=allcnt[loc]||{};const culprits=new Map();
     for(const day of [...cand].sort((a,b)=>a-b)){
-      const n=cnt.get(day),avg=(tot-n)/15;
+      const n=cnt.get(day),avg=avgBase;
       const nb=Math.max(0,...[day-1,day+1].filter(x=>!cand.has(x)).map(x=>ac[x]||0));
       if(n<NB_X*nb)continue;
       const sp=rs.filter(r=>Math.trunc(age(r))===day);const excess=n-avg;let cum=0;
@@ -771,10 +824,18 @@ function build(rows,COL,planRows,opts){
     const dests=items.map(([dd,x])=>({dest:dd,n:x.length,run:null})).sort((a,b)=>b.n-a.n);
     T.push({id:`rto-${slug(loc)}-small-${DATE}`,kind:'rto',pivot:'At Dock',prio:'P2',region:reg[loc],loc,dest:`${dests.length} destinations`,dests,n:Lr.length,
       title:`Receive ${Lr.length} RTO-queued shipments across ${dests.length} smaller destination${dests.length>1?'s':''}`,awbs:Lr.sort((a,b)=>age(b)-age(a)).map(awb)})}
+  T.forEach(t=>{t.value=t.awbs.reduce((s,a)=>s+(a.pv||0),0);t.hovN=t.awbs.filter(a=>a.hov).length});
   const PR={P0:0,P1:1,P2:2};T.sort((a,b)=>PR[a.prio]-PR[b.prio]||b.n-a.n);T.forEach(t=>{t.awbs=t.awbs.slice(0,1500)});
   const lbr={};for(const r of base){const l=s(g(r,'Current_location')),rg=reg[l];(lbr[rg]=lbr[rg]||new Set()).add(l)}
   const locsByRegion={};for(const k in lbr)locsByRegion[k]=[...lbr[k]].sort();
-  return {data,suggestions:{baseDate:DATE,asOf,locsByRegion,tasks:T}};
+  const WIN={'At Dock':[5,1e9],'RECEIVED_AT_DC':[0,20],'Picked_From_Client':[3,20]};
+  const pIdx=data.dims.pivot,lIdx=data.dims.loc,hIdx=data.dims.hold;const MD=new Map();const mdi=v=>{if(!MD.has(v))MD.set(v,MD.size);return MD.get(v)};
+  const A={awb:[],p:[],l:[],a:[],h:[],md:[],mc:[],pv:[],hov:[]};
+  for(const r of base){const piv=s(g(r,'Pivot'));const w=WIN[piv];if(!w)continue;const a=g(r,'Ageing_from_Bag_Rec');if(typeof a!=='number')continue;const ai=Math.trunc(a);if(ai<w[0]||ai>w[1])continue;
+    A.awb.push(s(g(r,'Awb_number')));A.p.push(pIdx.indexOf(piv));A.l.push(lIdx.indexOf(s(g(r,'Current_location'))));A.a.push(ai);A.h.push(hIdx.indexOf(s(g(r,'Hold_Flag'))));
+    A.md.push(mdi(s(g(r,'Manifest_Destination'))));A.mc.push(s(g(r,'Manifest_code')));A.pv.push(pv(r));A.hov.push(s(g(r,'HOV2'))==='HOV'?1:0)}
+  const awbs={asOf,dims:{pivot:pIdx,loc:lIdx,hold:hIdx,md:[...MD.keys()]},cols:A};
+  return {data,suggestions:{baseDate:DATE,asOf,locsByRegion,tasks:T},awbs};
 }
 root.PendencyParser={parseBase,build};
 })(typeof self!=='undefined'?self:globalThis);
@@ -803,7 +864,7 @@ const PIVOTS=['At Dock','Received at DC','Picked from Client','BRSNR','Other'];
 const PR={P0:0,P1:1,P2:2};
 const STALE_H=24;
 const RT={db:true,me:BOOT.me,admin:!!(BOOT.me&&BOOT.me.admin),cfg:Object.assign({regions:[],l1:{},people:{},autoPlaced:[]},BOOT.config||{}),binds:BOOT.signedIn||{},preview:null,tasks:new Map((BOOT.tasks||[]).map(t=>[t.id,t])),loaded:true,readOnly:false};
-const tv={tab:'suggested',region:'All',kind:'All',prio:'All',status:'pending',open:null,busy:false,awbCache:new Map(),formErr:'',confirm:null,cErr:''};
+const tv={owner:null,reassign:false,rq:'',rsel:new Set(),rnote:'',tab:'suggested',region:'All',kind:'All',prio:'All',status:'pending',open:null,busy:false,awbCache:new Map(),formErr:'',confirm:null,cErr:''};
 
 // ---------- helpers ----------
 const ago=iso=>{if(!iso)return '';const m=(Date.now()-Date.parse(iso))/6e4;if(m<1)return 'just now';if(m<60)return Math.round(m)+' min ago';const h=m/60;if(h<24)return Math.round(h)+' h ago';return Math.round(h/24)+' d ago'};
@@ -822,7 +883,10 @@ const myL2=()=>{const e=myEmail();return e?REGS().filter(g=>(g.l2||[]).includes(
 const myL1=()=>{const e=myEmail();return e?Object.keys(RT.cfg.l1||{}).filter(l=>(RT.cfg.l1[l]||[]).includes(e)):[]};
 const myDcs=()=>{const s=new Set(myL1());REGS().filter(g=>myL2().includes(g.name)).forEach(g=>(g.dcs||[]).forEach(d=>s.add(d)));return [...s]};
 const isPoc=()=>myL2().length+myL1().length>0;
-const sees=t=>isAdminView()||(t.loc?myDcs().includes(t.loc):myL2().includes(pocReg(t)));
+const sees=t=>isAdminView()||(t.assignees&&t.assignees.length?t.assignees.includes(myEmail()):(t.loc?myDcs().includes(t.loc):myL2().includes(pocReg(t))));
+const owners=t=>{if(t.assignees&&t.assignees.length)return t.assignees;const l1=t.loc?(RT.cfg.l1[t.loc]||[]):[];if(l1.length)return l1;return ((REGS().find(g=>g.name===pocReg(t))||{}).l2)||[]};
+const roleOf=e=>{const l2=REGS().filter(g=>(g.l2||[]).includes(e)).map(g=>g.name);const l1=Object.keys(RT.cfg.l1||{}).filter(l=>(RT.cfg.l1[l]||[]).includes(e));return {l2,l1}};
+const roleTxt=e=>{const r=roleOf(e);return [r.l2.length?'L2 · '+r.l2.join(', '):'',r.l1.length?'L1 · '+(r.l1.length>3?r.l1.length+' DCs':r.l1.join(', ')):''].filter(Boolean).join(' | ')||'Central team'};
 const canWork=t=>!!(me()&&!RT.preview&&(RT.admin||sees(t)));
 const canAdmin=()=>!!isAdminView();
 const pname=e=>(RT.cfg.people[e]&&RT.cfg.people[e].name)||e;
@@ -870,7 +934,7 @@ function taskRow(t,sug){
   const db=RT.tasks.get(t.id);let state='';
   if(sug){state=db?`<span class="st ${stCls(db.status)}">${esc(db.status)}</span>`:(canAdmin()?`<button class="btn" type="button" data-assign="${esc(t.id)}">Assign</button>`:'<span class="st Sug">Not assigned</span>')}
   else{state=`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>${isStale(t)?'<span class="st Stale">No update '+ago(t.lastUpdateAt||t.assignedAt).replace(' ago','')+'</span>':''}<span class="note">${t.lastUpdateAt?'Updated '+ago(t.lastUpdateAt):'Assigned '+ago(t.assignedAt)}</span>`+(canAdmin()?unBtn(t.id):'')}
-  const sub=[t.loc?`<b>${esc(t.loc)}</b>`:'<b>All DCs</b>',esc(pocReg(t)),t.n?fmt(t.n)+' AWBs':'',t.kind==='hov'?rs(t.value||0):'',t.dest?'to '+esc(t.dest):'',t.kind==='spike'?'day '+(t.days||[]).join(', '):'',t.due?'due '+esc(t.due):'',sug?'':'base '+esc(t.baseDate)].filter(Boolean).join(' · ');
+  const sub=[t.loc?`<b>${esc(t.loc)}</b>`:'<b>All DCs</b>',esc(pocReg(t)),t.n?fmt(t.n)+' AWBs':'',t.value?rs(t.value):'',sug?'':'with '+esc(owners(t).map(pname).join(', ')||'unmapped')+(t.assignees&&t.assignees.length?' (reassigned)':''),t.dest?'to '+esc(t.dest):'',t.kind==='spike'?'day '+(t.days||[]).join(', '):'',t.due?'due '+esc(t.due):'',sug?'':'base '+esc(t.baseDate)].filter(Boolean).join(' · ');
   return `<div class="trow" tabindex="0" role="button" data-open="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="pill">${esc(pivotLbl(t))}</span><span class="ktag">${KIND[t.kind]||esc(t.kind)}</span></div><div class="ttl"></div><div class="tsub">${sub}</div></div><div class="tact">${state}</div></div>`;
 }
 function unBtn(id){return tv.confirm===id?`<button class="btn danger" type="button" data-unassign="${esc(id)}">Confirm unassign</button><button class="mini" type="button" data-uncancel>Cancel</button>`:`<button class="mini" type="button" data-unask="${esc(id)}">Unassign</button>`}
@@ -900,14 +964,35 @@ function renderTasks(){
   root.innerHTML=`<div class="tv-head"><div><div class="eyebrow">Task assigner</div><h2>Regional POC tasks</h2><div class="note">Suggestions come from the ${esc(SUG.asOf)} base. Each task reaches the L1 POC of its DC and the L2 POC of its region (escalation matrix).</div></div>
     <div class="seg" role="group" aria-label="Task list"><button type="button" data-tab="suggested" aria-pressed="${tv.tab==='suggested'}">Suggested · ${SUG.tasks.length}</button><button type="button" data-tab="assigned" aria-pressed="${tv.tab==='assigned'}">Assigned · ${assigned.length}</button></div></div>
     ${note}
-    <div class="card" style="padding:0;overflow:auto"><table class="board"><thead><tr><th>Region</th><th class="ppl">L2 POC</th><th>DCs with L1</th><th>Open</th><th>In progress</th><th>Closed</th><th>No update ${STALE_H}h+</th></tr></thead><tbody>${brd}</tbody></table></div>
+    ${tv.tab==='assigned'?overview(assigned):''}
+    ${tv.tab==='suggested'?`<div class="card" style="padding:0;overflow:auto"><table class="board"><thead><tr><th>Region</th><th class="ppl">L2 POC</th><th>DCs with L1</th><th>Open</th><th>In progress</th><th>Closed</th><th>No update ${STALE_H}h+</th></tr></thead><tbody>${brd}</tbody></table></div>`:''}
     ${chipRow('Region','region',[['All','All',base.length],...REGS().map(g=>[g.name,g.name,cnt(t=>pocReg(t)===g.name)])])}
     ${chipRow('Type','kind',[['All','All',null],...KORDER.filter(k=>base.some(t=>t.kind===k)).map(k=>[k,KIND[k],cnt(t=>fR(t)&&t.kind===k)])])}
     ${chipRow('Priority','prio',[['All','All',null],...['P0','P1','P2'].map(p=>[p,p,cnt(t=>fR(t)&&fK(t)&&t.prio===p)])])}
     ${tv.tab==='assigned'?chipRow('Status','status',[['pending','Pending',null],['closed','Closed',null],['all','All',null]]):''}
-    ${tv.tab==='suggested'?groupHtml(list,true):(RT.loaded||!RT.db?groupHtml(list,false):'<div class="card empty">Loading tasks…</div>')}
+    ${tv.owner?`<div class="chips"><span class="flabel">POC</span><button class="fchip" type="button" aria-pressed="true" id="ownerClear">${esc(pname(tv.owner))} ✕</button></div>`:''}
+    ${tv.tab==='suggested'?groupHtml(list,true):(RT.loaded||!RT.db?groupHtml(tv.owner?list.filter(t=>owners(t).includes(tv.owner)):list,false):'<div class="card empty">Loading tasks…</div>')}
     <p class="note">Priority: HOV above ₹20K is P0, ₹10K–20K P1, below ₹10K P2. Spike manifests with 20+ AWBs P0, 10–19 P1, under 10 P2. RTO-queued destinations with 50+ AWBs P0, 20–49 P1, smaller ones grouped per DC as P2. Volumetric patterns of 5+ days P0.</p>`;
   wire(root);
+}
+function overview(all){
+  const sum=(L,f)=>L.reduce((s,t)=>s+(f(t)||0),0);
+  const open=all.filter(t=>t.status==='Open'),wip=all.filter(t=>t.status==='In progress'),done=all.filter(t=>t.status==='Closed'),live=all.filter(t=>t.status!=='Closed'),stale=all.filter(isStale);
+  const k=(cls,l,v,s)=>`<div class="kt ${cls}"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
+  const bar=L=>{const n=L.length||1,o=L.filter(t=>t.status==='Open').length,w=L.filter(t=>t.status==='In progress').length,c=L.filter(t=>t.status==='Closed').length;return `<div class="sbar" title="Open ${o} · In progress ${w} · Closed ${c}"><i class="o" style="width:${o/n*100}%"></i><i class="w" style="width:${w/n*100}%"></i><i class="c" style="width:${c/n*100}%"></i></div>`};
+  const regRows=REGS().map(g=>{const L=all.filter(t=>pocReg(t)===g.name);if(!L.length)return '';const lv=L.filter(t=>t.status!=='Closed');
+    return `<tr><td class="l"><b>${esc(g.name)}</b><div class="note">${esc((g.l2||[]).map(pname).join(', '))}</div></td><td>${L.length}</td><td>${L.filter(t=>t.status==='Open').length}</td><td>${L.filter(t=>t.status==='In progress').length}</td><td>${L.filter(t=>t.status==='Closed').length}</td><td class="${L.filter(isStale).length?'warn':''}">${L.filter(isStale).length}</td><td>${fmt(sum(lv,t=>t.n))}</td><td>${rs(sum(lv,t=>t.value))}</td><td>${Math.round(L.filter(t=>t.status==='Closed').length*100/L.length)}%</td><td class="l">${bar(L)}</td></tr>`}).join('');
+  const om=new Map();all.forEach(t=>owners(t).forEach(e=>{if(!om.has(e))om.set(e,[]);om.get(e).push(t)}));
+  const pocRows=[...om].map(([e,L])=>({e,L,lv:L.filter(t=>t.status!=='Closed')})).sort((a,b)=>b.lv.length-a.lv.length||b.L.length-a.L.length).map(({e,L,lv})=>{
+    const last=L.map(t=>t.lastUpdateAt).filter(Boolean).sort().pop();
+    return `<tr class="click${tv.owner===e?' sel':''}" data-owner="${esc(e)}"><td class="l"><b>${esc(pname(e))}</b><div class="note">${esc(roleTxt(e))}</div></td><td>${L.length}</td><td>${L.filter(t=>t.status==='Open').length}</td><td>${L.filter(t=>t.status==='In progress').length}</td><td>${L.filter(t=>t.status==='Closed').length}</td><td class="${L.filter(isStale).length?'warn':''}">${L.filter(isStale).length}</td><td>${fmt(sum(lv,t=>t.n))}</td><td>${rs(sum(lv,t=>t.value))}</td><td>${last?ago(last):'<span class="note">No update yet</span>'}</td><td class="l">${bar(L)}</td></tr>`}).join('');
+  const byKind=KORDER.map(kd=>{const L=live.filter(t=>t.kind===kd);return L.length?`<div class="kt"><span>${KIND[kd]}</span><b>${L.length}</b><small>${fmt(sum(L,t=>t.n))} AWBs · ${rs(sum(L,t=>t.value))}</small></div>`:''}).join('');
+  const hdr=`<tr><th>%NAME%</th><th>Tasks</th><th>Open</th><th>In progress</th><th>Closed</th><th>No update ${STALE_H}h+</th><th>AWBs pending</th><th>Value pending</th><th>%X%</th><th>Status mix</th></tr>`;
+  return `<div class="kstrip">${k('','Tasks assigned',fmt(all.length),`${fmt(live.length)} still pending`)}${k('','Not started',fmt(open.length),'status Open')}${k('','In progress (WIP)',fmt(wip.length),'')}${k('ok','Closed',fmt(done.length),all.length?Math.round(done.length*100/all.length)+'% of assigned':'')}${k(stale.length?'warn':'','No update '+STALE_H+'h+',fmt(stale.length),'')}${k('','AWBs pending',fmt(sum(live,t=>t.n)),'in open + WIP tasks')}${k('','Value pending',rs(sum(live,t=>t.value)),'product value')}</div>
+   ${byKind?`<div class="kstrip">${byKind}</div>`:''}
+   <section class="tgroup"><h3><span class="gh">By region <span>pending = open + in progress</span></span></h3><div style="overflow:auto"><table class="ov">${hdr.replace('%NAME%','Region').replace('%X%','Closed %')}${regRows||'<tr><td class="l" colspan="10"><span class="note">No tasks assigned yet.</span></td></tr>'}</table></div>
+   <div class="legend2" style="padding:0 16px 12px"><span><i style="background:#F2B33D"></i>Open</span><span><i style="background:#2F74C0"></i>In progress</span><span><i style="background:var(--teal)"></i>Closed</span></div></section>
+   <section class="tgroup"><h3><span class="gh">By POC <span>current owner of each task; click a row to see that POC's tasks</span></span></h3><div style="overflow:auto"><table class="ov">${hdr.replace('%NAME%','POC').replace('%X%','Last update')}${pocRows||'<tr><td class="l" colspan="10"><span class="note">No tasks assigned yet.</span></td></tr>'}</table></div></section>`;
 }
 function renderMyTasks(root){
   let body='';
@@ -927,7 +1012,9 @@ function renderMyTasks(root){
 }
 function wire(root){
   setTitles(root);
-  root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tv.tab=b.dataset.tab;tv.confirm=null;renderTasks()});
+  root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tv.tab=b.dataset.tab;tv.confirm=null;tv.owner=null;renderTasks()});
+  root.querySelectorAll('[data-owner]').forEach(r=>r.onclick=()=>{tv.owner=tv.owner===r.dataset.owner?null:r.dataset.owner;renderTasks()});
+  root.querySelector('#ownerClear')?.addEventListener('click',()=>{tv.owner=null;renderTasks()});
   root.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{tv[b.dataset.f]=b.dataset.v;rerender()});
   root.querySelectorAll('[data-open]').forEach(r=>{r.onclick=e=>{if(e.target.closest('button'))return;openTask(r.dataset.open)};r.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target===r){e.preventDefault();openTask(r.dataset.open)}}});
   root.querySelectorAll('[data-assign]').forEach(b=>b.onclick=e=>{e.stopPropagation();assign([SUGM.get(b.dataset.assign)])});
@@ -957,7 +1044,7 @@ async function unassign(id){
 }
 
 // ---------- drawer ----------
-function openTask(id){tv.open=id;tv.formErr='';renderDrawer();const d=document.getElementById('drawer');d.hidden=false;document.getElementById('scrim').hidden=false;setTimeout(()=>d.querySelector('.xbtn')?.focus(),0)}
+function openTask(id){tv.open=id;tv.formErr='';tv.reassign=false;renderDrawer();const d=document.getElementById('drawer');d.hidden=false;document.getElementById('scrim').hidden=false;setTimeout(()=>d.querySelector('.xbtn')?.focus(),0)}
 function closeDrawer(){tv.open=null;tv.confirm=null;document.getElementById('drawer').hidden=true;const sideOpen=document.getElementById('side').dataset.collapsed==='false'&&matchMedia('(max-width:760px)').matches;document.getElementById('scrim').hidden=!sideOpen}
 document.getElementById('scrim').addEventListener('click',()=>{if(tv.open)closeDrawer()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&tv.open)closeDrawer()});
@@ -977,9 +1064,10 @@ async function renderDrawer(){
   const el=document.getElementById('drawer');const id=tv.open;if(!id)return;
   const db=RT.tasks.get(id),sug=SUGM.get(id);const t=db||sug;if(!t){el.innerHTML='<div class="dh"><div class="empty">This task was unassigned.</div><button class="xbtn" type="button" aria-label="Close">×</button></div>';el.querySelector('.xbtn').onclick=closeDrawer;return}
   const awbs=await awbsFor(id);if(tv.open!==id)return;
-  const facts=[['Priority',pri(t.prio)],['Pivot',esc(t.pivot||'At Dock')],['Region',esc(pocReg(t))],['Current location',t.loc?esc(t.loc):'All DCs in region'],t.n?['AWBs',fmt(t.n)]:null,
-    t.kind==='spike'?['Spike day',(t.days||[]).join(', ')]:null,t.dest?['Manifest destination',esc(t.dest)]:null,t.kind==='hov'?['HOV value',rs(t.value||0)]:null,t.due?['Due',esc(t.due)]:null,
+  const facts=[['Priority',pri(t.prio)],['Pivot',esc(t.pivot||'At Dock')],['Region',esc(pocReg(t))],['Current location',t.loc?esc(t.loc):'All DCs in region'],t.n?['AWBs',fmt(t.n)]:null,t.value?['Shipment value',rs(t.value)]:null,
+    t.kind==='spike'?['Spike day',(t.days||[]).join(', ')]:null,t.dest?['Manifest destination',esc(t.dest)]:null,t.due?['Due',esc(t.due)]:null,
     ['Base file',esc(db?db.baseDate:SUG.baseDate)],db?['Assigned',when(db.assignedAt)]:null,
+    db?['With',people(owners(t))+(t.assignees&&t.assignees.length?' <span class="note">(reassigned)</span>':'')]:null,
     t.loc?['L1 POC',people(RT.cfg.l1[t.loc])]:null,['L2 POC',people((REGS().find(g=>g.name===pocReg(t))||{}).l2)]].filter(Boolean);
   const man=new Map();awbs.forEach(a=>{if(!a.mc)return;const m=man.get(a.mc)||{code:a.mc,n:0,md:a.md,seal:a.seal,mm:a.mm,mms:a.mms,esl:a.esl,est:a.est,esd:a.esd};m.n++;man.set(a.mc,m)});
   const manL=[...man.values()].sort((a,b)=>b.n-a.n);
@@ -990,7 +1078,12 @@ async function renderDrawer(){
   const ups=(db&&db.updates)||[];const rev=ups.slice().reverse();
   const att=f=>{const u='https://drive.google.com/file/d/'+encodeURIComponent(f.id)+'/view';if(/^image\//.test(f.type||''))return `<a href="${u}" target="_blank" rel="noopener"><img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(f.id)}&sz=w400" alt="${esc(f.name)}" loading="lazy"></a>`;return `<a class="filelink" href="${u}" target="_blank" rel="noopener">${/^video\//.test(f.type||'')?'▶ ':''}${esc(f.name)}</a>`};
   const safeLink=l=>/^https:\/\//i.test(l||'')?`<a href="${esc(l)}" target="_blank" rel="noopener">Footage link</a>`:'';
-  const thread=db?`<h4>Updates (${ups.length})</h4>${ups.length?`<div class="thread">${rev.map((u,i)=>`<div class="upd"><div class="uh"><b>${u.byEmail?esc(pname(u.byEmail)):nameSpan(u.by)}</b><span>${when(u.at)}</span><span class="st ${stCls(u.status)}">${esc(u.status)}</span></div><p data-rm="${i}"></p>${(u.files&&u.files.length)||u.link?`<div class="atts">${(u.files||[]).map(att).join('')}${safeLink(u.link)}</div>`:''}</div>`).join('')}</div>`:`<div class="note">No updates yet.</div>`}`:'';
+  const evs=db?[...(db.history||[]).map(h=>({...h,kind:h.type})),...ups.map(u=>({...u,kind:'update'}))].sort((a,b)=>String(b.at).localeCompare(String(a.at))):[];
+  if(db&&!(db.history||[]).some(h=>h.type==='assigned'))evs.push({kind:'assigned',at:db.assignedAt,by:db.assignedBy,to:[]});
+  const nm=l=>(l||[]).map(pname).join(', ');
+  const thread=db?`<h4>History (${evs.length})</h4><div class="tl">${evs.map((u,i)=>u.kind==='update'?`<div class="ev"><div class="eh"><b>${u.byEmail?esc(pname(u.byEmail)):nameSpan(u.by)}</b> posted an update · ${when(u.at)} <span class="st ${stCls(u.status)}">${esc(u.status)}</span></div><p data-rm="${ups.indexOf(evs[i].__u||null)}" data-ev="${i}"></p>${(u.files&&u.files.length)||u.link?`<div class="atts">${(u.files||[]).map(att).join('')}${safeLink(u.link)}</div>`:''}</div>`
+    :u.kind==='reassigned'?`<div class="ev re"><div class="eh"><b>${esc(pname(u.by))}</b> reassigned from ${esc(nm(u.from)||'—')} to <b>${esc(nm(u.to))}</b> · ${when(u.at)}</div>${u.note?`<p data-ev="${i}"></p>`:''}</div>`
+    :`<div class="ev as"><div class="eh">Assigned${u.to&&u.to.length?' to <b>'+esc(nm(u.to))+'</b>':''} by ${esc(pname(u.by||''))} · ${when(u.at)}</div></div>`).join('')}</div>`:'';
   let form='';
   if(db&&canWork(db)){
     form=`<h4>Post an update</h4><form class="form" id="updForm"><div class="row"><label>Status<select id="updStatus">${['Open','In progress','Closed'].map(s=>`<option ${s===(db.status==='Open'?'In progress':db.status)?'selected':''}>${s}</option>`).join('')}</select></label>
@@ -1002,22 +1095,67 @@ async function renderDrawer(){
   }else if(sug&&!db){
     form=canAdmin()?`<div style="margin-top:16px"><button class="btn" type="button" id="drAssign">Assign to ${esc(t.region)}</button></div>`:`<div class="note" style="margin-top:16px">Not assigned yet.</div>`;
   }
-  const adminBar=db&&canAdmin()?`<div class="tact" style="justify-content:flex-start;margin-top:12px">${unBtn(id)}</div>`:'';
+  const canRe=db&&db.status!=='Closed'&&canWork(db);
+  const adminBar=db&&(canAdmin()||canRe)?`<div class="tact" style="justify-content:flex-start;margin-top:12px">${canRe?`<button class="btn ghost" type="button" id="reBtn">${tv.reassign?'Cancel reassign':'Reassign to another POC'}</button>`:''}${canAdmin()?unBtn(id):''}</div>${tv.reassign&&canRe?reassignPanel(db):''}`:'';
   el.innerHTML=`<div class="dh"><div><div class="tags">${pri(t.prio)}<span class="pill">${esc(pivotLbl(t))}</span><span class="ktag">${KIND[t.kind]||''}</span>${db?`<span class="st ${stCls(db.status)}">${esc(db.status)}</span>`:'<span class="st Sug">Suggested</span>'}</div><h2></h2></div><button class="xbtn" type="button" aria-label="Close">×</button></div>
    <div class="facts">${facts.map(([a,b])=>`<div><span>${a}</span>${b}</div>`).join('')}</div>
    <div class="todo" id="todoBox">${t.kind==='custom'?'':todo(t)}</div>${adminBar}${form}${thread}${destTbl}${manTbl}${awbTbl}`;
   el.querySelector('h2').textContent=t.title;
   if(t.kind==='custom')el.querySelector('#todoBox').textContent=t.details||'';
-  el.querySelectorAll('[data-rm]').forEach(p=>{const u=rev[+p.dataset.rm];p.textContent=u.remark||'';if(!u.remark)p.remove()});
+  el.querySelectorAll('[data-ev]').forEach(p=>{const u=evs[+p.dataset.ev];const txt=u.kind==='update'?(u.remark||''):(u.note||'');p.textContent=txt;if(!txt)p.remove()});
   el.querySelector('.xbtn').onclick=closeDrawer;
   el.querySelector('#copyAwbs')?.addEventListener('click',()=>copyText(awbs.map(a=>a.awb).join('\n'),awbs.length+' AWBs copied'));
   el.querySelector('#drAssign')?.addEventListener('click',()=>assign([sug]));
   el.querySelectorAll('[data-unask]').forEach(b=>b.onclick=()=>{tv.confirm=id;renderDrawer()});
   el.querySelectorAll('[data-uncancel]').forEach(b=>b.onclick=()=>{tv.confirm=null;renderDrawer()});
   el.querySelectorAll('[data-unassign]').forEach(b=>b.onclick=()=>unassign(id));
+  el.querySelector('#reBtn')?.addEventListener('click',()=>{tv.reassign=!tv.reassign;tv.rsel=new Set();tv.rq='';tv.rnote='';renderDrawer()});
+  wireReassign(el,db);
   const f=el.querySelector('#updForm');if(f)f.onsubmit=e=>{e.preventDefault();postUpdate(db)};
   fillNames(el);
 }
+function reassignPanel(t){
+  const cur=new Set(owners(t));const q=tv.rq.toLowerCase();
+  const seen=new Set();
+  const groups=REGS().map(g=>{const ppl=new Map();const add=(e,l2)=>{if(seen.has(e))return;seen.add(e);ppl.set(e,roleTxt(e))};(g.l2||[]).forEach(e=>add(e,true));(g.dcs||[]).forEach(dc=>(RT.cfg.l1[dc]||[]).forEach(e=>add(e,false)));
+    const L=[...ppl].filter(([e,r])=>!q||(pname(e)+' '+e+' '+r+' '+g.name).toLowerCase().includes(q)).sort((a,b)=>(roleOf(a[0]).l2.length?0:1)-(roleOf(b[0]).l2.length?0:1)||pname(a[0]).localeCompare(pname(b[0])));
+    return L.length?`<div class="pg">${esc(g.name)}</div>${L.map(([e,r])=>`<label class="pp"><input type="checkbox" data-pick="${esc(e)}" ${tv.rsel.has(e)?'checked':''} ${cur.has(e)?'disabled':''}><span><b>${esc(pname(e))}</b>${cur.has(e)?' <span class="note">(has it now)</span>':''}<small>${esc(r)}</small></span></label>`).join('')}`:''}).join('');
+  return `<div class="picker2"><div><b>Reassign to</b> <span class="note">Pick one or more POCs from any region. The task moves to their My tasks with its full history.</span></div>
+    <input type="search" id="rq" placeholder="Search name, DC or region" value="${esc(tv.rq)}">
+    <div class="plist">${groups||'<div class="note" style="padding:10px">No match.</div>'}</div>
+    <label class="note" style="display:flex;flex-direction:column;gap:4px;font-weight:600">Reason for reassigning (optional)<textarea id="rnote" rows="2" placeholder="e.g. Bag is at Kolkata XD, not at Kolkata DC">${esc(tv.rnote)}</textarea></label>
+    <div><button class="btn" type="button" id="reGo" ${tv.rsel.size?'':'disabled'}>Reassign${tv.rsel.size?' to '+[...tv.rsel].map(pname).join(', '):''}</button></div></div>`;
+}
+function wireReassign(el,t){
+  const q=el.querySelector('#rq');if(!q)return;
+  q.oninput=()=>{tv.rq=q.value;renderDrawer().then(()=>{const n=document.getElementById('rq');if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length)}})};
+  el.querySelector('#rnote').oninput=e=>{tv.rnote=e.target.value};
+  el.querySelectorAll('[data-pick]').forEach(cb=>cb.onchange=()=>{cb.checked?tv.rsel.add(cb.dataset.pick):tv.rsel.delete(cb.dataset.pick);const b=el.querySelector('#reGo');b.disabled=!tv.rsel.size;b.textContent='Reassign'+(tv.rsel.size?' to '+[...tv.rsel].map(pname).join(', '):'')});
+  el.querySelector('#reGo').onclick=async()=>{const to=[...tv.rsel];const b=el.querySelector('#reGo');b.disabled=true;b.textContent='Reassigning…';
+    try{const r=await API('reassign',{id:t.id,to,note:tv.rnote.trim()});tv.reassign=false;const gone=!(r.tasks||[]).some(x=>x.id===t.id);setTasks(r.tasks);toast('Task moved to '+to.map(pname).join(', '));if(gone)closeDrawer()}
+    catch(e){toast(dbMsg(e));b.disabled=false}};
+}
+
+// ---------- drill-down dialog (double-click on a pivot number) ----------
+X.onCell=async function(c){
+  let bg=document.getElementById('cellModal');if(!bg){bg=document.createElement('div');bg.id='cellModal';bg.className='modal-bg';document.body.appendChild(bg);bg.addEventListener('click',e=>{if(e.target===bg)bg.remove()});}
+  const head=`<div class="dh"><div><div class="eyebrow">${esc(c.pivotLabel)}${c.hovOnly?' · HOV misses':''}${c.hold.length?' · '+esc(c.hold.join(', ')):''}</div><h2>${esc(c.loc)} · ${esc(c.ageLabel)}</h2></div><button class="xbtn" type="button" aria-label="Close" id="cmX">×</button></div>`;
+  bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${head}<p class="note">Loading shipments…</p></div>`;bg.querySelector('#cmX').onclick=()=>bg.remove();
+  let r;try{r=await API('cell',{pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly})}catch(e){bg.querySelector('.note').textContent=dbMsg(e);return}
+  if(!document.body.contains(bg))return;
+  if(r.missing){bg.querySelector('.modal').innerHTML=head+'<p class="note">Shipment details arrive with the next base upload. Upload the base file again from Upload base file to enable this.</p>';bg.querySelector('#cmX').onclick=()=>bg.remove();return}
+  const tk=new Map((r.tasks||[]).map(t=>[t.id,t]));
+  const k=(l,v,s,cls)=>`<div class="kt ${cls||''}"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
+  bg.querySelector('.modal').innerHTML=head+`<div class="kstrip">${k('AWBs',fmt(r.n))}${k('Shipment value',rs(r.value))}${k('HOV',fmt(r.hov),rs(r.hovValue))}${k('On hold',fmt(r.held))}${k('In assigned tasks',fmt(r.assigned),r.n?Math.round(r.assigned*100/r.n)+'% of AWBs':'',r.assigned?'ok':'')}${k('Not assigned',fmt(r.n-r.assigned),'',r.n-r.assigned?'warn':'')}</div>
+   ${r.tasks.length?`<h4>Tasks covering these AWBs</h4><section class="tgroup">${r.tasks.map(t=>`<div class="trow" data-cmopen="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="ktag">${KIND[t.kind]||''}</span></div><div class="ttl"></div><div class="tsub">${fmt(t.matched)} of these AWBs · with ${esc((t.owners||[]).map(pname).join(', '))}</div></div><div class="tact"><span class="st ${stCls(t.status)}">${esc(t.status)}</span></div></div>`).join('')}</section>`:`<div class="banner">None of these AWBs are in an assigned task yet.</div>`}
+   <h4>Manifest destinations (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Manifest destination</th><th style="text-align:right">AWBs</th><th style="text-align:right">Manifests</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.dest)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.manifests)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>
+   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Copy AWBs</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th><th>Manifest destination</th><th>Manifest code</th><th style="text-align:right">Value (₹)</th><th>HOV</th><th>Hold</th><th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td><td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td><td>${esc(a.hold)}</td><td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
+  bg.querySelectorAll('[data-cmopen]').forEach(row=>{row.querySelector('.ttl').textContent=tk.get(row.dataset.cmopen).title;row.onclick=()=>{bg.remove();if(RT.tasks.has(row.dataset.cmopen))openTask(row.dataset.cmopen)}});
+  bg.querySelector('#cmX').onclick=()=>bg.remove();
+  bg.querySelector('#cmCopy').onclick=()=>copyText(r.rows.map(a=>a.awb).join('\n'),r.rows.length+' AWBs copied');
+};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('cellModal');if(m)m.remove()}});
+
 function copyText(txt,msg){const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();toast(ok?msg:'Copy was blocked by the browser.')};try{navigator.clipboard.writeText(txt).then(()=>toast(msg),fb)}catch(e){fb()}}
 const TYPES={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',mp4:'video/mp4',webm:'video/webm',pdf:'application/pdf'};
 async function postUpdate(t){
@@ -1229,7 +1367,7 @@ function readFile(B){
 }
 async function publish(B){
   up.busy=true;up.phase='Sending to the server…';up.pct=1;renderUpload(B);
-  try{const o=up.out;await window.API('uploadBase',{data:o.data,suggestions:o.suggestions,asOf:o.data.asOf,baseDate:o.suggestions.baseDate,fileName:up.file.name});
+  try{const o=up.out;await window.API('uploadBase',{data:o.data,suggestions:o.suggestions,awbs:o.awbs,asOf:o.data.asOf,baseDate:o.suggestions.baseDate,fileName:up.file.name});
     window.SFX.toast('Base file published');setTimeout(()=>{location.hash='forward';location.reload()},600)}
   catch(e){up.busy=false;up.err=e.message;renderUpload(B)}
 }
