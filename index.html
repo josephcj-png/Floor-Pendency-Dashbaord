@@ -889,7 +889,12 @@ const roleOf=e=>{const l2=REGS().filter(g=>(g.l2||[]).includes(e)).map(g=>g.name
 const roleTxt=e=>{const r=roleOf(e);return [r.l2.length?'L2 · '+r.l2.join(', '):'',r.l1.length?'L1 · '+(r.l1.length>3?r.l1.length+' DCs':r.l1.join(', ')):''].filter(Boolean).join(' | ')||'Central team'};
 const canWork=t=>!!(me()&&!RT.preview&&(RT.admin||sees(t)));
 const canAdmin=()=>!!isAdminView();
-const pname=e=>(RT.cfg.people[e]&&RT.cfg.people[e].name)||e;
+const pname=e=>e==='auto'?'Auto':(RT.cfg.people[e]&&RT.cfg.people[e].name)||e;
+const ageD=t=>Math.max(0,Math.floor((Date.now()-Date.parse(t.assignedAt))/864e5));
+const cleared=t=>t.status==='Closed'&&t.closedBy==='auto';
+const stPill=t=>cleared(t)?'<span class="st Closed">Cleared from pendency</span>':`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`;
+const pendN=t=>t.status==='Closed'?0:(t.pending!=null?t.pending:(t.n||0));
+const pendV=t=>t.status==='Closed'?0:(t.pendingValue!=null?t.pendingValue:(t.value||0));
 function nameSpan(id){return `<span data-uid="${esc(id)}">…</span>`}
 const people=es=>es&&es.length?es.map(e=>`<span title="${esc(e)}">${esc(pname(e))}</span>`).join(', '):'<span class="note">Not mapped</span>';
 async function fillNames(root){
@@ -933,8 +938,8 @@ function renderSide(){
 function taskRow(t,sug){
   const db=RT.tasks.get(t.id);let state='';
   if(sug){state=db?`<span class="st ${stCls(db.status)}">${esc(db.status)}</span>`:(canAdmin()?`<button class="btn" type="button" data-assign="${esc(t.id)}">Assign</button>`:'<span class="st Sug">Not assigned</span>')}
-  else{state=`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>${isStale(t)?'<span class="st Stale">No update '+ago(t.lastUpdateAt||t.assignedAt).replace(' ago','')+'</span>':''}<span class="note">${t.lastUpdateAt?'Updated '+ago(t.lastUpdateAt):'Assigned '+ago(t.assignedAt)}</span>`+(canAdmin()?unBtn(t.id):'')}
-  const sub=[t.loc?`<b>${esc(t.loc)}</b>`:'<b>All DCs</b>',esc(pocReg(t)),t.n?fmt(t.n)+' AWBs':'',t.value?rs(t.value):'',sug?'':'with '+esc(owners(t).map(pname).join(', ')||'unmapped')+(t.assignees&&t.assignees.length?' (reassigned)':''),t.dest?'to '+esc(t.dest):'',t.kind==='spike'?'day '+(t.days||[]).join(', '):'',t.due?'due '+esc(t.due):'',sug?'':'base '+esc(t.baseDate)].filter(Boolean).join(' · ');
+  else{const d=ageD(t);state=`${stPill(t)}${isStale(t)?'<span class="st Stale">No update '+ago(t.lastUpdateAt||t.assignedAt).replace(' ago','')+'</span>':''}${t.status==='Closed'&&!cleared(t)&&t.pending?`<span class="st Stale" title="Closed by the POC but these AWBs are still in today's pendency">${fmt(t.pending)} still in pendency</span>`:''}<span class="note">Task age ${d} day${d===1?'':'s'}${t.assignedBy==='auto'?' · auto-assigned':''}</span>`+(canAdmin()?unBtn(t.id):'')}
+  const sub=[t.loc?`<b>${esc(t.loc)}</b>`:'<b>All DCs</b>',esc(pocReg(t)),!sug&&t.pending!=null&&t.status!=='Closed'?`<b>${fmt(t.pending)}</b> of ${fmt(t.total||t.n)} AWBs still pending`:(t.n?fmt(t.total||t.n)+' AWBs':''),!sug&&t.pending!=null&&t.status!=='Closed'?rs(t.pendingValue||0)+' pending':(t.value?rs(t.value):''),sug?'':'with '+esc(owners(t).map(pname).join(', ')||'unmapped')+(t.assignees&&t.assignees.length?' (reassigned)':''),t.dest?'to '+esc(t.dest):'',t.kind==='spike'?'day '+(t.days||[]).join(', '):'',t.due?'due '+esc(t.due):'',sug?'':'base '+esc(t.baseDate)].filter(Boolean).join(' · ');
   return `<div class="trow" tabindex="0" role="button" data-open="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="pill">${esc(pivotLbl(t))}</span><span class="ktag">${KIND[t.kind]||esc(t.kind)}</span></div><div class="ttl"></div><div class="tsub">${sub}</div></div><div class="tact">${state}</div></div>`;
 }
 function unBtn(id){return tv.confirm===id?`<button class="btn danger" type="button" data-unassign="${esc(id)}">Confirm unassign</button><button class="mini" type="button" data-uncancel>Cancel</button>`:`<button class="mini" type="button" data-unask="${esc(id)}">Unassign</button>`}
@@ -978,17 +983,20 @@ function renderTasks(){
 function overview(all){
   const sum=(L,f)=>L.reduce((s,t)=>s+(f(t)||0),0);
   const open=all.filter(t=>t.status==='Open'),wip=all.filter(t=>t.status==='In progress'),done=all.filter(t=>t.status==='Closed'),live=all.filter(t=>t.status!=='Closed'),stale=all.filter(isStale);
+  const autoC=done.filter(cleared),pocC=done.filter(t=>!cleared(t));
+  const ageB=[['0–1 days',t=>ageD(t)<=1],['2–3 days',t=>ageD(t)>=2&&ageD(t)<=3],['4–7 days',t=>ageD(t)>=4&&ageD(t)<=7],['8+ days',t=>ageD(t)>=8]];
   const k=(cls,l,v,s)=>`<div class="kt ${cls}"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
   const bar=L=>{const n=L.length||1,o=L.filter(t=>t.status==='Open').length,w=L.filter(t=>t.status==='In progress').length,c=L.filter(t=>t.status==='Closed').length;return `<div class="sbar" title="Open ${o} · In progress ${w} · Closed ${c}"><i class="o" style="width:${o/n*100}%"></i><i class="w" style="width:${w/n*100}%"></i><i class="c" style="width:${c/n*100}%"></i></div>`};
   const regRows=REGS().map(g=>{const L=all.filter(t=>pocReg(t)===g.name);if(!L.length)return '';const lv=L.filter(t=>t.status!=='Closed');
-    return `<tr><td class="l"><b>${esc(g.name)}</b><div class="note">${esc((g.l2||[]).map(pname).join(', '))}</div></td><td>${L.length}</td><td>${L.filter(t=>t.status==='Open').length}</td><td>${L.filter(t=>t.status==='In progress').length}</td><td>${L.filter(t=>t.status==='Closed').length}</td><td class="${L.filter(isStale).length?'warn':''}">${L.filter(isStale).length}</td><td>${fmt(sum(lv,t=>t.n))}</td><td>${rs(sum(lv,t=>t.value))}</td><td>${Math.round(L.filter(t=>t.status==='Closed').length*100/L.length)}%</td><td class="l">${bar(L)}</td></tr>`}).join('');
+    return `<tr><td class="l"><b>${esc(g.name)}</b><div class="note">${esc((g.l2||[]).map(pname).join(', '))}</div></td><td>${L.length}</td><td>${L.filter(t=>t.status==='Open').length}</td><td>${L.filter(t=>t.status==='In progress').length}</td><td>${L.filter(t=>t.status==='Closed').length}</td><td class="${L.filter(isStale).length?'warn':''}">${L.filter(isStale).length}</td><td>${fmt(sum(lv,pendN))}</td><td>${rs(sum(lv,pendV))}</td><td>${Math.round(L.filter(t=>t.status==='Closed').length*100/L.length)}%</td><td class="l">${bar(L)}</td></tr>`}).join('');
   const om=new Map();all.forEach(t=>owners(t).forEach(e=>{if(!om.has(e))om.set(e,[]);om.get(e).push(t)}));
   const pocRows=[...om].map(([e,L])=>({e,L,lv:L.filter(t=>t.status!=='Closed')})).sort((a,b)=>b.lv.length-a.lv.length||b.L.length-a.L.length).map(({e,L,lv})=>{
     const last=L.map(t=>t.lastUpdateAt).filter(Boolean).sort().pop();
-    return `<tr class="click${tv.owner===e?' sel':''}" data-owner="${esc(e)}"><td class="l"><b>${esc(pname(e))}</b><div class="note">${esc(roleTxt(e))}</div></td><td>${L.length}</td><td>${L.filter(t=>t.status==='Open').length}</td><td>${L.filter(t=>t.status==='In progress').length}</td><td>${L.filter(t=>t.status==='Closed').length}</td><td class="${L.filter(isStale).length?'warn':''}">${L.filter(isStale).length}</td><td>${fmt(sum(lv,t=>t.n))}</td><td>${rs(sum(lv,t=>t.value))}</td><td>${last?ago(last):'<span class="note">No update yet</span>'}</td><td class="l">${bar(L)}</td></tr>`}).join('');
-  const byKind=KORDER.map(kd=>{const L=live.filter(t=>t.kind===kd);return L.length?`<div class="kt"><span>${KIND[kd]}</span><b>${L.length}</b><small>${fmt(sum(L,t=>t.n))} AWBs · ${rs(sum(L,t=>t.value))}</small></div>`:''}).join('');
+    return `<tr class="click${tv.owner===e?' sel':''}" data-owner="${esc(e)}"><td class="l"><b>${esc(pname(e))}</b><div class="note">${esc(roleTxt(e))}</div></td><td>${L.length}</td><td>${L.filter(t=>t.status==='Open').length}</td><td>${L.filter(t=>t.status==='In progress').length}</td><td>${L.filter(t=>t.status==='Closed').length}</td><td class="${L.filter(isStale).length?'warn':''}">${L.filter(isStale).length}</td><td>${fmt(sum(lv,pendN))}</td><td>${rs(sum(lv,pendV))}</td><td>${last?ago(last):'<span class="note">No update yet</span>'}</td><td class="l">${bar(L)}</td></tr>`}).join('');
+  const byKind=KORDER.map(kd=>{const L=live.filter(t=>t.kind===kd);return L.length?`<div class="kt"><span>${KIND[kd]} pending</span><b>${L.length}</b><small>${fmt(sum(L,pendN))} AWBs · ${rs(sum(L,pendV))}</small></div>`:''}).join('');
   const hdr=`<tr><th>%NAME%</th><th>Tasks</th><th>Open</th><th>In progress</th><th>Closed</th><th>No update ${STALE_H}h+</th><th>AWBs pending</th><th>Value pending</th><th>%X%</th><th>Status mix</th></tr>`;
-  return `<div class="kstrip">${k('','Tasks assigned',fmt(all.length),`${fmt(live.length)} still pending`)}${k('','Not started',fmt(open.length),'status Open')}${k('','In progress (WIP)',fmt(wip.length),'')}${k('ok','Closed',fmt(done.length),all.length?Math.round(done.length*100/all.length)+'% of assigned':'')}${k(stale.length?'warn':'','No update '+STALE_H+'h+',fmt(stale.length),'')}${k('','AWBs pending',fmt(sum(live,t=>t.n)),'in open + WIP tasks')}${k('','Value pending',rs(sum(live,t=>t.value)),'product value')}</div>
+  return `<div class="kstrip">${k('','Tasks assigned',fmt(all.length),`${fmt(live.length)} still pending`)}${k('','Not started',fmt(open.length),'status Open')}${k('','In progress (WIP)',fmt(wip.length),'')}${k('ok','Closed',fmt(done.length),`${fmt(autoC.length)} cleared from pendency · ${fmt(pocC.length)} by POC`)}${k(stale.length?'warn':'','No update '+STALE_H+'h+',fmt(stale.length),'')}${k('','AWBs pending',fmt(sum(live,pendN)),'still in today\'s pendency')}${k('','Value pending',rs(sum(live,pendV)),'product value')}</div>
+   <div class="kstrip">${ageB.map(([l,f])=>{const L=live.filter(f);return `<div class="kt${l==='8+ days'&&L.length?' warn':''}"><span>Pending tasks aged ${l}</span><b>${fmt(L.length)}</b><small>${fmt(sum(L,pendN))} AWBs · ${rs(sum(L,pendV))}</small></div>`}).join('')}</div>
    ${byKind?`<div class="kstrip">${byKind}</div>`:''}
    <section class="tgroup"><h3><span class="gh">By region <span>pending = open + in progress</span></span></h3><div style="overflow:auto"><table class="ov">${hdr.replace('%NAME%','Region').replace('%X%','Closed %')}${regRows||'<tr><td class="l" colspan="10"><span class="note">No tasks assigned yet.</span></td></tr>'}</table></div>
    <div class="legend2" style="padding:0 16px 12px"><span><i style="background:#F2B33D"></i>Open</span><span><i style="background:#2F74C0"></i>In progress</span><span><i style="background:var(--teal)"></i>Closed</span></div></section>
@@ -1064,7 +1072,7 @@ async function renderDrawer(){
   const el=document.getElementById('drawer');const id=tv.open;if(!id)return;
   const db=RT.tasks.get(id),sug=SUGM.get(id);const t=db||sug;if(!t){el.innerHTML='<div class="dh"><div class="empty">This task was unassigned.</div><button class="xbtn" type="button" aria-label="Close">×</button></div>';el.querySelector('.xbtn').onclick=closeDrawer;return}
   const awbs=await awbsFor(id);if(tv.open!==id)return;
-  const facts=[['Priority',pri(t.prio)],['Pivot',esc(t.pivot||'At Dock')],['Region',esc(pocReg(t))],['Current location',t.loc?esc(t.loc):'All DCs in region'],t.n?['AWBs',fmt(t.n)]:null,t.value?['Shipment value',rs(t.value)]:null,
+  const facts=[['Priority',pri(t.prio)],['Pivot',esc(t.pivot||'At Dock')],['Region',esc(pocReg(t))],['Current location',t.loc?esc(t.loc):'All DCs in region'],t.n?['AWBs',fmt(t.total||t.n)]:null,t.value?['Shipment value',rs(t.value)]:null,db&&t.pending!=null?['Still in pendency',`${fmt(t.pending)} AWBs · ${rs(t.pendingValue||0)}${t.lastSeenBase?` <span class="note">(base ${esc(t.lastSeenBase)})</span>`:''}`]:null,db?['Task age',`${ageD(db)} day${ageD(db)===1?'':'s'}`]:null,db&&db.status==='Closed'?['Closed',cleared(db)?'Cleared from pendency':'By POC']:null,
     t.kind==='spike'?['Spike day',(t.days||[]).join(', ')]:null,t.dest?['Manifest destination',esc(t.dest)]:null,t.due?['Due',esc(t.due)]:null,
     ['Base file',esc(db?db.baseDate:SUG.baseDate)],db?['Assigned',when(db.assignedAt)]:null,
     db?['With',people(owners(t))+(t.assignees&&t.assignees.length?' <span class="note">(reassigned)</span>':'')]:null,
@@ -1083,7 +1091,10 @@ async function renderDrawer(){
   const nm=l=>(l||[]).map(pname).join(', ');
   const thread=db?`<h4>History (${evs.length})</h4><div class="tl">${evs.map((u,i)=>u.kind==='update'?`<div class="ev"><div class="eh"><b>${u.byEmail?esc(pname(u.byEmail)):nameSpan(u.by)}</b> posted an update · ${when(u.at)} <span class="st ${stCls(u.status)}">${esc(u.status)}</span></div><p data-rm="${ups.indexOf(evs[i].__u||null)}" data-ev="${i}"></p>${(u.files&&u.files.length)||u.link?`<div class="atts">${(u.files||[]).map(att).join('')}${safeLink(u.link)}</div>`:''}</div>`
     :u.kind==='reassigned'?`<div class="ev re"><div class="eh"><b>${esc(pname(u.by))}</b> reassigned from ${esc(nm(u.from)||'—')} to <b>${esc(nm(u.to))}</b> · ${when(u.at)}</div>${u.note?`<p data-ev="${i}"></p>`:''}</div>`
-    :`<div class="ev as"><div class="eh">Assigned${u.to&&u.to.length?' to <b>'+esc(nm(u.to))+'</b>':''} by ${esc(pname(u.by||''))} · ${when(u.at)}</div></div>`).join('')}</div>`:'';
+    :u.kind==='cleared'?`<div class="ev"><div class="eh"><b>Closed automatically</b> · base ${esc(u.base)}: all ${fmt(u.cleared||0)} pending AWBs have left this DC's ${esc(t.pivot||'At Dock')} pendency · ${when(u.at)}</div></div>`
+    :u.kind==='carried'?`<div class="ev as"><div class="eh">Base ${esc(u.base)}: <b>${fmt(u.pending)}</b> AWBs still pending${u.cleared?`, ${fmt(u.cleared)} cleared`:''}</div></div>`
+    :u.kind==='added'?`<div class="ev as"><div class="eh">Base ${esc(u.base)}: ${fmt(u.added)} new AWB${u.added===1?'':'s'} added to this task</div></div>`
+    :`<div class="ev as"><div class="eh">${u.auto?'Auto-assigned':'Assigned'}${u.to&&u.to.length?' to <b>'+esc(nm(u.to))+'</b>':''}${u.auto?'':' by '+esc(pname(u.by||''))} · ${when(u.at)}</div></div>`).join('')}</div>`:'';
   let form='';
   if(db&&canWork(db)){
     form=`<h4>Post an update</h4><form class="form" id="updForm"><div class="row"><label>Status<select id="updStatus">${['Open','In progress','Closed'].map(s=>`<option ${s===(db.status==='Open'?'In progress':db.status)?'selected':''}>${s}</option>`).join('')}</select></label>
@@ -1097,7 +1108,7 @@ async function renderDrawer(){
   }
   const canRe=db&&db.status!=='Closed'&&canWork(db);
   const adminBar=db&&(canAdmin()||canRe)?`<div class="tact" style="justify-content:flex-start;margin-top:12px">${canRe?`<button class="btn ghost" type="button" id="reBtn">${tv.reassign?'Cancel reassign':'Reassign to another POC'}</button>`:''}${canAdmin()?unBtn(id):''}</div>${tv.reassign&&canRe?reassignPanel(db):''}`:'';
-  el.innerHTML=`<div class="dh"><div><div class="tags">${pri(t.prio)}<span class="pill">${esc(pivotLbl(t))}</span><span class="ktag">${KIND[t.kind]||''}</span>${db?`<span class="st ${stCls(db.status)}">${esc(db.status)}</span>`:'<span class="st Sug">Suggested</span>'}</div><h2></h2></div><button class="xbtn" type="button" aria-label="Close">×</button></div>
+  el.innerHTML=`<div class="dh"><div><div class="tags">${pri(t.prio)}<span class="pill">${esc(pivotLbl(t))}</span><span class="ktag">${KIND[t.kind]||''}</span>${db?stPill(db):'<span class="st Sug">Suggested</span>'}</div><h2></h2></div><button class="xbtn" type="button" aria-label="Close">×</button></div>
    <div class="facts">${facts.map(([a,b])=>`<div><span>${a}</span>${b}</div>`).join('')}</div>
    <div class="todo" id="todoBox">${t.kind==='custom'?'':todo(t)}</div>${adminBar}${form}${thread}${destTbl}${manTbl}${awbTbl}`;
   el.querySelector('h2').textContent=t.title;
@@ -1339,11 +1350,12 @@ function renderUpload(B){
     ${up.busy||up.phase?`<div class="prog"><div class="bar"><span style="width:${Math.round(up.pct*100)}%"></span></div><div class="note">${esc(up.phase)} ${up.busy?Math.round(up.pct*100)+'%':''}</div></div>`:''}
     ${up.err?`<div class="err" style="margin-top:10px">${esc(up.err)}</div>`:''}
   </div>
-  ${o?`<div class="card"><h2>Ready to publish · base ${esc(o.data.asOf)}</h2>
+  ${up.done?`<div class="card"><h2>Published</h2><div class="facts" style="margin-top:6px"><div><span>HOV + RTO tasks auto-assigned</span>${up.done.autoAssigned||0}</div><div><span>Assigned tasks still pending</span>${up.done.carried||0}</div><div><span>Closed (cleared from pendency)</span>${up.done.cleared||0}</div><div><span>New AWBs added to existing tasks</span>${up.done.added||0}</div></div><p class="note">Tasks still in pendency keep their age. Tasks with no AWBs left at the same DC and pivot were closed automatically.</p><button class="btn" type="button" onclick="location.hash='tasks';location.reload()">Open the task assigner</button></div>`:''}
+  ${o&&!up.done?`<div class="card"><h2>Ready to publish · base ${esc(o.data.asOf)}</h2>
     <div class="facts" style="margin-top:6px"><div><span>AWBs considered</span>${(o.data.total-o.data.excludedNA).toLocaleString('en-IN')}</div><div><span>Excluded (Ecom Data #N/A)</span>${o.data.excludedNA.toLocaleString('en-IN')}</div><div><span>Current locations</span>${o.data.dims.loc.length}</div><div><span>Hold plan rows matched</span>${Object.keys(o.data.plan).length}</div>
     <div><span>Suggested tasks</span>${T.length}</div><div><span>Spike manifests</span>${k(t=>t.kind==='spike')}</div><div><span>RTO queued</span>${k(t=>t.kind==='rto')}</div><div><span>HOV</span>${k(t=>t.kind==='hov')}</div><div><span>Volumetric</span>${k(t=>t.kind==='vol')}</div><div><span>P0 tasks</span>${k(t=>t.prio==='P0')}</div></div>
-    <p class="note">Publishing replaces the dashboard data and the suggestions for everyone. Tasks already assigned stay as they are.</p>
-    <button class="btn" type="button" id="upPub" ${up.busy?'disabled':''}>Publish to dashboard</button></div>`:''}`;
+    <p class="note">Publishing replaces the dashboard data for everyone, assigns HOV and RTO-queued tasks automatically, and checks every assigned task against this base: tasks still pending carry forward, tasks with no AWBs left are closed.</p>
+    <button class="btn" type="button" id="upPub" ${up.busy?'disabled':''}>${up.busy?'Publishing…':'Publish to dashboard'}</button></div>`:''}`;
   const fi=root.querySelector('#upFile');fi.onchange=()=>{const f=fi.files[0];if(f){up={file:f,phase:'',pct:0,out:null,err:'',busy:false,date:dateFromName(f.name)};renderUpload(B)}};
   const drop=root.querySelector('#drop');drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');
   drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');const f=e.dataTransfer.files[0];if(f&&!up.busy){up={file:f,phase:'',pct:0,out:null,err:'',busy:false,date:dateFromName(f.name)};renderUpload(B)}};
@@ -1367,8 +1379,8 @@ function readFile(B){
 }
 async function publish(B){
   up.busy=true;up.phase='Sending to the server…';up.pct=1;renderUpload(B);
-  try{const o=up.out;await window.API('uploadBase',{data:o.data,suggestions:o.suggestions,awbs:o.awbs,asOf:o.data.asOf,baseDate:o.suggestions.baseDate,fileName:up.file.name});
-    window.SFX.toast('Base file published');setTimeout(()=>{location.hash='forward';location.reload()},600)}
+  try{const o=up.out;const res=await window.API('uploadBase',{data:o.data,suggestions:o.suggestions,awbs:o.awbs,asOf:o.data.asOf,baseDate:o.suggestions.baseDate,fileName:up.file.name});
+    const rc=res.reconcile||{};up.busy=false;up.phase='';up.done=rc;renderUpload(B)}
   catch(e){up.busy=false;up.err=e.message;renderUpload(B)}
 }
 boot();
