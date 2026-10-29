@@ -226,6 +226,36 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .picker2 label.pp:hover{background:var(--teal-soft)}
 .picker2 label.pp small{display:block;color:var(--muted);font-size:11.5px}
 .picker2 input[type=search],.picker2 textarea{font:13px var(--font-ui);border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px;width:100%;box-sizing:border-box;background:var(--panel);color:var(--ink)}
+.hright{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.brandlogo{height:30px;width:auto;display:block}
+.brandword{font-family:var(--font-display);font-weight:700;letter-spacing:.14em;color:var(--teal-deep);font-size:16px}
+@media (max-width:760px){.hright{align-items:flex-start}}
+.pvbody{display:grid;grid-template-columns:minmax(0,1fr) 280px}
+.pvtables{min-width:0;border-right:1px solid var(--line)}
+.pvtables .tblbox{border-right:0;border-bottom:1px solid var(--line)}
+.pvtables .tblbox:last-child{border-bottom:0}
+@media (max-width:1330px){.pvbody{grid-template-columns:minmax(0,1fr)}.pvtables{border-right:0;border-bottom:1px solid var(--line)}}
+.pvtables .pt th,.pvtables .pt td{padding:4px 5px;font-size:11.5px}
+.pvtables .pt td:first-child,.pvtables .pt th:first-child{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.pvtables .pt.dense th,.pvtables .pt.dense td{padding:4px 3px;font-size:11px;letter-spacing:-.1px}
+.pvtables .pt.dense td:first-child,.pvtables .pt.dense th:first-child{max-width:118px;padding-left:6px}
+.insight{padding:14px 16px;background:#FAFCFB;min-width:0;font-size:13px}
+.insight h5{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ins-p{margin:6px 0 0;line-height:1.5}
+.ins-l{margin:0;padding:0 0 0 16px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
+.ins-l.rem{list-style:none;padding:0}
+.ins-l.rem li{border-left:3px solid var(--lime);padding:2px 0 2px 8px}
+.ins-l.rem .st{margin-left:6px;font-size:10.5px;padding:1px 6px}
+.ins-l.rem q{display:block;color:var(--ink);margin-top:2px;quotes:'“' '”'}
+.ins-foot{margin-top:14px}
+.peek{position:fixed;z-index:65;width:340px;max-width:calc(100vw - 24px);background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 14px 36px rgba(15,47,41,.2);padding:12px 14px;font-size:12.5px}
+.peek h6{margin:0;font-size:13px;font-family:var(--font-display)}
+.peek .pk-sum{color:var(--muted);margin:3px 0 8px}
+.peek .pk-t{border-top:1px solid var(--line);padding:7px 0 5px;cursor:pointer}
+.peek .pk-t:hover{background:var(--teal-soft)}
+.peek .pk-ttl{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:3px 0 1px}
+.peek .pk-ev{color:var(--muted)}
+.peek .pk-foot{border-top:1px solid var(--line);padding-top:7px;color:var(--muted);font-size:11.5px}
 .avatar{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--teal-deep);color:#fff;font-weight:700;font-size:12px}
 .uploadcard{display:flex;flex-direction:column}
 .drop{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;border:2px dashed var(--line-strong);border-radius:12px;padding:28px 16px;cursor:pointer;background:var(--bg)}
@@ -343,7 +373,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="eyebrow">Shadowfax · Network Pendency Review</div>
     <h1>Pendency Dashboard</h1>
   </div>
-  <div class="meta" id="meta"></div>
+  <div class="hright"><img class="brandlogo" src="shadowfax-logo.png" alt="Shadowfax" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'brandword',textContent:'SHADOWFAX'}))"><div class="meta" id="meta"></div></div>
 </div></header>
 
 <div id="view-forward">
@@ -513,7 +543,8 @@ function render(){
   document.getElementById('pivots').innerHTML=showPv.map(i=>{const p=byPv[i],name=dims.pivot[i];
     const head=`<div class="pvhead"><div><h2>${esc(pl(name))}</h2><div class="note">${WINLBL[name]||''} · from bag received</div></div><div class="stats"><span class="chip"><b>${fmt(p.n)}</b> AWBs</span><span class="chip"><b>${fmt(p.hold)}</b> on hold</span><span class="chip"><b>${p.loc.size}</b> sites</span>${i===BRS_I?'':`<span class="chip"><b>${rs(p.hv)}</b> HOV value</span>`}</div></div>`;
     if(i===BRS_I)return `<section class="pvsec" id="pv-${i}">${head}${brsnr(brO,brD,brOL)}</section>`;
-    return `<section class="pvsec" id="pv-${i}">${head}<div class="pair">${table(i,'cnt',p.loc,p.ages,'Count of AWB','current location × ageing (days)',fmt)}${table(i,'hov',p.hov,p.ages,'HOV misses','sum of product value (₹), HOV2 = HOV',v=>Math.round(v).toLocaleString('en-IN'))}</div></section>`}).join('')||'<div class="card empty">No pivot has pendency for these filters.</div>';
+    return `<section class="pvsec" id="pv-${i}">${head}<div class="pvbody"><div class="pvtables">${table(i,'cnt',p.loc,p.ages,'Count of AWB','current location × ageing (days)',fmt)}${table(i,'hov',p.hov,p.ages,'HOV misses','sum of product value (₹), HOV2 = HOV · L = lakh, K = thousand',kfmt)}</div><aside class="insight" id="ins-${i}"></aside></div></section>`}).join('')||'<div class="card empty">No pivot has pendency for these filters.</div>';
+  LAST={byPv,showPv};renderInsights();
   document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyTable(b));
   renderHold(idx);
   document.getElementById('fsum').textContent=`Showing ${fmt(tot)} AWBs`;
@@ -556,6 +587,43 @@ function brsnr(brO,brD,brOL){
   <p class="note" style="margin:8px 0 0">Continuous trend: BRSNR pendency on ${RUN_MIN} or more consecutive ageing days. Spike: one day with at least ${SPIKE_MIN} AWBs and ${SPIKE_X}× the DC's normal daily average (averages leave out the spike days).</p></div>`;
 }
 const TBL={};
+const kfmt=v=>{v=Math.round(v);if(v>=1e5)return (v/1e5).toFixed(v>=1e6?0:1)+'L';if(v>=1e3)return (v/1e3).toFixed(v>=1e4?0:1)+'K';return String(v)};
+// ---------- summary panel beside each pivot ----------
+let LAST=null;
+const TASK_PIVOT={'At Dock':'At Dock','RECEIVED_AT_DC':'Received at DC','Picked_From_Client':'Picked from Client'};
+function spikesOf(p,ages){ // per DC: days well above that DC's normal day (normal = average of its other days, spike days left out)
+  const days=ages.filter(k=>/^\d+$/.test(k));const out=[];
+  p.loc.forEach((r,l)=>{const v=days.map(k=>r[k]||0);let cand=new Set(),avg=0;
+    for(let it=0;it<6;it++){const base=v.filter((_,j)=>!cand.has(j));avg=base.length?base.reduce((s,x)=>s+x,0)/base.length:0;const nc=new Set(v.map((x,j)=>x>=10&&x>=2.5*Math.max(avg,0.5)?j:-1).filter(j=>j>=0));if(nc.size===cand.size&&[...nc].every(j=>cand.has(j)))break;cand=nc}
+    cand.forEach(j=>out.push({loc:dims.loc[l],day:days[j],n:v[j],avg}))});
+  return out.sort((a,b)=>(b.n-b.avg)-(a.n-a.avg));
+}
+function renderInsights(){
+  if(!LAST)return;const tasks=(window.SFX&&window.SFX.getTasks)?window.SFX.getTasks():[];
+  const ago=iso=>{const m=(Date.now()-Date.parse(iso))/6e4;if(m<60)return Math.max(1,Math.round(m))+' min ago';const h=m/60;if(h<24)return Math.round(h)+' h ago';return Math.round(h/24)+' d ago'};
+  const pname=(window.SFX&&window.SFX.pname)||(e=>e);
+  LAST.showPv.forEach(i=>{const el=document.getElementById('ins-'+i);if(!el)return;const p=LAST.byPv[i],name=dims.pivot[i];
+    const T=TBL[i+'cnt'];const ages=T?T.ages:[];
+    const locs=[...p.loc].map(([l,r])=>({l,n:ages.reduce((s,k)=>s+(r[k]||0),0),old:ages.filter(k=>k==='21+'||+k>=11).reduce((s,k)=>s+(r[k]||0),0)})).sort((a,b)=>b.n-a.n);
+    const tot=locs.reduce((s,x)=>s+x.n,0);if(!tot){el.innerHTML='';return}
+    const top3=locs.slice(0,3).reduce((s,x)=>s+x.n,0),old=locs.reduce((s,x)=>s+x.old,0);
+    const hovL=[...p.hov].map(([l,r])=>({l,v:Object.values(r).reduce((s,x)=>s+x,0)})).sort((a,b)=>b.v-a.v);
+    const pct=(a,b)=>b?Math.round(a*100/b)+'%':'0%';
+    let s=`<b>${fmt(tot)}</b> AWBs across ${locs.length} DCs. <b>${esc(dims.loc[locs[0].l])}</b> holds ${pct(locs[0].n,tot)}, and the top three DCs hold ${pct(top3,tot)}. ${pct(old,tot)} is 11 days or older.`;
+    if(hovL.length&&hovL[0].v)s+=` HOV pending is ${rs(p.hv)}, led by ${esc(dims.loc[hovL[0].l])} (${rs(hovL[0].v)}).`;
+    const sp=spikesOf(p,ages).slice(0,4);
+    const tp=TASK_PIVOT[name];const L=tp?tasks.filter(t=>(t.pivot||'At Dock')===tp):[];
+    const live=L.filter(t=>t.status!=='Closed'),wip=L.filter(t=>t.status==='In progress'),cl=L.filter(t=>t.status==='Closed'),auto=cl.filter(t=>t.closedBy==='auto');
+    const ups=[];L.forEach(t=>(t.updates||[]).forEach(u=>u.remark&&ups.push({t,u})));ups.sort((a,b)=>String(b.u.at).localeCompare(String(a.u.at)));
+    const p0=live.filter(t=>t.prio==='P0').length;
+    el.innerHTML=`<div class="eyebrow">Summary</div><p class="ins-p">${s}</p>
+      ${sp.length?`<h5>Spikes to look at</h5><ul class="ins-l">${sp.map(x=>`<li><b>${esc(x.loc)}</b> · day ${esc(x.day)}: ${fmt(x.n)} AWBs against a normal ${x.avg<1?'under 1':fmt(x.avg)} a day</li>`).join('')}</ul>`:''}
+      <h5>From the field</h5>${tp?(L.length?`<p class="ins-p">${fmt(live.length)} tasks pending (${fmt(wip.length)} in progress${p0?`, ${fmt(p0)} P0`:''}) and ${fmt(cl.length)} closed${auto.length?`, ${fmt(auto.length)} of them cleared from pendency`:''}.</p>
+      ${ups.length?`<ul class="ins-l rem">${ups.slice(0,4).map(({t,u})=>`<li><b>${esc(t.loc||'')}</b> · ${esc(pname(u.byEmail||''))}, ${ago(u.at)}<span class="st ${u.status==='In progress'?'In':esc(u.status)}">${esc(u.status)}</span><q></q></li>`).join('')}</ul>`:'<p class="note">No POC remarks yet.</p>'}`:'<p class="note">No tasks for this pivot yet.</p>'):'<p class="note">Tasks for this pivot come later.</p>'}
+      <p class="note ins-foot">Built from the ${esc(D.asOf)} base and POC updates.</p>`;
+    el.querySelectorAll('.rem q').forEach((q,j)=>{const r=ups[j].u.remark;q.textContent=r.length>140?r.slice(0,137)+'…':r});
+  });
+}
 function table(pi,kind,map,ageSet,title,sub,f){
   const ages=AGE_KEYS.filter(k=>ageSet.has(k));
   const rows=[...map].map(([l,r])=>({l,r,t:ages.reduce((s,k)=>s+(r[k]||0),0)})).filter(x=>x.t>0||kind==='hov').sort((a,b)=>b.t-a.t);
@@ -565,7 +633,7 @@ function table(pi,kind,map,ageSet,title,sub,f){
   const base=kind==='hov'?'212,208,38':'0,135,113';
   const cell=(v,l,k)=>{if(!v)return '<td></td>';const t=Math.sqrt(v/mx);const a=(0.08+t*0.85).toFixed(2);const hot=kind!=='hov'&&t>0.62;return `<td style="background:rgba(${base},${a})"${hot?' class="hot"':''} data-l="${l}" data-k="${k}">${f(v)}</td>`};
   const key=pi+kind;TBL[key]={ages,rows,colT,gt,title:pl(dims.pivot[pi])+' · '+title};
-  return `<div class="tblbox"><div class="tblhead"><h3>${title} <span>· ${sub}</span></h3><button class="mini" type="button" data-copy="${key}">Copy table</button></div><div class="scroll"><table class="pt" data-pv="${pi}" data-kind="${kind}" data-key="${key}" title="Double-click a number for details"><thead><tr><th>Current location</th>${ages.map(k=>`<th>${k==='NA'?'Blank':k}</th>`).join('')}<th class="gt">Grand Total</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(dims.loc[x.l])}</td>${ages.map(k=>cell(x.r[k]||0,x.l,k)).join('')}<td class="gt"${x.t?` data-l="${x.l}" data-k="all"`:''}>${f(x.t)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Grand Total</td>${colT.map(v=>`<td>${v?f(v):''}</td>`).join('')}<td class="gt">${f(gt)}</td></tr></tfoot></table></div></div>`;
+  return `<div class="tblbox"><div class="tblhead"><h3>${title} <span>· ${sub}</span></h3><button class="mini" type="button" data-copy="${key}">Copy table</button></div><div class="scroll"><table class="pt${ages.length>16?' dense':''}" data-pv="${pi}" data-kind="${kind}" data-key="${key}" title="Click a number for its tasks; double-click for full details"><thead><tr><th>Current location</th>${ages.map(k=>`<th>${k==='NA'?'Blank':k}</th>`).join('')}<th class="gt">Grand Total</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(dims.loc[x.l])}</td>${ages.map(k=>cell(x.r[k]||0,x.l,k)).join('')}<td class="gt"${x.t?` data-l="${x.l}" data-k="all"`:''}>${f(x.t)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Grand Total</td>${colT.map(v=>`<td>${v?f(v):''}</td>`).join('')}<td class="gt">${f(gt)}</td></tr></tfoot></table></div></div>`;
 }
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)}
 function copyTable(b){
@@ -620,11 +688,19 @@ let sideInit=matchMedia('(max-width:760px)').matches;try{const v=localStorage.ge
 setSide(sideInit);
 addEventListener('hashchange',()=>setTab(location.hash.slice(1)));
 setTab(location.hash.slice(1));
-document.getElementById('pivots').addEventListener('dblclick',e=>{
-  const td=e.target.closest('td[data-l]');if(!td)return;const tb=td.closest('table.pt');const T=TBL[tb.dataset.key];if(!T)return;
+function cellInfo(td){const tb=td.closest('table.pt');const T=TBL[tb.dataset.key];if(!T)return null;
   const pi=+tb.dataset.pv,l=+td.dataset.l,k=td.dataset.k;const ages=k==='all'?T.ages.slice():[k];
+  return {pivot:dims.pivot[pi],pivotLabel:pl(dims.pivot[pi]),loc:dims.loc[l],ages,ageLabel:k==='all'?(ages.length>1?'Days '+ages[0]+' to '+ages[ages.length-1]:'Day '+ages[0]):'Day '+k,hold:[...S.hold].map(i=>dims.hold[i]),hovOnly:tb.dataset.kind==='hov',count:td.textContent}}
+let clickT=null;
+document.getElementById('pivots').addEventListener('click',e=>{
+  const td=e.target.closest('td[data-l]');if(!td||e.detail>1)return;clearTimeout(clickT);
+  clickT=setTimeout(()=>{const c=cellInfo(td);if(c&&window.SFX.onCellPeek)window.SFX.onCellPeek(c,td.getBoundingClientRect())},260);
+});
+document.getElementById('pivots').addEventListener('dblclick',e=>{
+  const td=e.target.closest('td[data-l]');if(!td)return;clearTimeout(clickT);const c=cellInfo(td);if(!c)return;
   window.getSelection&&window.getSelection().removeAllRanges();
-  window.SFX.onCell&&window.SFX.onCell({pivot:dims.pivot[pi],pivotLabel:pl(dims.pivot[pi]),loc:dims.loc[l],ages,ageLabel:k==='all'?(ages.length>1?'Days '+ages[0]+' to '+ages[ages.length-1]:'Day '+ages[0]):'Day '+k,hold:[...S.hold].map(i=>dims.hold[i]),hovOnly:tb.dataset.kind==='hov',count:td.textContent});
+  window.SFX.closePeek&&window.SFX.closePeek();
+  window.SFX.onCell&&window.SFX.onCell(c);
 });
 drawButtons();render();
 window.SFX=Object.assign(window.SFX||{},{esc,fmt,rs,toast,dims,D,
@@ -636,7 +712,7 @@ window.SFX=Object.assign(window.SFX||{},{esc,fmt,rs,toast,dims,D,
     const ch=document.getElementById('scopeChip');ch.hidden=!(SCOPE||SCOPE_L);
     if(!ch.hidden)ch.innerHTML='Your view: <b>'+esc(sc.label||[...R,...L].join(', '))+'</b>';
     drawButtons();render()},
-  view:()=>location.hash.slice(1)||'forward'});
+  view:()=>location.hash.slice(1)||'forward',refreshInsights:()=>renderInsights()});
 };
 </script>
 <script type="text/plain" id="worker-src">
@@ -909,9 +985,10 @@ const pri=p=>p?`<span class="pri ${esc(p)}">${esc(p)}</span>`:'';
 
 // ---------- start ----------
 async function signOut(){if(RT.preview){RT.preview=null;applyScope();renderAll();return}window.APP.logout()}
-function setTasks(list){RT.tasks=new Map((list||[]).map(t=>[t.id,t]));renderAll();if(tv.open)renderDrawer()}
+function setTasks(list){RT.tasks=new Map((list||[]).map(t=>[t.id,t]));CELLC.clear();renderAll();if(tv.open)renderDrawer();X.refreshInsights&&X.refreshInsights()}
 async function refreshTasks(){try{const r=await API('tasks');setTasks(r.tasks)}catch(e){}}
-function start(){applyScope();renderAll();setInterval(()=>{if(!document.hidden&&!tv.busy)refreshTasks()},60000)}
+X.getTasks=()=>[...RT.tasks.values()].filter(sees);X.pname=e=>pname(e);
+function start(){applyScope();renderAll();X.refreshInsights&&X.refreshInsights();setInterval(()=>{if(!document.hidden&&!tv.busy)refreshTasks()},60000)}
 function applyScope(){
   if(isAdminView()||!isPoc()){X.setScope(null);return}
   const l2=myL2(),inL2=new Set(REGS().filter(g=>l2.includes(g.name)).flatMap(g=>g.dcs||[]));const extra=myL1().filter(l=>!inL2.has(l));
@@ -937,7 +1014,8 @@ function renderSide(){
 // ---------- task rows ----------
 function taskRow(t,sug){
   const db=RT.tasks.get(t.id);let state='';
-  if(sug){state=db?`<span class="st ${stCls(db.status)}">${esc(db.status)}</span>`:(canAdmin()?`<button class="btn" type="button" data-assign="${esc(t.id)}">Assign</button>`:'<span class="st Sug">Not assigned</span>')}
+  const covered=sug&&!db&&t.overlap&&t.n&&t.overlap>=t.n;
+  if(sug){state=db?stPill(db):covered?'<span class="st Sug" title="Every AWB in this suggestion is already in an open task">Already in open tasks</span>':(canAdmin()?`${t.overlap?`<span class="note" title="These AWBs are already in other open tasks and will be left out">${fmt(t.overlap)} AWBs already in open tasks</span>`:''}<button class="btn" type="button" data-assign="${esc(t.id)}">Assign</button>`:'<span class="st Sug">Not assigned</span>')}
   else{const d=ageD(t);state=`${stPill(t)}${isStale(t)?'<span class="st Stale">No update '+ago(t.lastUpdateAt||t.assignedAt).replace(' ago','')+'</span>':''}${t.status==='Closed'&&!cleared(t)&&t.pending?`<span class="st Stale" title="Closed by the POC but these AWBs are still in today's pendency">${fmt(t.pending)} still in pendency</span>`:''}<span class="note">Task age ${d} day${d===1?'':'s'}${t.assignedBy==='auto'?' · auto-assigned':''}</span>`+(canAdmin()?unBtn(t.id):'')}
   const sub=[t.loc?`<b>${esc(t.loc)}</b>`:'<b>All DCs</b>',esc(pocReg(t)),!sug&&t.pending!=null&&t.status!=='Closed'?`<b>${fmt(t.pending)}</b> of ${fmt(t.total||t.n)} AWBs still pending`:(t.n?fmt(t.total||t.n)+' AWBs':''),!sug&&t.pending!=null&&t.status!=='Closed'?rs(t.pendingValue||0)+' pending':(t.value?rs(t.value):''),sug?'':'with '+esc(owners(t).map(pname).join(', ')||'unmapped')+(t.assignees&&t.assignees.length?' (reassigned)':''),t.dest?'to '+esc(t.dest):'',t.kind==='spike'?'day '+(t.days||[]).join(', '):'',t.due?'due '+esc(t.due):'',sug?'':'base '+esc(t.baseDate)].filter(Boolean).join(' · ');
   return `<div class="trow" tabindex="0" role="button" data-open="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="pill">${esc(pivotLbl(t))}</span><span class="ktag">${KIND[t.kind]||esc(t.kind)}</span></div><div class="ttl"></div><div class="tsub">${sub}</div></div><div class="tact">${state}</div></div>`;
@@ -1039,8 +1117,9 @@ async function assign(list){
   list=list.filter(t=>t&&!RT.tasks.has(t.id));
   if(tv.busy||!list.length)return;tv.busy=true;
   document.querySelectorAll('[data-assign],[data-assignall],#drAssign').forEach(b=>{b.disabled=true;if(b.matches('[data-assignall],#drAssign')||list.length===1)b.textContent='Assigning…'});
-  try{let done=0;for(let i=0;i<list.length;i+=40){const r=await API('assign',{ids:list.slice(i,i+40).map(t=>t.id)});done+=r.assigned;RT.tasks=new Map((r.tasks||[]).map(t=>[t.id,t]))}
-    toast(list.length===1?'Task assigned':`Assigned ${done} tasks`)}
+  try{let done=0,sk=0,tr=0;for(let i=0;i<list.length;i+=40){const r=await API('assign',{ids:list.slice(i,i+40).map(t=>t.id)});done+=r.assigned;sk+=r.skipped||0;tr+=r.trimmed||0;RT.tasks=new Map((r.tasks||[]).map(t=>[t.id,t]))}
+    CELLC.clear();X.refreshInsights&&X.refreshInsights();
+    toast((done===1&&list.length===1?'Task assigned':`Assigned ${done} task${done===1?'':'s'}`)+(sk?`. ${sk} skipped: all their AWBs are already in open tasks`:'')+(tr?`. ${tr} AWBs left out: already in open tasks`:''))}
   catch(e){toast(dbMsg(e))}
   tv.busy=false;renderAll();if(tv.open)renderDrawer();
 }
@@ -1148,11 +1227,45 @@ function wireReassign(el,t){
 }
 
 // ---------- drill-down dialog (double-click on a pivot number) ----------
+// cached cell lookups shared by the single-click popup and the double-click dialog
+const CELLC=new Map();
+function cellData(c){const k=JSON.stringify([c.pivot,c.loc,c.ages,c.hold,c.hovOnly]);if(!CELLC.has(k)){const pr=API('cell',{pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly});pr.catch(()=>CELLC.delete(k));CELLC.set(k,pr)}return CELLC.get(k)}
+function lastEvent(t){
+  const evs=[...(t.history||[]).map(h=>({...h,k:h.type})),...(t.updates||[]).map(u=>({...u,k:'update'}))].sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  const e=evs[0];if(!e)return '';const nm=l=>(l||[]).map(pname).join(', ');
+  if(e.k==='update')return `${pname(e.byEmail||'')}, ${ago(e.at)}: “${(e.remark||'').slice(0,90)}${(e.remark||'').length>90?'…':''}”`;
+  if(e.k==='reassigned')return `Reassigned to ${nm(e.to)} ${ago(e.at)}`;
+  if(e.k==='cleared')return `Cleared from pendency in base ${e.base}`;
+  if(e.k==='carried')return `Base ${e.base}: ${fmt(e.pending)} AWBs still pending`;
+  if(e.k==='added')return `Base ${e.base}: ${fmt(e.added)} new AWBs added`;
+  return `${e.auto?'Auto-assigned':'Assigned'} to ${nm(e.to)} ${ago(e.at)}`;
+}
+X.closePeek=()=>{const p=document.getElementById('peek');if(p)p.remove()};
+X.onCellPeek=async function(c,rect){
+  X.closePeek();const p=document.createElement('div');p.id='peek';p.className='peek';p.setAttribute('role','dialog');
+  const place=()=>{const w=p.offsetWidth||340,h=p.offsetHeight||160;let x=rect.right+8,y=rect.top-8;if(x+w>innerWidth-12)x=Math.max(12,rect.left-w-8);if(y+h>innerHeight-12)y=Math.max(12,innerHeight-h-12);p.style.left=x+'px';p.style.top=y+'px'};
+  p.innerHTML=`<h6></h6><div class="pk-sum">Loading…</div>`;p.querySelector('h6').textContent=`${c.loc} · ${c.ageLabel}${c.hovOnly?' · HOV':''}`;document.body.appendChild(p);place();
+  let r;try{r=await cellData(c)}catch(e){p.querySelector('.pk-sum').textContent=dbMsg(e);return}
+  if(!document.body.contains(p))return;
+  if(r.missing){p.querySelector('.pk-sum').textContent='Task links arrive with the next base upload.';return}
+  const T=(r.tasks||[]).map(x=>({x,t:RT.tasks.get(x.id)})).sort((a,b)=>(a.x.status==='Closed')-(b.x.status==='Closed'));
+  const unassigned=r.n-r.assigned;
+  p.innerHTML=`<h6></h6><div class="pk-sum">${fmt(r.n)} AWBs · ${rs(r.value)} · ${r.assigned?`<b>${fmt(r.assigned)}</b> in ${T.length} task${T.length===1?'':'s'}`:'none in a task yet'}${unassigned&&r.assigned?` · ${fmt(unassigned)} not in any task`:''}</div>
+    ${T.slice(0,3).map(({x,t})=>`<div class="pk-t" data-pk="${esc(x.id)}"><div class="tags">${pri(x.prio)}${t?stPill(t):`<span class="st ${stCls(x.status)}">${esc(x.status)}</span>`}<span class="pk-ev">${fmt(x.matched)} here · ${esc((x.owners||[]).map(pname).join(', '))}${t?` · ${ageD(t)} d old`:''}</span></div><div class="pk-ttl"></div>${t?`<div class="pk-ev">${esc(lastEvent(t))}</div>`:''}</div>`).join('')}
+    ${T.length>3?`<div class="pk-ev" style="padding:4px 0">+${T.length-3} more tasks</div>`:''}
+    <div class="pk-foot">${T.length?'Click a task to open it. ':''}Double-click for all AWBs.</div>`;
+  p.querySelector('h6').textContent=`${c.loc} · ${c.ageLabel}${c.hovOnly?' · HOV':''}`;
+  p.querySelectorAll('[data-pk]').forEach(row=>{row.querySelector('.pk-ttl').textContent=(T.find(z=>z.x.id===row.dataset.pk).x.title)||'';row.onclick=()=>{X.closePeek();if(RT.tasks.has(row.dataset.pk))openTask(row.dataset.pk)}});
+  place();
+};
+document.addEventListener('click',e=>{const p=document.getElementById('peek');if(p&&!p.contains(e.target)&&!e.target.closest('td[data-l]'))p.remove()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')X.closePeek()});
+addEventListener('scroll',()=>X.closePeek(),true);
 X.onCell=async function(c){
   let bg=document.getElementById('cellModal');if(!bg){bg=document.createElement('div');bg.id='cellModal';bg.className='modal-bg';document.body.appendChild(bg);bg.addEventListener('click',e=>{if(e.target===bg)bg.remove()});}
   const head=`<div class="dh"><div><div class="eyebrow">${esc(c.pivotLabel)}${c.hovOnly?' · HOV misses':''}${c.hold.length?' · '+esc(c.hold.join(', ')):''}</div><h2>${esc(c.loc)} · ${esc(c.ageLabel)}</h2></div><button class="xbtn" type="button" aria-label="Close" id="cmX">×</button></div>`;
   bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${head}<p class="note">Loading shipments…</p></div>`;bg.querySelector('#cmX').onclick=()=>bg.remove();
-  let r;try{r=await API('cell',{pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly})}catch(e){bg.querySelector('.note').textContent=dbMsg(e);return}
+  let r;try{r=await cellData(c)}catch(e){bg.querySelector('.note').textContent=dbMsg(e);return}
   if(!document.body.contains(bg))return;
   if(r.missing){bg.querySelector('.modal').innerHTML=head+'<p class="note">Shipment details arrive with the next base upload. Upload the base file again from Upload base file to enable this.</p>';bg.querySelector('#cmX').onclick=()=>bg.remove();return}
   const tk=new Map((r.tasks||[]).map(t=>[t.id,t]));
@@ -1220,7 +1333,7 @@ async function createCustom(){
   const awbs=cf.awbs.split(/[\s,]+/).map(x=>x.trim()).filter(Boolean).slice(0,2000);
   try{
     const r=await API('createCustom',{title:cf.title.trim(),details:cf.details.trim(),pivot:cf.pivot,region:cf.region,loc:cf.loc||null,prio:cf.prio,due:cf.due.trim()||null,awbs});
-    Object.assign(cf,{title:'',details:'',awbs:'',due:''});tv.cErr='';RT.tasks=new Map((r.tasks||[]).map(t=>[t.id,t]));toast('Action item assigned');
+    Object.assign(cf,{title:'',details:'',awbs:'',due:''});tv.cErr='';RT.tasks=new Map((r.tasks||[]).map(t=>[t.id,t]));toast('Action item assigned'+(r.leftOut?`. ${r.leftOut} AWBs left out: already in open tasks`:''));
   }catch(e){tv.cErr=dbMsg(e)}
   renderCustom();
 }
