@@ -249,6 +249,18 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .ins-l.rem q{display:block;color:var(--ink);margin-top:2px;quotes:'“' '”'}
 .ins-foot{margin-top:14px}
 .ins-sub{margin:0 0 6px}
+.hovtag{display:inline-block;background:#FFF6CC;color:#7A5B00;border:1px solid #F1DE8A;border-radius:999px;padding:0 7px;font-size:11px;font-weight:600;white-space:nowrap;margin-left:4px}
+.hp td.pdc{max-width:260px;white-space:normal;min-width:180px}
+.ins-il{margin:0;line-height:1.55}
+.ins-il em{font-style:normal;font-weight:700;color:var(--teal-deep)}
+.insight{position:relative}
+.ins-wrap{max-height:380px;overflow:hidden;position:relative}
+.ins-wrap:not(.open):not(.fits)::after{content:'';position:absolute;left:0;right:0;bottom:0;height:56px;background:linear-gradient(rgba(250,252,251,0),#FAFCFB)}
+.ins-wrap.open{max-height:none}
+.ins-more{appearance:none;margin-top:8px;border:1px solid var(--line-strong);background:var(--panel);color:var(--teal-deep);font:600 12px var(--font-ui);border-radius:999px;padding:5px 12px 5px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.ins-more::before{content:'';border-top:5px solid currentColor;border-left:4px solid transparent;border-right:4px solid transparent;transition:transform .15s}
+.ins-more[aria-expanded="true"]::before{transform:rotate(180deg)}
+.ins-more:hover{background:var(--teal-soft)}
 .ins-lead{margin-top:6px}
 .pt .tg{appearance:none;border:0;background:none;padding:0;margin:0 4px 0 0;width:14px;height:14px;display:inline-grid;place-items:center;vertical-align:-2px;cursor:pointer;color:var(--teal-deep);border-radius:3px}
 .pt .tg::before{content:'';border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
@@ -577,7 +589,7 @@ const TBL={};
 const kfmt=v=>{v=Math.round(v);if(v>=1e5)return (v/1e5).toFixed(v>=1e6?0:1)+'L';if(v>=1e3)return (v/1e3).toFixed(v>=1e4?0:1)+'K';return String(v)};
 // ---------- summary panel beside each pivot ----------
 let LAST=null;
-const TASK_PIVOT={'At Dock':'At Dock','RECEIVED_AT_DC':'Received at DC','Picked_From_Client':'Picked from Client'};
+const TASK_PIVOT={'At Dock':'At Dock','RECEIVED_AT_DC':'Received at DC','Picked_From_Client':'Picked from Client','BRSNR':'BRSNR'};
 function spikesOf(p,ages,minN){minN=minN||10; // per DC: days well above that DC's normal day (normal = average of its other days, spike days left out)
   const days=ages.filter(k=>/^\d+$/.test(k));const out=[];
   p.loc.forEach((r,l)=>{const v=days.map(k=>r[k]||0);let cand=new Set(),avg=0;
@@ -619,6 +631,7 @@ function topBy(J,key,val){const m=new Map();for(const j of J){const k=key(j);m.s
 const LN=l=>esc(dims.loc[l]);
 const ul=a=>a.length?`<ul class="ins-l">${a.map(x=>`<li>${x}</li>`).join('')}</ul>`:'';
 const sec=(t,body)=>body?`<h5>${t}</h5>${body}`:'';
+const il=a=>a.length?`<p class="ins-p ins-il">${a.map((x,k)=>`<span><em>${k+1}.</em> ${x}</span>`).join(', ')}</p>`:''; // numbered, comma-separated: saves vertical space
 const lead=s=>`<p class="ins-p ins-lead">${s}</p>`;
 const normal=a=>a<1?'under 1':fmt(a);
 const validAu=k=>{const v=k>=0?XD.au[k]:'';return !!v&&v!=='0'};
@@ -629,21 +642,21 @@ function daySpikes(byLocDay,days,minN){ // per DC: days well above that DC's nor
     cand.forEach(k=>out.push({l,day:days[k],n:v[k],avg}))});
   return out.sort((a,b)=>(b.n-b.avg)-(a.n-a.avg));
 }
+const spikeIl=sp=>il(sp.map(x=>`<b>${esc(x.loc!=null?x.loc:dims.loc[x.l])}</b> day ${esc(x.day)}: ${fmt(x.n)} vs normal ${normal(x.avg)}`));
 const spikeLi=sp=>ul(sp.map(x=>`<b>${esc(x.loc!=null?x.loc:dims.loc[x.l])}</b> · day ${esc(x.day)}: ${fmt(x.n)} against a normal ${normal(x.avg)} a day`));
 function insAtDock(i,ages){
   const {J,Jh}=LAST.XP[i];const tot=sumN(J);if(!tot)return '';
   const locs=topBy(J,j=>X.l[j]),md=topBy(J,j=>X.md[j]);const top3=locs.slice(0,3).reduce((s,x)=>s+x[1],0);
   let h=lead(`<b>${fmt(tot)}</b> AWBs at dock across ${locs.length} DCs and ${fmt(md.length)} manifest destinations. The top three DCs hold ${pctS(top3,tot)} of the misses.`);
-  h+=sec('Top DCs with misses',ul(locs.slice(0,5).map(([l,n])=>`<b>${LN(l)}</b> · ${fmt(n)} (${pctS(n,tot)})`)));
-  h+=sec('Top manifest destinations',ul(md.slice(0,5).map(([k,n])=>`<b>${esc(XL('md',k))}</b> · ${fmt(n)} at ${topLoc(J.filter(j=>X.md[j]===k))}`)));
+  h+=sec('Top manifest destination misses',il(md.slice(0,5).map(([k,n])=>`<b>${esc(XL('md',k))}</b> · ${fmt(n)} at ${topLoc(J.filter(j=>X.md[j]===k))}`)));
   const H=Jh.filter(j=>X.h[j]===HOLD_I);
   if(H.length){const hubs=topBy(H,j=>X.hub[j]);const dc=new Set(H.map(j=>X.l[j]));
-    h+=sec('On hold',`<p class="ins-p ins-sub"><b>${fmt(hubs.length)}</b> hold locations (delivery hubs) across ${dc.size} DCs, ${fmt(sumN(H))} AWBs${S.hold.size?', counted whatever the hold-flag filter':''}. Top 5:</p>`+ul(hubs.slice(0,5).map(([k,n])=>`<b>${esc(XL('hub',k))}</b> · ${fmt(n)} at ${topLoc(H.filter(j=>X.hub[j]===k))}`)))}
+    h+=sec('On hold',`<p class="ins-p ins-sub"><b>${fmt(hubs.length)}</b> hold locations (delivery hubs) across ${dc.size} DCs, ${fmt(sumN(H))} AWBs${S.hold.size?', counted whatever the hold-flag filter':''}. Top 5:</p>`+il(hubs.slice(0,5).map(([k,n])=>`<b>${esc(XL('hub',k))}</b> · ${fmt(n)} at ${topLoc(H.filter(j=>X.hub[j]===k))}`)))}
   const R=J.filter(j=>X.rto[j]===1);
   if(R.length){const g=topBy(R,j=>X.md[j]+'|'+X.l[j]);
-    h+=sec('RTO queued, processing pending',`<p class="ins-p ins-sub">${fmt(sumN(R))} AWBs (DCH2/BAGGING manifests to destinations that aren't our DCs). Top 5:</p>`+ul(g.slice(0,5).map(([k,n])=>{const [m,l]=k.split('|').map(Number);return `<b>${esc(XL('md',m))}</b> · ${fmt(n)} at ${LN(l)}`})))}
+    h+=sec('RTO queued, processing pending',`<p class="ins-p ins-sub">${fmt(sumN(R))} AWBs (DCH2/BAGGING manifests to destinations that aren't our DCs). Top 5:</p>`+il(g.slice(0,5).map(([k,n])=>{const [m,l]=k.split('|').map(Number);return `<b>${esc(XL('md',m))}</b> · ${fmt(n)} at ${LN(l)}`})))}
   const sp=spikesOf(LAST.byPv[i],ages).slice(0,10);
-  h+=sec(sp.length>1?`Top ${sp.length} spikes to look at`:'Spikes to look at',sp.length?spikeLi(sp):'<p class="note">No single-day spike.</p>');
+  h+=sec(sp.length>1?`Top ${sp.length} spikes to look at`:'Spikes to look at',sp.length?spikeIl(sp):'<p class="note">No single-day spike.</p>');
   return h;
 }
 function insRdc(i,ages){
@@ -686,19 +699,19 @@ function insPfc(i){
   const cl=topBy(J,j=>X.cl[j]),pr=topBy(J,j=>X.cl[j]+'|'+X.se[j]);let cum=0,k80=0;for(const [,n] of pr){cum+=n;k80++;if(cum>=0.8*tot)break}
   const top3c=cl.slice(0,3).reduce((s,x)=>s+x[1],0);
   let h=lead(`<b>${fmt(tot)}</b> AWBs worth ${rs(sumV(J))} from ${cl.length} clients and ${fmt(pr.length)} sellers. <b>${esc(XL('cl',cl[0][0]))}</b> alone is ${pctS(cl[0][1],tot)}, and the top three clients ${pctS(top3c,tot)}. ${fmt(k80)} of the ${fmt(pr.length)} client–seller pairs make up 80% of the pendency.`);
-  h+=sec('Top sellers × client (Pareto)',ul(pr.slice(0,5).map(([k,n])=>{const [c,se]=k.split('|').map(Number);return `<b>${esc(XL('se',se))}</b> · ${esc(XL('cl',c))} · ${fmt(n)} (${pctS(n,tot)}) at ${topLoc(J.filter(j=>X.cl[j]===c&&X.se[j]===se))}`})));
+  h+=sec('Top sellers × client (Pareto)',il(pr.slice(0,5).map(([k,n])=>{const [c,se]=k.split('|').map(Number);return `<b>${esc(XL('se',se))}</b> · ${esc(XL('cl',c))} · ${fmt(n)} (${pctS(n,tot)}) at ${topLoc(J.filter(j=>X.cl[j]===c&&X.se[j]===se))}`})));
   const hi=J.filter(j=>X.pv[j]>0).sort((a,b)=>X.pv[b]-X.pv[a]).slice(0,3);
-  h+=sec('Highest value pending',ul(hi.map(j=>`${esc(XL('pd',X.pd[j]))} · <b>${rs(X.pv[j])}</b>${X.n[j]>1?` (${X.n[j]} AWBs)`:''} · ${esc(XL('cl',X.cl[j]))} · ${LN(X.l[j])}, day ${X.a[j]}`)));
+  h+=sec('Highest value pending',il(hi.map(j=>`${esc(XL('pd',X.pd[j]))} · <b>${rs(X.pv[j])}</b>${X.n[j]>1?` (${X.n[j]} AWBs)`:''} · ${esc(XL('cl',X.cl[j]))} · ${LN(X.l[j])}, day ${X.a[j]}`)));
   return h;
 }
 function insBrsnr(i,ages){
   const {J}=LAST.XP[i];const tot=sumN(J);if(!tot)return '';
   const locs=topBy(J,j=>X.l[j]),mo=topBy(J,j=>X.mo[j]);
   let h=lead(`<b>${fmt(tot)}</b> BRSNR AWBs across ${locs.length} DCs from ${fmt(mo.length)} manifest origins. <b>${LN(locs[0][0])}</b> holds ${pctS(locs[0][1],tot)}.`);
-  h+=sec('Top DCs',ul(locs.slice(0,5).map(([l,n])=>`<b>${LN(l)}</b> · ${fmt(n)} (${pctS(n,tot)})`)));
-  h+=sec('Top manifest origins',ul(mo.slice(0,5).map(([k,n])=>`<b>${esc(XL('mo',k))}</b> · ${fmt(n)}, at ${topLoc(J.filter(j=>X.mo[j]===k))}`)));
+  h+=sec('Top DCs',il(locs.slice(0,5).map(([l,n])=>`<b>${LN(l)}</b> · ${fmt(n)} (${pctS(n,tot)})`)));
+  h+=sec('Top manifest origins',il(mo.slice(0,5).map(([k,n])=>`<b>${esc(XL('mo',k))}</b> · ${fmt(n)}, at ${topLoc(J.filter(j=>X.mo[j]===k))}`)));
   const sp=spikesOf(LAST.byPv[i],ages,5).slice(0,5);
-  h+=sec('Spikes',sp.length?spikeLi(sp):'<p class="note">No single-day spike.</p>');
+  h+=sec('Spikes',sp.length?spikeIl(sp):'<p class="note">No single-day spike.</p>');
   return h;
 }
 let LOCI=null;
@@ -716,6 +729,7 @@ function fieldBlock(name,tasks){
     ${top.length?`<ul class="ins-l rem">${top.map(({t,u})=>`<li><b>${esc(t.loc||'')}</b> · ${esc(pname(u.byEmail||''))}, ${ago(u.at)}<span class="st ${u.status==='In progress'?'In':esc(u.status)}">${esc(u.status)}</span><q></q></li>`).join('')}</ul>`:'<p class="note">No POC remarks yet.</p>'}`;
   return {html,bind:el=>el.querySelectorAll('.rem q').forEach((q,j)=>{const r=top[j].u.remark;q.textContent=r.length>160?r.slice(0,157)+'…':r})};
 }
+const INS_OPEN=new Set();
 const INS={'At Dock':insAtDock,'RECEIVED_AT_DC':insRdc,'Picked_From_Client':insPfc,'BRSNR':insBrsnr};
 function renderInsights(){
   if(!LAST)return;if(!X){renderInsightsBasic();return}
@@ -724,8 +738,15 @@ function renderInsights(){
     const T=TBL[i+'cnt'];const ages=T?T.ages:[];const fn=INS[name];const body=fn?fn(i,ages):'';
     if(!body){el.innerHTML='';return}
     const f=fieldBlock(name,tasks);
-    el.innerHTML=`<div class="eyebrow">Summary</div>${body}${f.html}<p class="note ins-foot">Built from the ${esc(D.asOf)} base${f.html?' and POC updates':''}. Follows the filters above.</p>`;
+    const open=INS_OPEN.has(name);
+    el.innerHTML=`<div class="ins-wrap${open?' open':''}"><div class="eyebrow">Summary</div>${body}${f.html}<p class="note ins-foot">Built from the ${esc(D.asOf)} base${f.html?' and POC updates':''}. Follows the filters above.</p></div><button class="ins-more" type="button" aria-expanded="${open}">${open?'Show less':'Show full summary'}</button>`;
     f.bind(el);
+    const w=el.querySelector('.ins-wrap'),bt=el.querySelector('.ins-more');
+    // collapsed height: line up with the count table beside it (fallback 380px when the panel sits below the tables)
+    if(!open){const tb=el.parentElement.querySelector('.pvtables .tblbox');const side=getComputedStyle(el.parentElement).gridTemplateColumns.split(' ').length>1;
+      w.style.maxHeight=(side&&tb?Math.max(260,tb.offsetHeight-64):380)+'px'}else w.style.maxHeight='none';
+    if(!open&&w.scrollHeight<=w.clientHeight+4){bt.hidden=true;w.classList.add('fits')}
+    bt.onclick=()=>{if(INS_OPEN.has(name))INS_OPEN.delete(name);else INS_OPEN.add(name);renderInsights()};
   });
 }
 
@@ -910,8 +931,8 @@ const s=v=>{if(v==null)return '';if(typeof v==='object')return v.err?'':'';if(ty
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const xdate=v=>{if(typeof v!=='number'||!isFinite(v))return s(v);const d=new Date(Math.round((v-25569)*86400000));const p=n=>String(n).padStart(2,'0');return `${p(d.getUTCDate())}-${MON[d.getUTCMonth()]} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`};
 const isNA=v=>v==null||(typeof v==='object'&&v&&v.err)||(typeof v==='string'&&(v.trim()===''||v.trim()==='#N/A'));
-const NEED=['Ageing_from_Bag_Rec','Pivot','Awb_number','Ecom Data','Manifest_Type','Delivery_hub','Manifest_origin','Manifest_Destination','Manifest_code','Error Scan Location','Error Scan Time','Error Scan Details','seal_number','Manifest_status','MM_Status','MM_code','Current_location','HOV2','rto_queue_flag','Hold_Flag','Volumetric_flag','Client','seller_name','Product Description','MPSR_Tag','message','action_user'];
-const LAST=['Region','product_value','bin_level']; // the later duplicate column is the one the pivots use
+const NEED=['Ageing_from_Bag_Rec','Pivot','Awb_number','Ecom Data','Manifest_Type','Delivery_hub','Manifest_origin','Manifest_Destination','Manifest_code','Error Scan Location','Error Scan Time','Error Scan Details','seal_number','Manifest_status','MM_Status','MM_code','Current_location','HOV2','rto_queue_flag','Hold_Flag','Volumetric_flag','Client','seller_name','Product Description','MPSR_Tag','message','action_user','last_action_user','Product Category'];
+const LAST=['Region','product_value','bin_level','bin_name','layout_name']; // the later duplicate column is the one the pivots use
 
 async function parseBase(getChunks,size,opts){
   opts=opts||{};const prog=opts.onProgress||(()=>{});
@@ -968,7 +989,7 @@ function build(rows,COL,planRows,opts){
   const d=dall.filter(r=>age(r)>=5);
   const allcnt={};for(const r of dall){const l=s(g(r,'Current_location'));(allcnt[l]=allcnt[l]||{});const k=Math.trunc(age(r));allcnt[l][k]=(allcnt[l][k]||0)+1}
   const pv=r=>typeof g(r,'product_value')==='number'?Math.round(g(r,'product_value')):0;
-  const awb=r=>({awb:s(g(r,'Awb_number')),age:Math.trunc(age(r)),mc:s(g(r,'Manifest_code')),md:s(g(r,'Manifest_Destination')),seal:s(g(r,'seal_number')),mm:s(g(r,'MM_code')),mms:s(g(r,'MM_Status')),ms:s(g(r,'Manifest_status')),esl:s(g(r,'Error Scan Location')),est:xdate(g(r,'Error Scan Time')),esd:s(g(r,'Error Scan Details')),pv:pv(r),hov:s(g(r,'HOV2'))==='HOV',hold:s(g(r,'Hold_Flag'))});
+  const awb=r=>({awb:s(g(r,'Awb_number')),age:Math.trunc(age(r)),mc:s(g(r,'Manifest_code')),md:s(g(r,'Manifest_Destination')),seal:s(g(r,'seal_number')),mm:s(g(r,'MM_code')),mms:s(g(r,'MM_Status')),ms:s(g(r,'Manifest_status')),esl:s(g(r,'Error Scan Location')),est:xdate(g(r,'Error Scan Time')),esd:s(g(r,'Error Scan Details')),pv:pv(r),hov:s(g(r,'HOV2'))==='HOV',hold:s(g(r,'Hold_Flag')),...(s(g(r,'HOV2'))==='HOV'||s(g(r,'Pivot'))!=='At Dock'?{pd:s(g(r,'Product Description')).slice(0,90),pc:s(g(r,'Product Category')).slice(0,60)}:{}),...(s(g(r,'Pivot'))==='RECEIVED_AT_DC'?{bl:s(g(r,'bin_level')),bn:s(g(r,'bin_name')),ln:s(g(r,'layout_name')),msg:s(g(r,'message')),au:s(g(r,'action_user')),lau:s(g(r,'last_action_user'))}:{})});
   const slug=x=>x.replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60);
   const count=(arr,f)=>{const m=new Map();for(const x of arr){const k=f(x);m.set(k,(m.get(k)||0)+1)}return m};
   const mostCommon=m=>[...m].sort((a,b)=>b[1]-a[1]);
@@ -1030,7 +1051,76 @@ function build(rows,COL,planRows,opts){
     const dests=items.map(([dd,x])=>({dest:dd,n:x.length,run:null})).sort((a,b)=>b.n-a.n);
     T.push({id:`rto-${slug(loc)}-small-${DATE}`,kind:'rto',pivot:'At Dock',prio:'P2',region:reg[loc],loc,dest:`${dests.length} destinations`,dests,n:Lr.length,
       title:`Receive ${Lr.length} RTO-queued shipments across ${dests.length} smaller destination${dests.length>1?'s':''}`,awbs:Lr.sort((a,b)=>age(b)-age(a)).map(awb)})}
-  T.forEach(t=>{t.value=t.awbs.reduce((s,a)=>s+(a.pv||0),0);t.hovN=t.awbs.filter(a=>a.hov).length});
+  // ================= Received at DC, Picked from Client, BRSNR =================
+  const okUser=v=>!!v&&!/^(0|#N\/A|NA|N\/A|null|none)$/i.test(v);
+  const dayRun=days=>{const d=[...new Set(days)].sort((a,b)=>a-b);let best=[],cur=[];for(const x of d){cur=cur.length&&x===cur[cur.length-1]+1?[...cur,x]:[x];if(cur.length>best.length)best=cur}return {days:d,run:best}};
+  const prN=n=>n>=20?'P0':n>=10?'P1':'P2';
+  const byDayOf=rs=>{const m=new Map();rs.forEach(r=>{const d=Math.trunc(age(r));m.set(d,(m.get(d)||0)+1)});return m};
+  const daysTxt=d=>d.length>4?`days ${d[0]}–${d[d.length-1]} (${d.length} days)`:`day${d.length>1?'s':''} ${d.join(', ')}`;
+  const rdc=base.filter(r=>s(g(r,'Pivot'))==='RECEIVED_AT_DC'&&typeof age(r)==='number'&&age(r)>=0&&age(r)<=20);
+  const rdcByLoc=new Map();rdc.forEach(r=>{const l=s(g(r,'Current_location'));if(!rdcByLoc.has(l))rdcByLoc.set(l,[]);rdcByLoc.get(l).push(r)});
+  const binOf=r=>{const b=s(g(r,'bin_level'));return b==='1'||b==='2'?b:''};
+  const RDCT=[];
+  for(const [loc,rs] of rdcByLoc){
+    const used=new Set();
+    // 1) action user (bin 1 and bin 2): one user behind a single-day spike, or the same user across several days
+    const binned=rs.filter(r=>binOf(r));const dayTot=byDayOf(binned);
+    const byAu=new Map();binned.forEach(r=>{const u=s(g(r,'action_user'));if(!okUser(u))return;if(!byAu.has(u))byAu.set(u,[]);byAu.get(u).push(r)});
+    for(const [u,L] of byAu){
+      const bd=byDayOf(L);const spikes=[...bd].filter(([d,n])=>n>=5&&n>=0.4*(dayTot.get(d)||0)).sort((a,b)=>b[1]-a[1]);
+      const {days,run}=dayRun(L.map(r=>Math.trunc(age(r))));const trend=days.length>=3&&L.length>=8;
+      if(!spikes.length&&!trend)continue;
+      const b1=L.filter(r=>binOf(r)==='1').length,b2=L.length-b1;
+      const b2days=dayRun(L.filter(r=>binOf(r)==='2').map(r=>Math.trunc(age(r)))).days;const b2all=trend&&b2days.length===days.length;
+      const what=[spikes.length?`spike on day ${spikes.map(x=>x[0]).join(', ')} (${spikes.map(x=>x[1]).join(', ')} AWBs)`:'',trend?`trend across ${days.length} ageing days${run.length>=3?`, ${run.length} in a row`:''}`:''].filter(Boolean).join(' and ');
+      L.forEach(r=>used.add(s(g(r,'Awb_number'))));
+      RDCT.push({id:`rdcau-${slug(loc)}-${slug(u)}-${DATE}`,kind:'rdcau',pivot:'Received at DC',prio:prN(L.length),region:reg[loc],loc,n:L.length,user:u,b1,b2,days,spikeDays:spikes.map(x=>x[0]),b2all,
+        title:`Action user ${u}: ${L.length} AWBs not processed (bin 1: ${b1}, bin 2: ${b2}), ${what}${b2all?', bin 2 on every day':''}. Check CCTV footage for this user`,
+        awbs:L.sort((a,b)=>age(a)-age(b)).map(awb)});
+    }
+    // 2) bin 2 success with no single user behind it: same layout + same bin name, spike on one day or trend over days
+    const b2s=rs.filter(r=>binOf(r)==='2'&&s(g(r,'message'))==='Success'&&!used.has(s(g(r,'Awb_number'))));
+    const byBin=new Map();b2s.forEach(r=>{const bn=s(g(r,'bin_name')),ln=s(g(r,'layout_name'));if(!bn)return;const k=ln+'\u0001'+bn;if(!byBin.has(k))byBin.set(k,[]);byBin.get(k).push(r)});
+    for(const [k,L] of byBin){const [ln,bn]=k.split('\u0001');const bd=byDayOf(L);const spikes=[...bd].filter(([d,n])=>n>=5).sort((a,b)=>b[1]-a[1]);const {days}=dayRun(L.map(r=>Math.trunc(age(r))));
+      const trend=days.length>=3&&L.length>=6;if(!spikes.length&&!trend)continue;
+      L.forEach(r=>used.add(s(g(r,'Awb_number'))));
+      RDCT.push({id:`rdcbin-${slug(loc)}-${slug(ln)}-${slug(bn)}-${DATE}`,kind:'rdcbin',pivot:'Received at DC',prio:prN(L.length),region:reg[loc],loc,n:L.length,bin:bn,layout:ln,days,
+        title:`Bin ${bn} (layout ${ln||'blank'}): ${L.length} bin 2 success AWBs ${trend?`keep landing here, ${daysTxt(days)}`:`spiked on day ${spikes[0][0]}`}. Check what is happening at this bin, CCTV if needed`,
+        awbs:L.sort((a,b)=>age(a)-age(b)).map(awb)})}
+    // 3) no bin level (#N/A / blank): same last action user, spike on one day or trend over days
+    const nb=rs.filter(r=>!binOf(r)&&!used.has(s(g(r,'Awb_number'))));const nbDay=byDayOf(nb);
+    const byLau=new Map();nb.forEach(r=>{const u=s(g(r,'last_action_user'));if(!okUser(u))return;if(!byLau.has(u))byLau.set(u,[]);byLau.get(u).push(r)});
+    for(const [u,L] of byLau){const bd=byDayOf(L);const spikes=[...bd].filter(([d,n])=>n>=5&&n>=0.4*(nbDay.get(d)||0)).sort((a,b)=>b[1]-a[1]);const {days}=dayRun(L.map(r=>Math.trunc(age(r))));
+      const trend=days.length>=3&&L.length>=8;if(!spikes.length&&!trend)continue;
+      RDCT.push({id:`rdcna-${slug(loc)}-${slug(u)}-${DATE}`,kind:'rdcna',pivot:'Received at DC',prio:prN(L.length),region:reg[loc],loc,n:L.length,user:u,days,
+        title:`Last action user ${u}: ${L.length} AWBs with no bin scan, ${[spikes.length?`spike on day ${spikes.map(x=>x[0]).join(', ')}`:'',trend?`trend across ${daysTxt(days)}`:''].filter(Boolean).join(' and ')}. Check what this user did with them`,
+        awbs:L.sort((a,b)=>age(a)-age(b)).map(awb)})}
+    // 4) HOV in Received at DC (same value bands as At Dock); may share AWBs with the tasks above
+    const hv=rs.filter(r=>s(g(r,'HOV2'))==='HOV');
+    for(const [pr,fn,lbl] of [['P0',v=>v>20000,'above ₹20K'],['P1',v=>v>=10000&&v<=20000,'₹10K–20K'],['P2',v=>v<10000,'below ₹10K']]){
+      const b=hv.filter(r=>fn(pv(r)));if(!b.length)continue;
+      RDCT.push({id:`hov-rdc-${slug(loc)}-${pr}-${DATE}`,kind:'hov',pivot:'Received at DC',prio:pr,region:reg[loc],loc,n:b.length,band:lbl,
+        title:`${b.length} HOV shipment${b.length>1?'s':''} ${lbl} received at DC and not processed`,awbs:b.sort((x,y)=>pv(y)-pv(x)).map(awb)})}
+  }
+  // link HOV tasks with the RDC tasks that share AWBs (both stay; closing the RDC task closes the HOV AWBs it covers)
+  const hovT=RDCT.filter(t=>t.kind==='hov'),rdcT=RDCT.filter(t=>t.kind!=='hov');
+  hovT.forEach(h=>{const set=new Set(h.awbs.map(a=>a.awb));rdcT.filter(t=>t.loc===h.loc).forEach(t=>{const k=t.awbs.filter(a=>set.has(a.awb)).length;if(k){(h.links=h.links||[]).push({id:t.id,n:k});(t.links=t.links||[]).push({id:h.id,n:k})}})});
+  T.push(...RDCT);
+  // Picked from Client: client x seller Pareto per DC
+  const pfc=base.filter(r=>s(g(r,'Pivot'))==='Picked_From_Client'&&typeof age(r)==='number'&&age(r)>=3&&age(r)<=20);
+  const pfcByLoc=new Map();pfc.forEach(r=>{const l=s(g(r,'Current_location'));if(!pfcByLoc.has(l))pfcByLoc.set(l,[]);pfcByLoc.get(l).push(r)});
+  for(const [loc,rs] of pfcByLoc){const pairs=new Map();rs.forEach(r=>{const k=s(g(r,'Client'))+'\u0001'+s(g(r,'seller_name'));if(!pairs.has(k))pairs.set(k,[]);pairs.get(k).push(r)});
+    let cum=0;for(const [k,L] of [...pairs].sort((a,b)=>b[1].length-a[1].length)){if(cum>=0.8*rs.length||L.length<5)break;cum+=L.length;const [cl,se]=k.split('\u0001');const {days}=dayRun(L.map(r=>Math.trunc(age(r))));
+      T.push({id:`pfc-${slug(loc)}-${slug(cl)}-${slug(se)}-${DATE}`,kind:'pfc',pivot:'Picked from Client',prio:prN(L.length),region:reg[loc],loc,n:L.length,client:cl,seller:se,days,
+        title:`Seller ${se||'(no name)'} (${cl}): ${L.length} AWBs picked but not received, ${daysTxt(days)}. ${Math.round(L.length*100/rs.length)}% of this DC's picked-from-client pendency`,
+        awbs:L.sort((a,b)=>age(b)-age(a)).map(awb)})}}
+  // BRSNR: a manifest origin that keeps showing up at a DC over several days (2-20)
+  const br=base.filter(r=>s(g(r,'Pivot'))==='BRSNR'&&typeof age(r)==='number'&&age(r)>=2&&age(r)<=20);
+  const brG=new Map();br.forEach(r=>{const k=s(g(r,'Current_location'))+'\u0001'+s(g(r,'Manifest_origin'));if(!brG.has(k))brG.set(k,[]);brG.get(k).push(r)});
+  for(const [k,L] of brG){const [loc,mo]=k.split('\u0001');const {days,run}=dayRun(L.map(r=>Math.trunc(age(r))));if(L.length<5||!(run.length>=3||days.length>=4))continue;
+    T.push({id:`brsnr-${slug(loc)}-${slug(mo)}-${DATE}`,kind:'brsnr',pivot:'BRSNR',prio:prN(L.length),region:reg[loc],loc,n:L.length,origin:mo,days,dest:null,
+      title:`BRSNR trend from ${mo}: ${L.length} AWBs over ${daysTxt(days)}. Check the bagging footage at ${mo}`,awbs:L.sort((a,b)=>age(a)-age(b)).map(awb)})}
+  T.forEach(t=>{t.value=t.awbs.reduce((s,a)=>s+(a.pv||0),0);t.hovN=t.awbs.filter(a=>a.hov).length;t.hovValue=t.awbs.filter(a=>a.hov).reduce((s,a)=>s+(a.pv||0),0)});
   const PR={P0:0,P1:1,P2:2};T.sort((a,b)=>PR[a.prio]-PR[b.prio]||b.n-a.n);T.forEach(t=>{t.awbs=t.awbs.slice(0,1500)});
   const lbr={};for(const r of base){const l=s(g(r,'Current_location')),rg=reg[l];(lbr[rg]=lbr[rg]||new Set()).add(l)}
   const locsByRegion={};for(const k in lbr)locsByRegion[k]=[...lbr[k]].sort();
@@ -1085,8 +1175,8 @@ const esc=s=>s==null?'':X.esc(s);
 const SUG=BOOT.suggestions||{tasks:[],asOf:'',baseDate:'',locsByRegion:{}};
 const SUGM=new Map(SUG.tasks.map(t=>[t.id,t]));
 const LBR=SUG.locsByRegion||{};
-const KIND={spike:'Spike manifest',vol:'Volumetric bags',hov:'HOV',rto:'RTO queued',custom:'Custom action'};
-const KORDER=['spike','vol','hov','rto','custom'];
+const KIND={spike:'Spike manifest',vol:'Volumetric bags',hov:'HOV',rto:'RTO queued',rdcau:'Action user',rdcbin:'Bin trend',rdcna:'No bin scan · last action user',pfc:'Seller Pareto',brsnr:'BRSNR origin trend',custom:'Custom action'};
+const KORDER=['spike','vol','hov','rto','rdcau','rdcbin','rdcna','pfc','brsnr','custom'];
 const PIVOTS=['At Dock','Received at DC','Picked from Client','BRSNR','Other'];
 const PR={P0:0,P1:1,P2:2};
 const STALE_H=24;
@@ -1169,14 +1259,23 @@ function taskRow(t,sug){
   if(sug){state=db?stPill(db):covered?'<span class="st Sug" title="Every AWB in this suggestion is already in an open task">Already in open tasks</span>':(canAdmin()?`${t.overlap?`<span class="note" title="These AWBs are already in other open tasks and will be left out">${fmt(t.overlap)} AWBs already in open tasks</span>`:''}<button class="btn" type="button" data-assign="${esc(t.id)}">Assign</button>`:'<span class="st Sug">Not assigned</span>')}
   else{const d=ageD(t);state=`${stPill(t)}${isStale(t)?'<span class="st Stale">No update '+ago(t.lastUpdateAt||t.assignedAt).replace(' ago','')+'</span>':''}${t.status==='Closed'&&!cleared(t)&&t.pending?`<span class="st Stale" title="Closed by the POC but these AWBs are still in today's pendency">${fmt(t.pending)} still in pendency</span>`:''}<span class="note">Task age ${d} day${d===1?'':'s'}${t.assignedBy==='auto'?' · auto-assigned':''}</span>`+(canAdmin()?unBtn(t.id):'')}
   const sub=[t.loc?`<b>${esc(t.loc)}</b>`:'<b>All DCs</b>',esc(pocReg(t)),!sug&&t.pending!=null&&t.status!=='Closed'?`<b>${fmt(t.pending)}</b> of ${fmt(t.total||t.n)} AWBs still pending`:(t.n?fmt(t.total||t.n)+' AWBs':''),!sug&&t.pending!=null&&t.status!=='Closed'?rs(t.pendingValue||0)+' pending':(t.value?rs(t.value):''),sug?'':'with '+esc(owners(t).map(pname).join(', ')||'unmapped')+(t.assignees&&t.assignees.length?' (reassigned)':''),t.dest?'to '+esc(t.dest):'',t.kind==='spike'?'day '+(t.days||[]).join(', '):'',t.due?'due '+esc(t.due):'',sug?'':'base '+esc(t.baseDate)].filter(Boolean).join(' · ');
-  return `<div class="trow" tabindex="0" role="button" data-open="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="pill">${esc(pivotLbl(t))}</span><span class="ktag">${KIND[t.kind]||esc(t.kind)}</span></div><div class="ttl"></div><div class="tsub">${sub}</div></div><div class="tact">${state}</div></div>`;
+  return `<div class="trow" tabindex="0" role="button" data-open="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="pill">${esc(pivotLbl(t))}</span><span class="ktag">${KIND[t.kind]||esc(t.kind)}</span>${hovTag(t)}</div><div class="ttl"></div><div class="tsub">${sub}</div></div><div class="tact">${state}</div></div>`;
+}
+// RDC (and other) tasks that include HOV shipments carry a HOV tag; HOV tasks show which tasks share their AWBs
+function linkLbl(id){const k=(id.match(/^[a-z]+/)||[''])[0];const lt=RT.tasks.get(id)||SUGM.get(id);
+  if(k==='hov'){const b=(id.match(/-(P\d)-\d{4}-\d{2}-\d{2}$/)||[])[1];return `HOV ${b||''} task${lt?' · '+lt.status:''}`.replace('  ',' ')}
+  return `${KIND[k]||'Task'}${lt&&lt.user?' '+lt.user:''}${lt&&RT.tasks.get(id)?' · '+lt.status:''}`}
+function hovTag(t){
+  if(t.kind!=='hov'&&t.hovN)return `<span class="hovtag" title="HOV shipments inside this task. They are also in a HOV task; closing this task closes those HOV AWBs">${fmt(t.hovN)} HOV · ${rs(t.hovValue||0)}</span>`;
+  if(t.kind==='hov'&&t.links&&t.links.length)return `<span class="hovtag" title="Some of these HOV AWBs are also in other tasks">Also in ${t.links.length} other task${t.links.length>1?'s':''}</span>`;
+  return '';
 }
 function unBtn(id){return tv.confirm===id?`<button class="btn danger" type="button" data-unassign="${esc(id)}">Confirm unassign</button><button class="mini" type="button" data-uncancel>Cancel</button>`:`<button class="mini" type="button" data-unask="${esc(id)}">Unassign</button>`}
 function groupHtml(list,sug){
-  const out=KORDER.map(kd=>{const L=list.filter(t=>t.kind===kd).sort(sortT);if(!L.length)return '';
+  const out=PIVOTS.flatMap(pv=>KORDER.map(kd=>[pv,kd])).map(([pv,kd])=>{const L=list.filter(t=>t.kind===kd&&(kd==='custom'?pv==='At Dock':(t.pivot||'At Dock')===pv)).sort(sortT);if(!L.length)return '';
     const un=sug?L.filter(t=>!RT.tasks.has(t.id)):[];
     const head=kd==='custom'?'Custom action items':`${esc(L[0].pivot||'At Dock')} misses · ${KIND[kd]}`;
-    return `<section class="tgroup"><h3><span class="gh">${head} <span>${L.length} task${L.length>1?'s':''}</span></span>${sug&&canAdmin()&&un.length?`<button class="btn ghost" type="button" data-assignall="${kd}">Assign all ${un.length} shown</button>`:''}</h3>${L.map(t=>taskRow(t,sug)).join('')}</section>`}).join('');
+    return `<section class="tgroup"><h3><span class="gh">${head} <span>${L.length} task${L.length>1?'s':''}</span></span>${sug&&canAdmin()&&un.length?`<button class="btn ghost" type="button" data-assignall="${kd}" data-assignpv="${esc(pv)}">Assign all ${un.length} shown</button>`:''}</h3>${L.map(t=>taskRow(t,sug)).join('')}</section>`}).join('');
   return out||'<div class="card empty">No tasks match these filters.</div>';
 }
 function setTitles(root,list){root.querySelectorAll('.trow').forEach(r=>{const t=RT.tasks.get(r.dataset.open)||SUGM.get(r.dataset.open);if(t)r.querySelector('.ttl').textContent=t.title})}
@@ -1255,7 +1354,7 @@ function wire(root){
   root.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{tv[b.dataset.f]=b.dataset.v;rerender()});
   root.querySelectorAll('[data-open]').forEach(r=>{r.onclick=e=>{if(e.target.closest('button'))return;openTask(r.dataset.open)};r.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target===r){e.preventDefault();openTask(r.dataset.open)}}});
   root.querySelectorAll('[data-assign]').forEach(b=>b.onclick=e=>{e.stopPropagation();assign([SUGM.get(b.dataset.assign)])});
-  root.querySelectorAll('[data-assignall]').forEach(b=>b.onclick=()=>{const kd=b.dataset.assignall;assign(SUG.tasks.filter(t=>t.kind===kd&&(tv.region==='All'||pocReg(t)===tv.region)&&(tv.prio==='All'||t.prio===tv.prio)&&!RT.tasks.has(t.id)))});
+  root.querySelectorAll('[data-assignall]').forEach(b=>b.onclick=()=>{const kd=b.dataset.assignall,pv=b.dataset.assignpv;assign(SUG.tasks.filter(t=>t.kind===kd&&(kd==='custom'||(t.pivot||'At Dock')===pv)&&(tv.region==='All'||pocReg(t)===tv.region)&&(tv.prio==='All'||t.prio===tv.prio)&&!RT.tasks.has(t.id)))});
   root.querySelectorAll('[data-unask]').forEach(b=>b.onclick=e=>{e.stopPropagation();tv.confirm=b.dataset.unask;rerender();setTimeout(()=>{if(tv.confirm===b.dataset.unask){tv.confirm=null;rerender()}},6000)});
   root.querySelectorAll('[data-uncancel]').forEach(b=>b.onclick=e=>{e.stopPropagation();tv.confirm=null;rerender()});
   root.querySelectorAll('[data-unassign]').forEach(b=>b.onclick=e=>{e.stopPropagation();unassign(b.dataset.unassign)});
@@ -1295,6 +1394,11 @@ function todo(t){
   if(t.kind==='spike')return `Manifest <b>${esc(m&&m.code)}</b> is behind the day-${(t.days||[]).join(', ')} spike at ${esc(t.loc)}. Once it is cleared the day falls back to normal (site average ${t.avg!=null?t.avg:'–'} AWBs a day). Track the bag using the error scan details below and confirm why its AWBs were not processed.`;
   if(t.kind==='vol')return (t.dests&&t.dests.length>1)?`Volumetric (DH) bags at ${esc(t.loc)} are being missed on consecutive days for ${t.dests.length} destinations (listed below). Track these bags and find out why volumetric shipments for these destinations are not getting connected.`:`Volumetric (DH) bags from ${esc(t.loc)} to <b>${esc(t.dest)}</b> are being missed on consecutive days. Track these bags and find out why volumetric shipments for this destination are not getting connected.`;
   if(t.kind==='hov')return `Track each HOV shipment ${esc(t.band||'')} below by AWB. Confirm its physical location, check the error scan details, and close or escalate it.`;
+  if(t.kind==='rdcau')return `Action user <b>${esc(t.user)}</b> scanned these ${fmt(t.n)} AWBs at ${esc(t.loc)} (bin 1: ${fmt(t.b1||0)}, bin 2: ${fmt(t.b2||0)}) and they are still received-at-DC${t.spikeDays&&t.spikeDays.length?`, with a spike on day ${t.spikeDays.join(', ')}`:''}${t.days&&t.days.length>=3?` and a trend across ${t.days.length} ageing days`:''}${t.b2all?', in bin 2 on every day':''}. Check the CCTV footage for this user at the scan times, find the shipments and record what happened.`;
+  if(t.kind==='rdcbin')return `Bin <b>${esc(t.bin)}</b> in layout <b>${esc(t.layout||'blank')}</b> at ${esc(t.loc)} keeps collecting bin 2 success shipments that are not moving (${fmt(t.n)} AWBs, ageing days ${(t.days||[]).join(', ')}). Check what is happening at this bin, physically and on CCTV, and clear it.`;
+  if(t.kind==='rdcna')return `These ${fmt(t.n)} AWBs at ${esc(t.loc)} have no bin level, and the last action user on all of them is <b>${esc(t.user)}</b> (ageing days ${(t.days||[]).join(', ')}). Check what this user did with them, on CCTV if needed, and locate the shipments.`;
+  if(t.kind==='pfc')return `Seller <b>${esc(t.seller||'(no name)')}</b> of client <b>${esc(t.client)}</b> is the largest share of picked-but-not-received shipments at ${esc(t.loc)}: ${fmt(t.n)} AWBs, ageing days ${(t.days||[]).join(', ')}. Check with the pickup hub and FM team where these shipments are.`;
+  if(t.kind==='brsnr')return `BRSNR shipments from manifest origin <b>${esc(t.origin)}</b> keep reaching ${esc(t.loc)} (${fmt(t.n)} AWBs, ageing days ${(t.days||[]).join(', ')}). Ask ${esc(t.origin)} for the bagging footage of these manifests and find out why the bags arrive this way.`;
   if(t.kind==='rto')return t.dests?`Receive the RTO-queued shipments at ${esc(t.loc)} for the destinations listed below and process them in reverse.`:`Receive all ${fmt(t.n)} RTO-queued shipments at ${esc(t.loc)} for <b>${esc(t.dest)}</b> and process them in reverse. The bags are listed below.`;
   return esc(t.details||'');
 }
@@ -1303,7 +1407,12 @@ async function renderDrawer(){
   const db=RT.tasks.get(id),sug=SUGM.get(id);const t=db||sug;if(!t){el.innerHTML='<div class="dh"><div class="empty">This task was unassigned.</div><button class="xbtn" type="button" aria-label="Close">×</button></div>';el.querySelector('.xbtn').onclick=closeDrawer;return}
   const awbs=await awbsFor(id);if(tv.open!==id)return;
   const facts=[['Priority',pri(t.prio)],['Pivot',esc(t.pivot||'At Dock')],['Region',esc(pocReg(t))],['Current location',t.loc?esc(t.loc):'All DCs in region'],t.n?['AWBs',fmt(t.total||t.n)]:null,t.value?['Shipment value',rs(t.value)]:null,db&&t.pending!=null?['Still in pendency',`${fmt(t.pending)} AWBs · ${rs(t.pendingValue||0)}${t.lastSeenBase?` <span class="note">(base ${esc(t.lastSeenBase)})</span>`:''}`]:null,db?['Task age',`${ageD(db)} day${ageD(db)===1?'':'s'}`]:null,db&&db.status==='Closed'?['Closed',cleared(db)?'Cleared from pendency':'By POC']:null,
-    t.kind==='spike'?['Spike day',(t.days||[]).join(', ')]:null,t.dest?['Manifest destination',esc(t.dest)]:null,t.due?['Due',esc(t.due)]:null,
+    t.kind==='spike'?['Spike day',(t.days||[]).join(', ')]:null,t.dest?['Manifest destination',esc(t.dest)]:null,
+    t.user?[t.kind==='rdcna'?'Last action user':'Action user',`<b>${esc(t.user)}</b>`]:null,t.bin?['Bin · layout',esc(t.bin)+' · '+esc(t.layout||'blank')]:null,
+    t.kind==='pfc'?['Client · seller',esc(t.client)+' · '+esc(t.seller||'(no name)')]:null,t.origin?['Manifest origin',esc(t.origin)]:null,
+    t.days&&t.kind!=='spike'&&t.days.length?['Ageing days',esc(t.days.join(', '))]:null,
+    t.kind!=='hov'&&t.hovN?['HOV involved',`<span class="hovtag">${fmt(t.hovN)} HOV · ${rs(t.hovValue||0)}</span> <span class="note">also in a HOV task</span>`]:null,
+    t.links&&t.links.length?['Linked tasks',t.links.map(x=>`<a href="#" data-link="${esc(x.id)}">${esc(linkLbl(x.id))}</a> <span class="note">(${fmt(x.n)} shared)</span>`).join('<br>')]:null,t.due?['Due',esc(t.due)]:null,
     ['Base file',esc(db?db.baseDate:SUG.baseDate)],db?['Assigned',when(db.assignedAt)]:null,
     db?['With',people(owners(t))+(t.assignees&&t.assignees.length?' <span class="note">(reassigned)</span>':'')]:null,
     t.loc?['L1 POC',people(RT.cfg.l1[t.loc])]:null,['L2 POC',people((REGS().find(g=>g.name===pocReg(t))||{}).l2)]].filter(Boolean);
@@ -1312,7 +1421,8 @@ async function renderDrawer(){
   const destTbl=t.dests&&t.dests.length?`<h4>Destinations (${t.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Manifest destination</th>${t.kind==='vol'?'<th>Consecutive days</th>':''}<th style="text-align:right">AWBs</th></tr></thead><tbody>${t.dests.map(d=>`<tr><td>${esc(d.dest)}</td>${t.kind==='vol'&&d.run?`<td>${d.run[0]}–${d.run[1]} (${d.run[1]-d.run[0]+1} days)</td>`:''}<td class="n">${d.n}</td></tr>`).join('')}</tbody></table></div>`:'';
   const manTbl=manL.length&&t.kind!=='hov'?`<h4>Manifests (${manL.length})</h4><div class="scroll" style="max-height:300px"><table class="hp"><thead><tr><th>Manifest code</th><th style="text-align:right">AWBs</th><th>Manifest destination</th><th>Seal</th><th>MM code</th><th>MM status</th><th>Error scan location</th><th>Error scan time</th><th>Error scan details</th></tr></thead><tbody>${manL.map(m=>`<tr><td><b>${esc(m.code)}</b></td><td class="n">${m.n}</td><td>${esc(m.md)}</td><td>${esc(m.seal)}</td><td>${esc(m.mm)}</td><td>${esc(m.mms)}</td><td>${esc(m.esl)}</td><td>${esc(m.est)}</td><td>${esc(m.esd)}</td></tr>`).join('')}</tbody></table></div>`:'';
   const hovPr=v=>v>20000?'P0':v>=10000?'P1':'P2';
-  const awbTbl=awbs.length?`<h4 style="display:flex;justify-content:space-between;align-items:center">AWBs (${awbs.length}) <button class="mini" type="button" id="copyAwbs">Copy AWBs</button></h4><div class="scroll" style="max-height:340px"><table class="hp"><thead><tr><th>AWB</th>${t.kind==='hov'?'<th>Priority</th><th style="text-align:right">Value (₹)</th>':''}<th style="text-align:right">Ageing</th><th>Manifest code</th><th>Manifest destination</th><th>Error scan location</th><th>Error scan details</th></tr></thead><tbody>${awbs.map(a=>`<tr><td>${esc(a.awb)}</td>${t.kind==='hov'?`<td>${pri(hovPr(a.pv))}</td><td class="n">${fmt(a.pv||0)}</td>`:''}<td class="n">${esc(a.age)}</td><td>${esc(a.mc)}</td><td>${esc(a.md)}</td><td>${esc(a.esl)}</td><td>${esc(a.esd)}</td></tr>`).join('')}</tbody></table></div>`:'';
+  const hasPd=awbs.some(a=>a.pd),hasRdc=awbs.some(a=>a.bl!=null||a.au!=null);
+  const awbTbl=awbs.length?`<h4 style="display:flex;justify-content:space-between;align-items:center">AWBs (${awbs.length}) <button class="mini" type="button" id="copyAwbs">Copy AWBs</button></h4><div class="scroll" style="max-height:380px"><table class="hp"><thead><tr><th>AWB</th>${t.kind==='hov'?'<th>Priority</th>':''}${hasPd?'<th>Product description</th><th>Category</th>':''}<th style="text-align:right">Value (₹)</th><th style="text-align:right">Ageing</th>${hasRdc?'<th>Bin level</th><th>Bin · layout</th><th>Message</th><th>Action user</th><th>Last action user</th>':''}<th>Manifest code</th><th>Manifest destination</th><th>Error scan location</th><th>Error scan details</th></tr></thead><tbody>${awbs.map(a=>`<tr><td>${esc(a.awb)}${a.hov&&t.kind!=='hov'?' <span class="hovtag">HOV</span>':''}</td>${t.kind==='hov'?`<td>${pri(hovPr(a.pv))}</td>`:''}${hasPd?`<td class="pdc">${esc(a.pd||'')}</td><td>${esc(a.pc&&a.pc!=='0'&&a.pc!==a.pd?a.pc:'')}</td>`:''}<td class="n">${fmt(a.pv||0)}</td><td class="n">${esc(a.age)}</td>${hasRdc?`<td>${esc(a.bl||'–')}</td><td>${esc([a.bn,a.ln].filter(v=>v&&v!=='0').join(' · '))}</td><td>${esc(a.msg||'')}</td><td>${esc(a.au||'')}</td><td>${esc(a.lau||'')}</td>`:''}<td>${esc(a.mc)}</td><td>${esc(a.md)}</td><td>${esc(a.esl)}</td><td>${esc(a.esd)}</td></tr>`).join('')}</tbody></table></div>`:'';
   const ups=(db&&db.updates)||[];const rev=ups.slice().reverse();
   const att=f=>{const u='https://drive.google.com/file/d/'+encodeURIComponent(f.id)+'/view';if(/^image\//.test(f.type||''))return `<a href="${u}" target="_blank" rel="noopener"><img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(f.id)}&sz=w400" alt="${esc(f.name)}" loading="lazy"></a>`;return `<a class="filelink" href="${u}" target="_blank" rel="noopener">${/^video\//.test(f.type||'')?'▶ ':''}${esc(f.name)}</a>`};
   const safeLink=l=>/^https:\/\//i.test(l||'')?`<a href="${esc(l)}" target="_blank" rel="noopener">Footage link</a>`:'';
@@ -1322,6 +1432,8 @@ async function renderDrawer(){
   const thread=db?`<h4>History (${evs.length})</h4><div class="tl">${evs.map((u,i)=>u.kind==='update'?`<div class="ev"><div class="eh"><b>${u.byEmail?esc(pname(u.byEmail)):nameSpan(u.by)}</b> posted an update · ${when(u.at)} <span class="st ${stCls(u.status)}">${esc(u.status)}</span></div><p data-rm="${ups.indexOf(evs[i].__u||null)}" data-ev="${i}"></p>${(u.files&&u.files.length)||u.link?`<div class="atts">${(u.files||[]).map(att).join('')}${safeLink(u.link)}</div>`:''}</div>`
     :u.kind==='reassigned'?`<div class="ev re"><div class="eh"><b>${esc(pname(u.by))}</b> reassigned from ${esc(nm(u.from)||'—')} to <b>${esc(nm(u.to))}</b> · ${when(u.at)}</div>${u.note?`<p data-ev="${i}"></p>`:''}</div>`
     :u.kind==='cleared'?`<div class="ev"><div class="eh"><b>Closed automatically</b> · base ${esc(u.base)}: all ${fmt(u.cleared||0)} pending AWBs have left this DC's ${esc(t.pivot||'At Dock')} pendency · ${when(u.at)}</div></div>`
+    :u.kind==='closedWith'?`<div class="ev"><div class="eh"><b>Closed with a linked task</b>: all its HOV AWBs are covered by closed tasks, last <a href="#" data-link="${esc(u.task)}">${esc(KIND[(u.task.match(/^[a-z]+/)||[''])[0]]||'task')}</a> (${fmt(u.n)} shared) · ${when(u.at)}</div></div>`
+    :u.kind==='partClosedWith'?`<div class="ev as"><div class="eh">Linked <a href="#" data-link="${esc(u.task)}">${esc(KIND[(u.task.match(/^[a-z]+/)||[''])[0]]||'task')}</a> closed: ${fmt(u.n)} of these HOV AWBs covered, ${fmt(u.left)} still open · ${when(u.at)}</div></div>`
     :u.kind==='carried'?`<div class="ev as"><div class="eh">Base ${esc(u.base)}: <b>${fmt(u.pending)}</b> AWBs still pending${u.cleared?`, ${fmt(u.cleared)} cleared`:''}</div></div>`
     :u.kind==='added'?`<div class="ev as"><div class="eh">Base ${esc(u.base)}: ${fmt(u.added)} new AWB${u.added===1?'':'s'} added to this task</div></div>`
     :`<div class="ev as"><div class="eh">${u.auto?'Auto-assigned':'Assigned'}${u.to&&u.to.length?' to <b>'+esc(nm(u.to))+'</b>':''}${u.auto?'':' by '+esc(pname(u.by||''))} · ${when(u.at)}</div></div>`).join('')}</div>`:'';
@@ -1345,6 +1457,7 @@ async function renderDrawer(){
   if(t.kind==='custom')el.querySelector('#todoBox').textContent=t.details||'';
   el.querySelectorAll('[data-ev]').forEach(p=>{const u=evs[+p.dataset.ev];const txt=u.kind==='update'?(u.remark||''):(u.note||'');p.textContent=txt;if(!txt)p.remove()});
   el.querySelector('.xbtn').onclick=closeDrawer;
+  el.querySelectorAll('[data-link]').forEach(a=>a.onclick=e=>{e.preventDefault();const lid=a.dataset.link;if(RT.tasks.has(lid)||SUGM.has(lid))openTask(lid);else toast('That task is not assigned or no longer listed')});
   el.querySelector('#copyAwbs')?.addEventListener('click',()=>copyText(awbs.map(a=>a.awb).join('\n'),awbs.length+' AWBs copied'));
   el.querySelector('#drAssign')?.addEventListener('click',()=>assign([sug]));
   el.querySelectorAll('[data-unask]').forEach(b=>b.onclick=()=>{tv.confirm=id;renderDrawer()});
@@ -1387,6 +1500,8 @@ function lastEvent(t){
   if(e.k==='update')return `${pname(e.byEmail||'')}, ${ago(e.at)}: “${(e.remark||'').slice(0,90)}${(e.remark||'').length>90?'…':''}”`;
   if(e.k==='reassigned')return `Reassigned to ${nm(e.to)} ${ago(e.at)}`;
   if(e.k==='cleared')return `Cleared from pendency in base ${e.base}`;
+  if(e.k==='closedWith')return `Closed with a linked task (${e.n} AWBs shared)`;
+  if(e.k==='partClosedWith')return `Linked task closed: ${e.n} AWBs covered, ${e.left} still open`;
   if(e.k==='carried')return `Base ${e.base}: ${fmt(e.pending)} AWBs still pending`;
   if(e.k==='added')return `Base ${e.base}: ${fmt(e.added)} new AWBs added`;
   return `${e.auto?'Auto-assigned':'Assigned'} to ${nm(e.to)} ${ago(e.at)}`;
