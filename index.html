@@ -230,17 +230,20 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .brandlogo{height:30px;width:auto;display:block}
 .brandword{font-family:var(--font-display);font-weight:700;letter-spacing:.14em;color:var(--teal-deep);font-size:16px}
 @media (max-width:760px){.hright{align-items:flex-start}}
-.pvbody{display:grid;grid-template-columns:minmax(0,1fr) 280px}
+.pvbody{display:grid;grid-template-columns:minmax(0,1fr) 340px}
 .pvtables{min-width:0;border-right:1px solid var(--line)}
 .pvtables .tblbox{border-right:0;border-bottom:1px solid var(--line)}
 .pvtables .tblbox:last-child{border-bottom:0}
+.pvtables .pt td:first-child,.pvtables .pt th:first-child{width:1%}
+.pvtables .pt td.gt,.pvtables .pt th.gt{width:1%;padding-left:8px;padding-right:8px}
 @media (max-width:1330px){.pvbody{grid-template-columns:minmax(0,1fr)}.pvtables{border-right:0;border-bottom:1px solid var(--line)}}
 .pvtables .pt th,.pvtables .pt td{padding:4px 5px;font-size:11.5px}
 .pvtables .pt td:first-child,.pvtables .pt th:first-child{max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .pvtables .pt.dense th,.pvtables .pt.dense td{padding:4px 3px;font-size:11px;letter-spacing:-.1px}
 .pvtables .pt.dense td:first-child,.pvtables .pt.dense th:first-child{max-width:118px;padding-left:6px}
 .insight{padding:14px 16px;background:#FAFCFB;min-width:0;font-size:13px}
-.insight h5{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.insight h5{margin:14px 0 5px;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:#0B3D33;font-weight:800;border-left:3px solid var(--teal);padding-left:7px}
+.insight .eyebrow{color:#0B3D33;font-weight:800}
 .ins-p{margin:6px 0 0;line-height:1.5}
 .ins-l{margin:0;padding:0 0 0 16px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
 .ins-l.rem{list-style:none;padding:0}
@@ -278,6 +281,8 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .peek .pk-t:hover{background:var(--teal-soft)}
 .peek .pk-ttl{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:3px 0 1px}
 .peek .pk-ev{color:var(--muted)}
+.peek .pk-man{margin:-2px 0 8px;display:flex;flex-direction:column;gap:4px}
+.peek .pk-mr{font-size:12px;line-height:1.35}
 .peek .pk-foot{border-top:1px solid var(--line);padding-top:7px;color:var(--muted);font-size:11.5px}
 .avatar{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--teal-deep);color:#fff;font-weight:700;font-size:12px}
 .uploadcard{display:flex;flex-direction:column}
@@ -408,6 +413,12 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms" data-dim="region"></div>
     <div class="ms" data-dim="loc"></div>
     <div class="ms" data-dim="age"></div>
+    <div class="ms xf" data-dim="cl"></div>
+    <div class="ms xf" data-dim="vol"></div>
+    <div class="ms xf" data-dim="mp"></div>
+    <div class="ms xf" data-dim="esd"></div>
+    <div class="ms xf" data-dim="bin"></div>
+    <div class="ms xf" data-dim="msg"></div>
     <button class="reset" id="reset" type="button">Reset</button>
     <span class="spacer"></span>
     <span class="fsum" id="fsum"></span>
@@ -470,14 +481,14 @@ for(let i=0;i<N;i++)regLocs[C.r[i]].add(C.l[i]);
 // detail cube (from the parser): manifest destination / hub / RTO for At Dock, bin level / message / action user / MPSR for Received at DC,
 // client / seller / product for Picked from Client, manifest origin for BRSNR. Older uploads don't have it; the page falls back gracefully.
 const X=D.det?D.det.cols:null,XD=D.det?D.det.dims:{},XN=X?X.n.length:0;
-const XL=(f,k)=>{if(k==null||k<0)return '';const v=XD[f][k];if(v===''||v==null)return f==='bin'?'No bin scan':f==='se'?'(no seller name)':f==='pd'?'(no description)':'(blank)';return f==='bin'?'Bin level '+v:v};
-const DRILL={'At Dock':['md'],'RECEIVED_AT_DC':['bin','msg'],'Picked_From_Client':['cl','se'],'BRSNR':['mo']};
-const DRILL_LBL={md:'manifest destinations',bin:'bin levels',msg:'messages',cl:'clients',se:'sellers',mo:'manifest origins'};
+const XL=(f,k)=>{if(k==null||k<0)return '';const v=XD[f][k];if(v===''||v==null)return f==='bin'?'No bin scan':f==='se'?'(no seller name)':f==='pd'?'(no description)':'(blank)';return f==='bin'?'Bin level '+v:f==='ln'?'Layout '+v:f==='bn'?'Bin '+v:f==='au'?'User '+v:v};
+const DRILL={'At Dock':['md'],'RECEIVED_AT_DC':['bin','msg','ln','bn','au'],'Picked_From_Client':['cl','se'],'BRSNR':['mo']};
+const DRILL_LBL={md:'manifest destinations',bin:'bin levels',msg:'messages',ln:'layouts',bn:'bin names',au:'action users',cl:'clients',se:'sellers',mo:'manifest origins'};
 
 // state: Set of selected values (indices / age keys); empty = all
-const S={pivot:new Set(),hold:new Set(),region:new Set(),loc:new Set(),age:new Set()};
+const S={pivot:new Set(),hold:new Set(),region:new Set(),loc:new Set(),age:new Set(),cl:new Set(),vol:new Set(),mp:new Set(),esd:new Set(),bin:new Set(),msg:new Set()};
 try{const saved=JSON.parse(localStorage.getItem('sfx-fwd-filters')||'null');if(saved)for(const k in S)if(saved[k])saved[k].forEach(v=>S[k].add(v))}catch(e){}
-const save=()=>{try{const o={};for(const k in S)o[k]=[...S[k]];localStorage.setItem('sfx-fwd-filters',JSON.stringify(o))}catch(e){}};
+const save=()=>{try{const o={};for(const k in S){if(['cl','esd','bin','msg'].includes(k))continue;o[k]=[...S[k]]}localStorage.setItem('sfx-fwd-filters',JSON.stringify(o))}catch(e){}};
 
 const FIELD={pivot:'p',hold:'h',region:'r',loc:'l'};
 let SCOPE=null; // region indices a POC is limited to
@@ -490,12 +501,16 @@ function pass(i,skip){
   return true;
 }
 
+// detail rows also answer the extra filters: client, volumetric, MPSR, error scan remarks (all pivots), bin level and message (Received at DC only)
+const FIELDX={pivot:'p',hold:'h',region:'r',loc:'l',cl:'cl',vol:'vol',mp:'mp',esd:'esd',bin:'bin',msg:'msg'};
+const RDC_ONLY={bin:1,msg:1};const RDC_I=dims.pivot.indexOf('RECEIVED_AT_DC');
 function passX(j,skip){
   if((SCOPE||SCOPE_L)&&!((SCOPE&&SCOPE.has(X.r[j]))||(SCOPE_L&&SCOPE_L.has(X.l[j]))))return false;
-  for(const d of ['pivot','hold','region','loc']){if(d===skip)continue;const s=S[d];if(s.size&&!s.has(X[FIELD[d]][j]))return false}
-  if(S.age.size&&!S.age.has(ageKey(X.a[j])))return false;
+  for(const d in FIELDX){if(d===skip)continue;const s=S[d];if(!s.size)continue;if(RDC_ONLY[d]&&X.p[j]!==RDC_I)continue;if(!s.has(X[FIELDX[d]][j]))return false}
+  if(skip!=='age'&&S.age.size&&!S.age.has(ageKey(X.a[j])))return false;
   return true;
 }
+const xfActive=()=>['cl','vol','mp','esd','bin','msg'].some(d=>S[d].size);
 
 // ---------- multi-select ----------
 const DIMDEF={
@@ -506,8 +521,15 @@ const DIMDEF={
     if(S.region.size){const ok=new Set();S.region.forEach(r=>regLocs[r].forEach(l=>ok.add(l)));idx=idx.filter(i=>ok.has(i))}
     if(SCOPE||SCOPE_L)idx=idx.filter(i=>(SCOPE&&[...SCOPE].some(r=>regLocs[r].has(i)))||(SCOPE_L&&SCOPE_L.has(i)));
     return idx.map(i=>({v:i,t:dims.loc[i]})).sort((a,b)=>a.t.localeCompare(b.t))}},
-  age:{k:'Ageing from bag rec.',grid:true,opts:()=>AGE_KEYS.map(k=>({v:k,t:k==='NA'?'Blank':k}))}
+  age:{k:'Ageing from bag rec.',grid:true,opts:()=>AGE_KEYS.map(k=>({v:k,t:k==='NA'?'Blank':k}))},
+  cl:{k:'Client',search:true,opts:()=>(XD.cl||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))},
+  vol:{k:'Volumetric',opts:()=>[{v:0,t:'Normal'},{v:1,t:'Volumetric'}]},
+  mp:{k:'MPSR',opts:()=>[{v:0,t:'No'},{v:1,t:'Yes'}]},
+  esd:{k:'Error scan remarks',opts:()=>(XD.esd||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
+  bin:{k:'Bin level (RDC)',opts:()=>(XD.bin||[]).map((v,i)=>({v:i,t:v?'Bin level '+v:'No bin scan'}))},
+  msg:{k:'Message (RDC)',opts:()=>(XD.msg||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))}
 };
+if(!X)document.querySelectorAll('.ms.xf').forEach(e=>e.remove());
 const caret='<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
 let openDim=null;
 function label(dim){
@@ -526,6 +548,7 @@ function drawButtons(){
 }
 function counts(dim){
   const m=new Map();
+  if(X){for(let j=0;j<XN;j++){if(!passX(j,dim))continue;if(RDC_ONLY[dim]&&X.p[j]!==RDC_I)continue;const k=dim==='age'?ageKey(X.a[j]):X[FIELDX[dim]][j];m.set(k,(m.get(k)||0)+X.n[j])}return m}
   for(let i=0;i<N;i++){if(!pass(i,dim))continue;const k=dim==='age'?ALL_AGE[ageIdx[i]]:C[FIELD[dim]][i];m.set(k,(m.get(k)||0)+C.n[i])}
   return m;
 }
@@ -544,7 +567,7 @@ function drawPop(dim,q){
   }
   const items=opts.map(o=>{const n=cn.get(o.v)||0;const id=`o-${dim}-${String(o.v).replace(/\W/g,'_')}`;return `<label class="opt${n?'':' zero'}" for="${id}"><input type="checkbox" id="${id}" data-v="${esc(o.v)}" ${s.has(o.v)?'checked':''}><span>${esc(o.t)}</span><span class="n">${fmt(n)}</span></label>`}).join('');
   const searchVal=pop.querySelector('input[type=search]')?.value||'';
-  pop.innerHTML=(def.search?`<input type="search" id="ms-q-${dim}" placeholder="Search location" value="${esc(searchVal)}">`:'')+`<div class="acts">${acts}</div><div class="${def.grid?'agegrid':'opts'}">${items||'<div class="note">No match</div>'}</div>`+(dim==='age'?'<p class="note" style="margin:8px 0 0">Tick any combination. Nothing ticked means all ages.</p>':'');
+  pop.innerHTML=(def.search?`<input type="search" id="ms-q-${dim}" placeholder="Search" value="${esc(searchVal)}">`:'')+`<div class="acts">${acts}</div><div class="${def.grid?'agegrid':'opts'}">${items||'<div class="note">No match</div>'}</div>`+(dim==='age'?'<p class="note" style="margin:8px 0 0">Tick any combination. Nothing ticked means all ages.</p>':'');
   const parse=v=>dim==='age'?v:+v;
   pop.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.onchange=()=>{const v=parse(cb.dataset.v);cb.checked?s.add(v):s.delete(v);changed(dim)});
   pop.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{if(b.dataset.a==='none')s.clear();else{opts.forEach(o=>s.add(o.v))}changed(dim)});
@@ -567,11 +590,13 @@ function render(){
   const idx=[];for(let i=0;i<N;i++)if(pass(i))idx.push(i);
   let tot=0;
   const byPv=dims.pivot.map(()=>({n:0,hv:0,hold:0,loc:new Map(),hov:new Map(),ages:new Set(),hovAges:new Set()}));
-  for(const i of idx){
-    const n=C.n[i],p=byPv[C.p[i]],ak=ALL_AGE[ageIdx[i]];
-    tot+=n;p.n+=n;if(C.h[i]===HOLD_I)p.hold+=n;
-    let r=p.loc.get(C.l[i]);if(!r){r={};p.loc.set(C.l[i],r)}r[ak]=(r[ak]||0)+n;p.ages.add(ak);
-    if(C.v[i]===1){p.hv+=C.pv[i];let h=p.hov.get(C.l[i]);if(!h){h={};p.hov.set(C.l[i],h)}h[ak]=(h[ak]||0)+C.pv[i];p.hovAges.add(ak)}
+  // tables come from the detail rows when present (they carry every filter); older uploads fall back to the summary cube
+  const SR=X||C;let rows=idx;if(X){rows=[];for(let j=0;j<XN;j++)if(passX(j))rows.push(j)}
+  for(const i of rows){
+    const n=SR.n[i],p=byPv[SR.p[i]],ak=X?ageKey(X.a[i]):ALL_AGE[ageIdx[i]];
+    tot+=n;p.n+=n;if(SR.h[i]===HOLD_I)p.hold+=n;
+    let r=p.loc.get(SR.l[i]);if(!r){r={};p.loc.set(SR.l[i],r)}r[ak]=(r[ak]||0)+n;p.ages.add(ak);
+    if(SR.v[i]===1){p.hv+=SR.pv[i];let h=p.hov.get(SR.l[i]);if(!h){h={};p.hov.set(SR.l[i],h)}h[ak]=(h[ak]||0)+SR.pv[i];p.hovAges.add(ak)}
   }
   const showPv=dims.pivot.map((v,i)=>i).filter(i=>(!S.pivot.size||S.pivot.has(i))&&byPv[i].n>0);
   document.getElementById('pivots').innerHTML=showPv.map(i=>{const p=byPv[i],name=dims.pivot[i];
@@ -655,8 +680,14 @@ function insAtDock(i,ages){
   const R=J.filter(j=>X.rto[j]===1);
   if(R.length){const g=topBy(R,j=>X.md[j]+'|'+X.l[j]);
     h+=sec('RTO queued, processing pending',`<p class="ins-p ins-sub">${fmt(sumN(R))} AWBs (DCH2/BAGGING manifests to destinations that aren't our DCs). Top 5:</p>`+il(g.slice(0,5).map(([k,n])=>{const [m,l]=k.split('|').map(Number);return `<b>${esc(XL('md',m))}</b> · ${fmt(n)} at ${LN(l)}`})))}
-  const sp=spikesOf(LAST.byPv[i],ages).slice(0,10);
-  h+=sec(sp.length>1?`Top ${sp.length} spikes to look at`:'Spikes to look at',sp.length?spikeIl(sp):'<p class="note">No single-day spike.</p>');
+  // cuts by shipment / manifest type: top 5 DCs, or every DC of the region when a region is selected
+  const cut=(L,title)=>{const n=sumN(L);if(!n)return '';const lc=topBy(L,j=>X.l[j]);const show=S.region.size?lc:lc.slice(0,5);
+    return sec(`${title} · ${fmt(n)} (${pctS(n,tot)})`,il(show.map(([l,v])=>`<b>${LN(l)}</b> ${fmt(v)}`))+(!S.region.size&&lc.length>5?`<p class="note" style="margin:2px 0 0">+${lc.length-5} more DCs</p>`:''))};
+  const SHIP=XD.rca?XD.rca.indexOf('Manifest Processed at Shipment Level'):-1,NORM=XD.rca?XD.rca.indexOf('Normal Manifest'):-1;
+  h+=cut(J.filter(j=>X.vol[j]===1),'Volumetric shipments');
+  h+=cut(J.filter(j=>X.ssm[j]===1),'SSM bags (1 AWB in manifest, not volumetric)');
+  h+=cut(J.filter(j=>X.rca[j]===SHIP),'Processed at shipment level');
+  h+=cut(J.filter(j=>X.rca[j]===NORM),'Normal manifests');
   return h;
 }
 function insRdc(i,ages){
@@ -666,7 +697,7 @@ function insRdc(i,ages){
   const b1s=b1.filter(j=>X.msg[j]===SU),b2s=b2.filter(j=>X.msg[j]===SU),cf=J.filter(j=>X.msg[j]===CF),mp=J.filter(j=>X.mp[j]===1);
   const locs=topBy(J,j=>X.l[j]),mpl=topBy(mp,j=>X.l[j]);
   let h=lead(`<b>${fmt(tot)}</b> AWBs across ${locs.length} DCs: ${fmt(sumN(b1s))} bin 1 success, ${fmt(sumN(b2s))} bin 2 success and ${fmt(sumN(cf))} CFGR. <b>${fmt(sumN(mp))}</b> MPSR shipments are pending across the network${mpl.length?`, most at ${LN(mpl[0][0])} (${fmt(mpl[0][1])})`:''}.`);
-  const topDc=(L,k)=>ul(topBy(L,j=>X.l[j]).slice(0,k).map(([l,n])=>`<b>${LN(l)}</b> · ${fmt(n)}`));
+  const topDc=(L,k)=>il(topBy(L,j=>X.l[j]).slice(0,k).map(([l,n])=>`<b>${LN(l)}</b> · ${fmt(n)}`));
   h+=sec('Bin 1 success · top 5 DCs',topDc(b1s,5));
   h+=sec('Bin 2 success · top 5 DCs',topDc(b2s,5));
   const cfl=topBy(cf,j=>X.l[j]);
@@ -675,7 +706,7 @@ function insRdc(i,ages){
   const byLD=new Map();b2s.forEach(j=>{let m=byLD.get(X.l[j]);if(!m){m=new Map();byLD.set(X.l[j],m)}m.set(X.a[j],(m.get(X.a[j])||0)+X.n[j])});
   const days=ages.filter(k=>/^\d+$/.test(k)).map(Number);
   const sp=daySpikes(byLD,days,5).slice(0,5);
-  h+=sec('Bin 2 success spikes',sp.length?spikeLi(sp):'<p class="note">No single-day spike.</p>');
+  h+=sec('Bin 2 success spikes',sp.length?spikeIl(sp):'<p class="note">No single-day spike.</p>');
   // one action user behind a large share of a DC's misses (overall or on one day)
   const flags=[];const seen=new Map();
   const conc=(L,label,minN,share)=>{const tl=new Map();L.forEach(j=>tl.set(X.l[j],(tl.get(X.l[j])||0)+X.n[j]));
@@ -688,10 +719,10 @@ function insRdc(i,ages){
     if(n>=5&&n>=0.5*t)flags.push({w:n,html:`<b>${esc(XD.au[au])}</b> at ${LN(l)} on day ${a}: ${fmt(n)} of ${fmt(t)} bin 2 success AWBs that day`})});
   conc(b1,'bin 1 AWBs',8,0.3);
   flags.sort((a,b)=>b.w-a.w);
-  h+=sec('Single action user behind the misses',flags.length?ul(flags.slice(0,6).map(f=>f.html)):'<p class="note">No single user stands out (8+ AWBs and 30%+ of a DC, or 5+ and half of one day).</p>');
+  h+=sec('Single action user behind the misses',flags.length?il(flags.slice(0,6).map(f=>f.html)):'<p class="note">No single user stands out (8+ AWBs and 30%+ of a DC, or 5+ and half of one day).</p>');
   const V=J.filter(j=>X.v[j]===1);
   if(V.length){const vl=topBy(V,j=>X.l[j],j=>X.pv[j]);const items=topBy(V,j=>X.pd[j]+'|'+X.l[j],j=>X.pv[j]);
-    h+=sec('HOV misses',`<p class="ins-p ins-sub">${fmt(sumN(V))} HOV AWBs worth ${rs(sumV(V))}. Highest at ${vl.slice(0,3).map(([l,v])=>`<b>${LN(l)}</b> (${rs(v)})`).join(', ')}.</p>`+ul(items.slice(0,3).map(([k,v])=>{const [pd,l]=k.split('|').map(Number);return `${esc(XL('pd',pd))} · <b>${rs(v)}</b> · ${LN(l)}`})))}
+    h+=sec('HOV misses',`<p class="ins-p ins-sub">${fmt(sumN(V))} HOV AWBs worth ${rs(sumV(V))}. Highest at ${vl.slice(0,3).map(([l,v])=>`<b>${LN(l)}</b> (${rs(v)})`).join(', ')}.</p>`+il(items.slice(0,3).map(([k,v])=>{const [pd,l]=k.split('|').map(Number);return `${esc(XL('pd',pd))} · <b>${rs(v)}</b> · ${LN(l)}`})))}
   return h;
 }
 function insPfc(i){
@@ -769,8 +800,8 @@ document.getElementById('pivots').addEventListener('click',e=>{
   const tt=r=>T.ages.reduce((s,k)=>s+(r[k]||0),0);
   const rows=R.rows.map(x=>({...x,t:tt(x.r)})).filter(x=>x.t>0).sort((a,b)=>b.t-a.t);
   const top=rows.slice(0,10),rest=rows.slice(10);const pad=`style="padding-left:${8+(d+1)*14}px"`;
-  const cells=r=>T.ages.map(k=>`<td>${r[k]?f(r[k]):''}</td>`).join('')+`<td class="gt">${f(tt(r))}</td>`;
-  let html=top.map(x=>{const lbl=XL(R.f,x.k);return `<tr class="sub" data-d="${d+1}" data-rl="${l}" data-path="${[...path,x.k].join(',')}"><td title="${esc(lbl)}" ${pad}>${R.last?'':`<button class="tg" type="button" data-tg aria-expanded="false" aria-label="Show ${DRILL_LBL[lv[d+1]]} for ${esc(lbl)}"></button>`}${esc(lbl)}</td>${cells(x.r)}</tr>`}).join('');
+  const cells=(r,ck)=>T.ages.map(k=>`<td${ck&&r[k]?` data-l="${l}" data-k="${k}"`:''}>${r[k]?f(r[k]):''}</td>`).join('')+`<td class="gt"${ck?` data-l="${l}" data-k="all"`:''}>${f(tt(r))}</td>`;
+  let html=top.map(x=>{const lbl=XL(R.f,x.k);return `<tr class="sub" data-d="${d+1}" data-rl="${l}" data-path="${[...path,x.k].join(',')}"><td title="${esc(lbl)}" ${pad}>${R.last?'':`<button class="tg" type="button" data-tg aria-expanded="false" aria-label="Show ${DRILL_LBL[lv[d+1]]} for ${esc(lbl)}"></button>`}${esc(lbl)}</td>${cells(x.r,true)}</tr>`}).join('');
   if(rest.length){const o={};rest.forEach(x=>T.ages.forEach(k=>{if(x.r[k])o[k]=(o[k]||0)+x.r[k]}));html+=`<tr class="sub other" data-d="${d+1}"><td ${pad}>Other ${rest.length} ${DRILL_LBL[R.f]}</td>${cells(o)}</tr>`}
   if(!html)html=`<tr class="sub other" data-d="${d+1}"><td ${pad}>Nothing for these filters</td>${T.ages.map(()=>'<td></td>').join('')}<td class="gt"></td></tr>`;
   tr.insertAdjacentHTML('afterend',html);b.setAttribute('aria-expanded','true');
@@ -784,10 +815,14 @@ function table(pi,kind,map,ageSet,title,sub,f){
   const base=kind==='hov'?'212,208,38':'0,135,113';
   const cell=(v,l,k)=>{if(!v)return '<td></td>';const t=Math.sqrt(v/mx);const a=(0.08+t*0.85).toFixed(2);const hot=kind!=='hov'&&t>0.62;return `<td style="background:rgba(${base},${a})"${hot?' class="hot"':''} data-l="${l}" data-k="${k}">${f(v)}</td>`};
   const key=pi+kind;TBL[key]={ages,rows,colT,gt,title:pl(dims.pivot[pi])+' · '+title};
-  return `<div class="tblbox"><div class="tblhead"><h3>${title} <span>· ${sub}</span></h3><button class="mini" type="button" data-copy="${key}">Copy table</button></div><div class="scroll"><table class="pt${ages.length>16?' dense':''}" data-pv="${pi}" data-kind="${kind}" data-key="${key}" title="Click a number for its tasks; double-click for full details"><thead><tr><th>Current location</th>${ages.map(k=>`<th>${k==='NA'?'Blank':k}</th>`).join('')}<th class="gt">Grand Total</th></tr></thead><tbody>${rows.map(x=>`<tr data-rl="${x.l}" data-d="0"><td title="${esc(dims.loc[x.l])}">${X&&DRILL[dims.pivot[pi]]?`<button class="tg" type="button" data-tg aria-expanded="false" aria-label="Show ${DRILL_LBL[DRILL[dims.pivot[pi]][0]]} for ${esc(dims.loc[x.l])}"></button>`:''}${esc(dims.loc[x.l])}</td>${ages.map(k=>cell(x.r[k]||0,x.l,k)).join('')}<td class="gt"${x.t?` data-l="${x.l}" data-k="all"`:''}>${f(x.t)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Grand Total</td>${colT.map(v=>`<td>${v?f(v):''}</td>`).join('')}<td class="gt">${f(gt)}</td></tr></tfoot></table></div></div>`;
+  return `<div class="tblbox"><div class="tblhead"><h3>${title} <span>· ${sub}</span></h3><button class="mini" type="button" data-copy="${key}">Download CSV</button></div><div class="scroll"><table class="pt${ages.length>16?' dense':''}" data-pv="${pi}" data-kind="${kind}" data-key="${key}" title="Click a number for its tasks; double-click for full details"><thead><tr><th>Current location</th>${ages.map(k=>`<th>${k==='NA'?'Blank':k}</th>`).join('')}<th class="gt">Grand Total</th></tr></thead><tbody>${rows.map(x=>`<tr data-rl="${x.l}" data-d="0"><td title="${esc(dims.loc[x.l])}">${X&&DRILL[dims.pivot[pi]]?`<button class="tg" type="button" data-tg aria-expanded="false" aria-label="Show ${DRILL_LBL[DRILL[dims.pivot[pi]][0]]} for ${esc(dims.loc[x.l])}"></button>`:''}${esc(dims.loc[x.l])}</td>${ages.map(k=>cell(x.r[k]||0,x.l,k)).join('')}<td class="gt"${x.t?` data-l="${x.l}" data-k="all"`:''}>${f(x.t)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Grand Total</td>${colT.map(v=>`<td>${v?f(v):''}</td>`).join('')}<td class="gt">${f(gt)}</td></tr></tfoot></table></div></div>`;
 }
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)}
-function copyTable(b){
+// CSV download of whatever the table shows (including opened drop-down rows)
+function csvCell(v){v=String(v==null?'':v).replace(/\s+/g,' ').trim();return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function downloadCsv(name,rows){const txt='\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));a.download=name.replace(/[^\w.\- ]+/g,'_')+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast('CSV downloaded')}
+function tableCsv(tbl,name){const rows=[...tbl.querySelectorAll('tr')].map(tr=>[...tr.children].map((c,k)=>{const d=+(tr.dataset.d||0);return (k===0&&d?'›'.repeat(d)+' ':'')+c.textContent}));downloadCsv(name,rows)}
+function copyTable(b){const tbl=b.closest('.tblbox').querySelector('table');if(tbl){const T=TBL[b.dataset.copy];tableCsv(tbl,(T?T.title:'table')+' '+D.asOf);return}
   const T=TBL[b.dataset.copy];if(!T)return;
   const lines=[T.title,['Current location',...T.ages,'Grand Total'].join('\t')];
   T.rows.forEach(x=>lines.push([dims.loc[x.l],...T.ages.map(k=>Math.round(x.r[k]||0)||''),Math.round(x.t)].join('\t')));
@@ -841,7 +876,12 @@ addEventListener('hashchange',()=>setTab(location.hash.slice(1)));
 setTab(location.hash.slice(1));
 function cellInfo(td){const tb=td.closest('table.pt');const T=TBL[tb.dataset.key];if(!T)return null;
   const pi=+tb.dataset.pv,l=+td.dataset.l,k=td.dataset.k;const ages=k==='all'?T.ages.slice():[k];
-  return {pivot:dims.pivot[pi],pivotLabel:pl(dims.pivot[pi]),loc:dims.loc[l],ages,ageLabel:k==='all'?(ages.length>1?'Days '+ages[0]+' to '+ages[ages.length-1]:'Day '+ages[0]):'Day '+k,hold:[...S.hold].map(i=>dims.hold[i]),hovOnly:tb.dataset.kind==='hov',count:td.textContent}}
+  // a number inside a drop-down row carries its path (e.g. manifest destination, or bin level › message › layout › bin › user)
+  const tr=td.closest('tr');const sub={};const subL=[];
+  if(X&&tr&&tr.dataset.path){const lv=DRILL[dims.pivot[pi]];tr.dataset.path.split(',').map(Number).forEach((v,q)=>{sub[lv[q]]=XD[lv[q]][v];subL.push(XL(lv[q],v))})}
+  const f={};if(X){['cl','esd','bin','msg'].forEach(d=>{if(S[d].size)f[d]=[...S[d]].map(i=>XD[d][i])});['vol','mp'].forEach(d=>{if(S[d].size)f[d]=[...S[d]]})}
+  const ageLabel=(k==='all'?(ages.length>1?'Days '+ages[0]+' to '+ages[ages.length-1]:'Day '+ages[0]):'Day '+k)+(subL.length?' · '+subL.join(' › '):'');
+  return {pivot:dims.pivot[pi],pivotLabel:pl(dims.pivot[pi]),loc:dims.loc[l],ages,ageLabel,hold:[...S.hold].map(i=>dims.hold[i]),hovOnly:tb.dataset.kind==='hov',count:td.textContent,sub,f}}
 let clickT=null;
 document.getElementById('pivots').addEventListener('click',e=>{
   const td=e.target.closest('td[data-l]');if(!td||e.detail>1)return;clearTimeout(clickT);
@@ -863,7 +903,7 @@ window.SFX=Object.assign(window.SFX||{},{esc,fmt,rs,toast,dims,D,
     const ch=document.getElementById('scopeChip');ch.hidden=!(SCOPE||SCOPE_L);
     if(!ch.hidden)ch.innerHTML='Your view: <b>'+esc(sc.label||[...R,...L].join(', '))+'</b>';
     drawButtons();render()},
-  view:()=>location.hash.slice(1)||'forward',refreshInsights:()=>renderInsights()});
+  view:()=>location.hash.slice(1)||'forward',tableCsv:(tb,n)=>tableCsv(tb,n),refreshInsights:()=>renderInsights()});
 };
 </script>
 <script type="text/plain" id="worker-src">
@@ -931,7 +971,7 @@ const s=v=>{if(v==null)return '';if(typeof v==='object')return v.err?'':'';if(ty
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const xdate=v=>{if(typeof v!=='number'||!isFinite(v))return s(v);const d=new Date(Math.round((v-25569)*86400000));const p=n=>String(n).padStart(2,'0');return `${p(d.getUTCDate())}-${MON[d.getUTCMonth()]} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`};
 const isNA=v=>v==null||(typeof v==='object'&&v&&v.err)||(typeof v==='string'&&(v.trim()===''||v.trim()==='#N/A'));
-const NEED=['Ageing_from_Bag_Rec','Pivot','Awb_number','Ecom Data','Manifest_Type','Delivery_hub','Manifest_origin','Manifest_Destination','Manifest_code','Error Scan Location','Error Scan Time','Error Scan Details','seal_number','Manifest_status','MM_Status','MM_code','Current_location','HOV2','rto_queue_flag','Hold_Flag','Volumetric_flag','Client','seller_name','Product Description','MPSR_Tag','message','action_user','last_action_user','Product Category'];
+const NEED=['Ageing_from_Bag_Rec','Pivot','Awb_number','Ecom Data','Manifest_Type','Delivery_hub','Manifest_origin','Manifest_Destination','Manifest_code','Error Scan Location','Error Scan Time','Error Scan Details','seal_number','Manifest_status','MM_Status','MM_code','Current_location','HOV2','rto_queue_flag','Hold_Flag','Volumetric_flag','Client','seller_name','Product Description','MPSR_Tag','message','action_user','last_action_user','Product Category','awbs_in_manifest','Manifest RCA'];
 const LAST=['Region','product_value','bin_level','bin_name','layout_name']; // the later duplicate column is the one the pivots use
 
 async function parseBase(getChunks,size,opts){
@@ -1126,32 +1166,42 @@ function build(rows,COL,planRows,opts){
   const locsByRegion={};for(const k in lbr)locsByRegion[k]=[...lbr[k]].sort();
   const WIN={'At Dock':[5,1e9],'RECEIVED_AT_DC':[0,20],'Picked_From_Client':[3,20],'BRSNR':[2,20]};
   const pIdx=data.dims.pivot,lIdx=data.dims.loc,hIdx=data.dims.hold;const MD=new Map();const mdi=v=>{if(!MD.has(v))MD.set(v,MD.size);return MD.get(v)};
-  const A={awb:[],p:[],l:[],a:[],h:[],md:[],mc:[],pv:[],hov:[]};
+  const A={awb:[],p:[],l:[],a:[],h:[],md:[],mc:[],pv:[],hov:[],vol:[],mp:[],cl:[],se:[],esd:[],esl:[],bin:[],msg:[],ln:[],bn:[],au:[],mo:[]};
+  const AD={cl:new Map(),se:new Map(),esd:new Map(),esl:new Map(),bin:new Map(),msg:new Map(),ln:new Map(),bn:new Map(),au:new Map(),mo:new Map()};
+  const ai2=(k,v)=>{const m=AD[k];if(!m.has(v))m.set(v,m.size);return m.get(v)};
   for(const r of base){const piv=s(g(r,'Pivot'));const w=WIN[piv];if(!w)continue;const a=g(r,'Ageing_from_Bag_Rec');if(typeof a!=='number')continue;const ai=Math.trunc(a);if(ai<w[0]||ai>w[1])continue;
     A.awb.push(s(g(r,'Awb_number')));A.p.push(pIdx.indexOf(piv));A.l.push(lIdx.indexOf(s(g(r,'Current_location'))));A.a.push(ai);A.h.push(hIdx.indexOf(s(g(r,'Hold_Flag'))));
-    A.md.push(mdi(s(g(r,'Manifest_Destination'))));A.mc.push(s(g(r,'Manifest_code')));A.pv.push(pv(r));A.hov.push(s(g(r,'HOV2'))==='HOV'?1:0)}
+    A.md.push(mdi(s(g(r,'Manifest_Destination'))));A.mc.push(s(g(r,'Manifest_code')));A.pv.push(pv(r));A.hov.push(s(g(r,'HOV2'))==='HOV'?1:0);
+    const rdcR=piv==='RECEIVED_AT_DC';
+    A.vol.push(s(g(r,'Volumetric_flag'))==='Volumetric'?1:0);A.mp.push(/^y/i.test(s(g(r,'MPSR_Tag')))?1:0);A.cl.push(ai2('cl',s(g(r,'Client'))));
+    A.se.push(piv==='Picked_From_Client'?ai2('se',s(g(r,'seller_name'))):-1);A.esd.push(ai2('esd',s(g(r,'Error Scan Details'))));A.esl.push(ai2('esl',s(g(r,'Error Scan Location'))));
+    A.bin.push(rdcR?ai2('bin',s(g(r,'bin_level'))):-1);A.msg.push(rdcR?ai2('msg',s(g(r,'message'))):-1);A.ln.push(rdcR?ai2('ln',s(g(r,'layout_name'))):-1);A.bn.push(rdcR?ai2('bn',s(g(r,'bin_name'))):-1);A.au.push(rdcR?ai2('au',s(g(r,'action_user'))):-1);
+    A.mo.push(piv==='BRSNR'?ai2('mo',s(g(r,'Manifest_origin'))):-1)}
   // ---- detail cube: feeds the summary panels and the drop-downs under each current location ----
   // At Dock: manifest destination, delivery hub, RTO-queued rule · Received at DC: bin level, message, action user, MPSR, HOV product
   // Picked from Client: client, seller, product · BRSNR: manifest origin
-  const DD={md:new Map(),hub:new Map(),mo:new Map(),cl:new Map(),se:new Map(),bin:new Map(),msg:new Map(),au:new Map(),pd:new Map()};
+  const DD={md:new Map(),hub:new Map(),mo:new Map(),cl:new Map(),se:new Map(),bin:new Map(),msg:new Map(),au:new Map(),pd:new Map(),esd:new Map(),rca:new Map(),ln:new Map(),bn:new Map()};
   const di=(k,v)=>{const m=DD[k];if(!m.has(v))m.set(v,m.size);return m.get(v)};
-  const XF=['p','l','a','h','r','v','rto','mp','md','hub','mo','cl','se','bin','msg','au','pd'];
+  const XF=['p','l','a','h','r','v','rto','mp','md','hub','mo','cl','se','bin','msg','au','pd','vol','ssm','esd','rca','ln','bn'];
   const dag=new Map();
   for(const r of base){const piv=s(g(r,'Pivot'));const w=WIN[piv];if(!w)continue;const a0=g(r,'Ageing_from_Bag_Rec');if(typeof a0!=='number')continue;const ai=Math.trunc(a0);if(ai<w[0]||ai>w[1])continue;
     const loc=s(g(r,'Current_location')),hv=s(g(r,'HOV2'))==='HOV'?1:0;
-    const o={p:P.get(piv),l:L.get(loc),a:ai,h:Hh.get(s(g(r,'Hold_Flag'))),r:R.get(s(g(r,'Region'))||'Unmapped'),v:hv,rto:0,mp:0,md:-1,hub:-1,mo:-1,cl:-1,se:-1,bin:-1,msg:-1,au:-1,pd:-1};
+    const isVol=s(g(r,'Volumetric_flag'))==='Volumetric'?1:0;
+    const o={p:P.get(piv),l:L.get(loc),a:ai,h:Hh.get(s(g(r,'Hold_Flag'))),r:R.get(s(g(r,'Region'))||'Unmapped'),v:hv,rto:0,mp:/^y/i.test(s(g(r,'MPSR_Tag')))?1:0,md:-1,hub:-1,mo:-1,cl:di('cl',s(g(r,'Client'))),se:-1,bin:-1,msg:-1,au:-1,pd:-1,
+      vol:isVol,ssm:0,esd:di('esd',s(g(r,'Error Scan Details'))),rca:-1,ln:-1,bn:-1};
     const pd=()=>di('pd',s(g(r,'Product Description')).slice(0,70));
     if(piv==='At Dock'){o.md=di('md',s(g(r,'Manifest_Destination')));o.hub=di('hub',s(g(r,'Delivery_hub')));
-      o.rto=s(g(r,'rto_queue_flag')).toUpperCase()==='YES'&&['DCH2','BAGGING'].includes(s(g(r,'Manifest_Type')))&&!LOCS.has(s(g(r,'Manifest_Destination')))?1:0}
-    else if(piv==='RECEIVED_AT_DC'){o.bin=di('bin',s(g(r,'bin_level')));o.msg=di('msg',s(g(r,'message')));o.au=di('au',s(g(r,'action_user')));o.mp=/^y/i.test(s(g(r,'MPSR_Tag')))?1:0;if(hv)o.pd=pd()}
-    else if(piv==='Picked_From_Client'){o.cl=di('cl',s(g(r,'Client')));o.se=di('se',s(g(r,'seller_name')));o.pd=pd()}
+      o.rto=s(g(r,'rto_queue_flag')).toUpperCase()==='YES'&&['DCH2','BAGGING'].includes(s(g(r,'Manifest_Type')))&&!LOCS.has(s(g(r,'Manifest_Destination')))?1:0;
+      o.ssm=s(g(r,'awbs_in_manifest'))==='1'&&!isVol?1:0;o.rca=di('rca',s(g(r,'Manifest RCA')))}
+    else if(piv==='RECEIVED_AT_DC'){o.bin=di('bin',s(g(r,'bin_level')));o.msg=di('msg',s(g(r,'message')));o.au=di('au',s(g(r,'action_user')));o.ln=di('ln',s(g(r,'layout_name')));o.bn=di('bn',s(g(r,'bin_name')));if(hv)o.pd=pd()}
+    else if(piv==='Picked_From_Client'){o.se=di('se',s(g(r,'seller_name')));o.pd=pd()}
     else if(piv==='BRSNR'){o.mo=di('mo',s(g(r,'Manifest_origin')))}
     const k=XF.map(f=>o[f]).join(',');const x=dag.get(k);if(x){x[0]++;x[1]+=pv(r)}else dag.set(k,[1,pv(r)]);
   }
   const det={dims:{},cols:{n:[],pv:[]}};XF.forEach(f=>det.cols[f]=[]);Object.keys(DD).forEach(k=>det.dims[k]=[...DD[k].keys()]);
   for(const [k,v] of dag){k.split(',').forEach((x,i)=>det.cols[XF[i]].push(+x));det.cols.n.push(v[0]);det.cols.pv.push(Math.round(v[1]))}
   data.det=det;
-  const awbs={asOf,dims:{pivot:pIdx,loc:lIdx,hold:hIdx,md:[...MD.keys()]},cols:A};
+  const awbs={asOf,dims:{pivot:pIdx,loc:lIdx,hold:hIdx,md:[...MD.keys()],...Object.fromEntries(Object.keys(AD).map(k=>[k,[...AD[k].keys()]]))},cols:A};
   return {data,suggestions:{baseDate:DATE,asOf,locsByRegion,tasks:T},awbs};
 }
 root.PendencyParser={parseBase,build};
@@ -1422,7 +1472,7 @@ async function renderDrawer(){
   const manTbl=manL.length&&t.kind!=='hov'?`<h4>Manifests (${manL.length})</h4><div class="scroll" style="max-height:300px"><table class="hp"><thead><tr><th>Manifest code</th><th style="text-align:right">AWBs</th><th>Manifest destination</th><th>Seal</th><th>MM code</th><th>MM status</th><th>Error scan location</th><th>Error scan time</th><th>Error scan details</th></tr></thead><tbody>${manL.map(m=>`<tr><td><b>${esc(m.code)}</b></td><td class="n">${m.n}</td><td>${esc(m.md)}</td><td>${esc(m.seal)}</td><td>${esc(m.mm)}</td><td>${esc(m.mms)}</td><td>${esc(m.esl)}</td><td>${esc(m.est)}</td><td>${esc(m.esd)}</td></tr>`).join('')}</tbody></table></div>`:'';
   const hovPr=v=>v>20000?'P0':v>=10000?'P1':'P2';
   const hasPd=awbs.some(a=>a.pd),hasRdc=awbs.some(a=>a.bl!=null||a.au!=null);
-  const awbTbl=awbs.length?`<h4 style="display:flex;justify-content:space-between;align-items:center">AWBs (${awbs.length}) <button class="mini" type="button" id="copyAwbs">Copy AWBs</button></h4><div class="scroll" style="max-height:380px"><table class="hp"><thead><tr><th>AWB</th>${t.kind==='hov'?'<th>Priority</th>':''}${hasPd?'<th>Product description</th><th>Category</th>':''}<th style="text-align:right">Value (₹)</th><th style="text-align:right">Ageing</th>${hasRdc?'<th>Bin level</th><th>Bin · layout</th><th>Message</th><th>Action user</th><th>Last action user</th>':''}<th>Manifest code</th><th>Manifest destination</th><th>Error scan location</th><th>Error scan details</th></tr></thead><tbody>${awbs.map(a=>`<tr><td>${esc(a.awb)}${a.hov&&t.kind!=='hov'?' <span class="hovtag">HOV</span>':''}</td>${t.kind==='hov'?`<td>${pri(hovPr(a.pv))}</td>`:''}${hasPd?`<td class="pdc">${esc(a.pd||'')}</td><td>${esc(a.pc&&a.pc!=='0'&&a.pc!==a.pd?a.pc:'')}</td>`:''}<td class="n">${fmt(a.pv||0)}</td><td class="n">${esc(a.age)}</td>${hasRdc?`<td>${esc(a.bl||'–')}</td><td>${esc([a.bn,a.ln].filter(v=>v&&v!=='0').join(' · '))}</td><td>${esc(a.msg||'')}</td><td>${esc(a.au||'')}</td><td>${esc(a.lau||'')}</td>`:''}<td>${esc(a.mc)}</td><td>${esc(a.md)}</td><td>${esc(a.esl)}</td><td>${esc(a.esd)}</td></tr>`).join('')}</tbody></table></div>`:'';
+  const awbTbl=awbs.length?`<h4 style="display:flex;justify-content:space-between;align-items:center">AWBs (${awbs.length}) <button class="mini" type="button" id="copyAwbs">Download CSV</button></h4><div class="scroll" style="max-height:380px"><table class="hp"><thead><tr><th>AWB</th>${t.kind==='hov'?'<th>Priority</th>':''}${hasPd?'<th>Product description</th><th>Category</th>':''}<th style="text-align:right">Value (₹)</th><th style="text-align:right">Ageing</th>${hasRdc?'<th>Bin level</th><th>Bin · layout</th><th>Message</th><th>Action user</th><th>Last action user</th>':''}<th>Manifest code</th><th>Manifest destination</th><th>Error scan location</th><th>Error scan details</th></tr></thead><tbody>${awbs.map(a=>`<tr><td>${esc(a.awb)}${a.hov&&t.kind!=='hov'?' <span class="hovtag">HOV</span>':''}</td>${t.kind==='hov'?`<td>${pri(hovPr(a.pv))}</td>`:''}${hasPd?`<td class="pdc">${esc(a.pd||'')}</td><td>${esc(a.pc&&a.pc!=='0'&&a.pc!==a.pd?a.pc:'')}</td>`:''}<td class="n">${fmt(a.pv||0)}</td><td class="n">${esc(a.age)}</td>${hasRdc?`<td>${esc(a.bl||'–')}</td><td>${esc([a.bn,a.ln].filter(v=>v&&v!=='0').join(' · '))}</td><td>${esc(a.msg||'')}</td><td>${esc(a.au||'')}</td><td>${esc(a.lau||'')}</td>`:''}<td>${esc(a.mc)}</td><td>${esc(a.md)}</td><td>${esc(a.esl)}</td><td>${esc(a.esd)}</td></tr>`).join('')}</tbody></table></div>`:'';
   const ups=(db&&db.updates)||[];const rev=ups.slice().reverse();
   const att=f=>{const u='https://drive.google.com/file/d/'+encodeURIComponent(f.id)+'/view';if(/^image\//.test(f.type||''))return `<a href="${u}" target="_blank" rel="noopener"><img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(f.id)}&sz=w400" alt="${esc(f.name)}" loading="lazy"></a>`;return `<a class="filelink" href="${u}" target="_blank" rel="noopener">${/^video\//.test(f.type||'')?'▶ ':''}${esc(f.name)}</a>`};
   const safeLink=l=>/^https:\/\//i.test(l||'')?`<a href="${esc(l)}" target="_blank" rel="noopener">Footage link</a>`:'';
@@ -1458,7 +1508,7 @@ async function renderDrawer(){
   el.querySelectorAll('[data-ev]').forEach(p=>{const u=evs[+p.dataset.ev];const txt=u.kind==='update'?(u.remark||''):(u.note||'');p.textContent=txt;if(!txt)p.remove()});
   el.querySelector('.xbtn').onclick=closeDrawer;
   el.querySelectorAll('[data-link]').forEach(a=>a.onclick=e=>{e.preventDefault();const lid=a.dataset.link;if(RT.tasks.has(lid)||SUGM.has(lid))openTask(lid);else toast('That task is not assigned or no longer listed')});
-  el.querySelector('#copyAwbs')?.addEventListener('click',()=>copyText(awbs.map(a=>a.awb).join('\n'),awbs.length+' AWBs copied'));
+  el.querySelector('#copyAwbs')?.addEventListener('click',e=>X.tableCsv(e.target.closest('h4').nextElementSibling.querySelector('table'),'Task '+(t.loc||'')+' '+(t.title||'').slice(0,60)));
   el.querySelector('#drAssign')?.addEventListener('click',()=>assign([sug]));
   el.querySelectorAll('[data-unask]').forEach(b=>b.onclick=()=>{tv.confirm=id;renderDrawer()});
   el.querySelectorAll('[data-uncancel]').forEach(b=>b.onclick=()=>{tv.confirm=null;renderDrawer()});
@@ -1493,7 +1543,7 @@ function wireReassign(el,t){
 // ---------- drill-down dialog (double-click on a pivot number) ----------
 // cached cell lookups shared by the single-click popup and the double-click dialog
 const CELLC=new Map();
-function cellData(c){const k=JSON.stringify([c.pivot,c.loc,c.ages,c.hold,c.hovOnly]);if(!CELLC.has(k)){const pr=API('cell',{pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly});pr.catch(()=>CELLC.delete(k));CELLC.set(k,pr)}return CELLC.get(k)}
+function cellData(c){const k=JSON.stringify([c.pivot,c.loc,c.ages,c.hold,c.hovOnly,c.sub||{},c.f||{}]);if(!CELLC.has(k)){const pr=API('cell',{pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly,sub:c.sub||{},f:c.f||{}});pr.catch(()=>CELLC.delete(k));CELLC.set(k,pr)}return CELLC.get(k)}
 function lastEvent(t){
   const evs=[...(t.history||[]).map(h=>({...h,k:h.type})),...(t.updates||[]).map(u=>({...u,k:'update'}))].sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   const e=evs[0];if(!e)return '';const nm=l=>(l||[]).map(pname).join(', ');
@@ -1514,7 +1564,10 @@ function staleBase(r,c){
   return isFinite(shown)&&shown>0&&r.n!==shown;
 }
 function staleHtml(r){return `<div class="banner warn" style="margin:6px 0">This page still shows an older base file. The server now has ${r.baseAsOf?'base <b>'+esc(r.baseAsOf)+'</b>':'a newer base'}${r.baseAt?', published '+esc(ago(r.baseAt)):''}, so the numbers won't match. <button class="btn" type="button" onclick="location.reload()">Refresh</button></div>`}
-function manHtml(r){const m=r.manifests||[];if(!m.length)return '';return `<div class="pk-ev" style="margin:-4px 0 8px">Manifests: ${m.slice(0,3).map(x=>`<b>${esc(x.mc)}</b> ${fmt(x.n)}`).join(' · ')}${r.manifestCount>3?` · +${fmt(r.manifestCount-3)} more`:''}</div>`}
+function manHtml(r,c){
+  if(r.pfc){const d=(r.dests||[]).slice(0,3);return d.length?`<div class="pk-ev" style="margin:-4px 0 8px">Clients · sellers: ${d.map(x=>`<b>${esc(x.client)}</b> · ${esc(x.seller)} ${fmt(x.n)}`).join('; ')}${r.dests.length>3?` · +${r.dests.length-3} more`:''}</div>`:''}
+  const m=r.manifests||[];if(!m.length)return '';
+  if(c&&c.pivot==='At Dock'){const k=c.sub&&c.sub.md!=null?5:3;return `<div class="pk-man"><div class="pk-ev">Manifests (${fmt(r.manifestCount)})</div>${m.slice(0,k).map(x=>`<div class="pk-mr"><b>${esc(x.mc)}</b> · ${fmt(x.n)} AWBs${c.sub&&c.sub.md!=null?'':` · ${esc(x.md)}`}<br><span class="note">Error scan: ${esc(x.esl||'–')}${x.esd?' · '+esc(x.esd):''}</span></div>`).join('')}${r.manifestCount>k?`<div class="pk-ev">+${fmt(r.manifestCount-k)} more manifests</div>`:''}</div>`}return `<div class="pk-ev" style="margin:-4px 0 8px">Manifests: ${m.slice(0,3).map(x=>`<b>${esc(x.mc)}</b> ${fmt(x.n)}`).join(' · ')}${r.manifestCount>3?` · +${fmt(r.manifestCount-3)} more`:''}</div>`}
 X.closePeek=()=>{const p=document.getElementById('peek');if(p)p.remove()};
 X.onCellPeek=async function(c,rect){
   X.closePeek();const p=document.createElement('div');p.id='peek';p.className='peek';p.setAttribute('role','dialog');
@@ -1527,7 +1580,7 @@ X.onCellPeek=async function(c,rect){
   const T=(r.tasks||[]).map(x=>({x,t:RT.tasks.get(x.id)})).sort((a,b)=>(a.x.status==='Closed')-(b.x.status==='Closed'));
   const unassigned=r.n-r.assigned;
   p.innerHTML=`<h6></h6><div class="pk-sum">${fmt(r.n)} AWBs · ${rs(r.value)} · ${r.assigned?`<b>${fmt(r.assigned)}</b> in ${T.length} task${T.length===1?'':'s'}`:'none in a task yet'}${unassigned&&r.assigned?` · ${fmt(unassigned)} not in any task`:''}</div>
-    ${manHtml(r)}
+    ${manHtml(r,c)}
     ${T.slice(0,3).map(({x,t})=>`<div class="pk-t" data-pk="${esc(x.id)}"><div class="tags">${pri(x.prio)}${t?stPill(t):`<span class="st ${stCls(x.status)}">${esc(x.status)}</span>`}<span class="pk-ev">${fmt(x.matched)} here · ${esc((x.owners||[]).map(pname).join(', '))}${t?` · ${ageD(t)} d old`:''}</span></div><div class="pk-ttl"></div>${t?`<div class="pk-ev">${esc(lastEvent(t))}</div>`:''}</div>`).join('')}
     ${T.length>3?`<div class="pk-ev" style="padding:4px 0">+${T.length-3} more tasks</div>`:''}
     <div class="pk-foot">${T.length?'Click a task to open it. ':''}Double-click for all AWBs.</div>`;
@@ -1550,11 +1603,12 @@ X.onCell=async function(c){
   const k=(l,v,s,cls)=>`<div class="kt ${cls||''}"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
   bg.querySelector('.modal').innerHTML=head+`<div class="kstrip">${k('AWBs',fmt(r.n))}${k('Shipment value',rs(r.value))}${k('HOV',fmt(r.hov),rs(r.hovValue))}${k('On hold',fmt(r.held))}${k('In assigned tasks',fmt(r.assigned),r.n?Math.round(r.assigned*100/r.n)+'% of AWBs':'',r.assigned?'ok':'')}${k('Not assigned',fmt(r.n-r.assigned),'',r.n-r.assigned?'warn':'')}</div>
    ${r.tasks.length?`<h4>Tasks covering these AWBs</h4><section class="tgroup">${r.tasks.map(t=>`<div class="trow" data-cmopen="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="ktag">${KIND[t.kind]||''}</span></div><div class="ttl"></div><div class="tsub">${fmt(t.matched)} of these AWBs · with ${esc((t.owners||[]).map(pname).join(', '))}</div></div><div class="tact"><span class="st ${stCls(t.status)}">${esc(t.status)}</span></div></div>`).join('')}</section>`:`<div class="banner">None of these AWBs are in an assigned task yet.</div>`}
-   <h4>Manifest destinations (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Manifest destination</th><th style="text-align:right">AWBs</th><th style="text-align:right">Manifests</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.dest)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.manifests)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>
-   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Copy AWBs</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th><th>Manifest destination</th><th>Manifest code</th><th style="text-align:right">Value (₹)</th><th>HOV</th><th>Hold</th><th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td><td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td><td>${esc(a.hold)}</td><td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
+   ${r.pfc?`<h4>Clients and sellers (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Client</th><th>Seller</th><th style="text-align:right">AWBs</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.client)}</td><td>${esc(d.seller)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>`
+   :`<h4>Manifest destinations (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Manifest destination</th><th style="text-align:right">AWBs</th><th style="text-align:right">Manifests</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.dest)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.manifests)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>`}
+   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Download CSV</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th>${r.pfc?'<th>Client</th><th>Seller</th>':'<th>Manifest destination</th><th>Manifest code</th><th>Error scan location</th><th>Error scan remarks</th>'}<th style="text-align:right">Value (₹)</th><th>HOV</th><th>Hold</th><th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td>${r.pfc?`<td>${esc(a.cl||'')}</td><td>${esc(a.se||'')}</td>`:`<td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td>${esc(a.esl||'')}</td><td>${esc(a.esd||'')}</td>`}<td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td><td>${esc(a.hold)}</td><td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
   bg.querySelectorAll('[data-cmopen]').forEach(row=>{row.querySelector('.ttl').textContent=tk.get(row.dataset.cmopen).title;row.onclick=()=>{bg.remove();if(RT.tasks.has(row.dataset.cmopen))openTask(row.dataset.cmopen)}});
   bg.querySelector('#cmX').onclick=()=>bg.remove();
-  bg.querySelector('#cmCopy').onclick=()=>copyText(r.rows.map(a=>a.awb).join('\n'),r.rows.length+' AWBs copied');
+  bg.querySelector('#cmCopy').onclick=e=>X.tableCsv(e.target.closest('h4').nextElementSibling.querySelector('table'),`${c.pivotLabel} ${c.loc} ${c.ageLabel}`);
 };
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('cellModal');if(m)m.remove()}});
 
