@@ -386,6 +386,9 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="side-sep"><span>Pendency</span></div>
     <a href="#forward" data-view="forward"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h10M8 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Forward</span></a>
     <a href="#reverse" data-view="reverse"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M14 8H4M8 4 4 8l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Reverse</span></a>
+    <div class="side-sep"><span>Reports</span></div>
+    <a href="#proc" data-view="proc"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5h11M4 11V8M7 11V5M10 11V7M13 11V3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>DC processing</span></a>
+    <a href="#closure" data-view="closure"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.2l1.7 1.7L10.7 6.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Closure tracker</span></a>
     <div class="side-sep"><span>Tasks</span></div>
     <a href="#tasks" data-view="tasks"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5l1.3 1.3L7 3M3 10.5l1.3 1.3L7 9M9 5h4.5M9 11h4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="navTasksLbl">Task assigner</span><b class="badge" id="taskBadge" hidden></b></a>
     <a href="#pocs" data-view="pocs" data-admin hidden><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.5" r="2.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 13c.6-2.2 2.1-3.3 4-3.3s3.4 1.1 4 3.3M11 5.5h3M12.5 4v3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>POC mapping</span></a>
@@ -443,6 +446,8 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 <div id="view-pocs" hidden><main class="wrap"><div class="inner" id="pocsRoot"></div></main></div>
 <div id="view-custom" hidden><main class="wrap"><div class="inner" id="customRoot"></div></main></div>
 <div id="view-upload" hidden><main class="wrap"><div class="inner" id="uploadRoot"></div></main></div>
+<div id="view-proc" hidden><main class="wrap"><div class="inner" id="procRoot"></div></main></div>
+<div id="view-closure" hidden><main class="wrap"><div class="inner" id="closureRoot"></div></main></div>
 <footer class="wrap"><div class="inner" id="foot"></div></footer>
 </div></div>
 <div class="scrim" id="scrim" hidden></div>
@@ -870,7 +875,7 @@ function renderHold(idx){
 // ---------- header, tabs ----------
 if(OPT.noBase)document.getElementById('meta').innerHTML='<span class="chip">No base file uploaded yet</span>';else document.getElementById('meta').innerHTML=`<span class="chip">Base file <b>${esc(D.asOf)}</b></span><span class="chip"><b>${fmt(D.total-D.excludedNA)}</b> AWBs considered</span><span class="chip"><b>${fmt(D.excludedNA)}</b> excluded (Ecom Data #N/A)</span>`;
 document.getElementById('foot').textContent=`Source: Forward Overall Pendency base ${D.asOf}. Ageing = Ageing_from_Bag_Rec (At Dock 5–20 + 21+, Received at DC up to 20, Picked from Client 3–20, BRSNR all days); Region = Region (pivot "Region2"); HOV value = product_value (pivot "product_value2") where HOV2 = HOV. AWBs with Ecom Data = #N/A are excluded throughout.`;
-const VIEWS=['forward','reverse','tasks','pocs','custom','upload'];
+const VIEWS=['forward','reverse','tasks','pocs','custom','proc','closure','upload'];
 function setTab(t){if(!VIEWS.includes(t))t='forward';VIEWS.forEach(v=>document.getElementById('view-'+v).hidden=v!==t);document.querySelectorAll('.side-nav a').forEach(a=>{if(a.dataset.view===t)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});document.getElementById('foot').hidden=t!=='forward';if(matchMedia('(max-width:760px)').matches)setSide(true);window.SFX&&window.SFX.onView&&window.SFX.onView(t)}
 // sidebar collapse
 const side=document.getElementById('side');
@@ -910,7 +915,7 @@ window.SFX=Object.assign(window.SFX||{},{esc,fmt,rs,toast,dims,D,
     const ch=document.getElementById('scopeChip');ch.hidden=!(SCOPE||SCOPE_L);
     if(!ch.hidden)ch.innerHTML='Your view: <b>'+esc(sc.label||[...R,...L].join(', '))+'</b>';
     drawButtons();render()},
-  view:()=>location.hash.slice(1)||'forward',tableCsv:(tb,n)=>tableCsv(tb,n),refreshInsights:()=>renderInsights()});
+  view:()=>location.hash.slice(1)||'forward',tableCsv:(tb,n)=>tableCsv(tb,n),downloadCsv:(n,r)=>downloadCsv(n,r),locRegion:(()=>{const m={};regLocs.forEach((s,ri)=>s.forEach(l=>{m[dims.loc[l]]=dims.region[ri]}));return m})(),refreshInsights:()=>renderInsights()});
 };
 </script>
 <script type="text/plain" id="worker-src">
@@ -1727,6 +1732,327 @@ start();
 
 </script>
 <script>
+// Reports tabs: DC processing volumes and the Fwd & Rev closure tracker, read live from their Google Sheets via the API.
+window.startReports=function(B){
+const X=window.SFX,API=window.API;const {esc,fmt,toast}=X;
+// fixed region colours (validated categorical slots; colour follows the region, never its rank)
+const REG_ORDER=['NCR Region','North/West 2','North','East','South','West'];
+const SERIES=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6','#e34948'];
+const REG_COLOR={};REG_ORDER.forEach((r,i)=>REG_COLOR[r]=SERIES[i]);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dShort=iso=>{const p=String(iso).split('-');return p.length===3?`${+p[2]}-${MON[+p[1]-1]}`:iso};
+const L=v=>(v/1e5).toFixed(2);
+const pctTxt=x=>x==null||!isFinite(x)?'–':(x>0?'+':x<0?'−':'')+Math.abs(Math.round(x*100))+'%';
+const arrow=x=>x==null||!isFinite(x)?'<span class="note">–</span>':Math.round(x*100)===0?'<span class="dz">0%</span>':x>0?`<span class="up">▲ ${Math.abs(Math.round(x*100))}%</span>`:`<span class="dn">▼ ${Math.abs(Math.round(x*100))}%</span>`;
+const caret='<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+const regRank=r=>{const i=REG_ORDER.indexOf(r);return i<0?(r==='Unmapped'?99:50):i};
+const sortRegions=a=>a.sort((x,y)=>regRank(x)-regRank(y)||x.localeCompare(y));
+let DATA=null,LOADING=null,OPEN=null;
+const ST={proc:{type:'fwd',region:new Set(),dc:new Set(),days:15,end:null},
+  cl:{view:new Set(),region:new Set(),site:new Set(),from:null,to:null,metric:'pct',siteView:'Fwd Rec at DC',min20:true}};
+
+const css=document.createElement('style');css.textContent=`
+.rp-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.rp-head h1{margin:2px 0 4px;font:700 26px var(--font-display)}
+.rp-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:16px}
+.rp-filters .flabel{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-right:2px}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--panel);font:500 13px var(--font-ui);padding:6px 11px;cursor:pointer;color:var(--ink)}
+.seg button+button{border-left:1px solid var(--line-strong)}
+.seg button[aria-pressed="true"]{background:var(--teal-deep);color:#fff}
+.rp select{font:13px var(--font-ui);border:1px solid var(--line-strong);border-radius:8px;padding:6px 8px;background:var(--panel);color:var(--ink)}
+.rp .ms{position:relative}
+.rp-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+.rp-card h2{margin:0 0 2px;font:700 20px var(--font-display);color:#0B3D33}
+.rp-card .sub{color:var(--muted);font-size:13px;margin-bottom:10px}
+.rp-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin:10px 0 14px}
+.rp-k{background:#F3F6F8;border-radius:10px;padding:10px 12px}
+.rp-k .t{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+.rp-k .t i{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.rp-k .v{font:700 22px var(--font-display);margin:4px 0 2px}
+.rp-k .s{font-size:12px;color:var(--muted)}
+.up{color:#0b7a3b;font-weight:700}.dn{color:#c0392b;font-weight:700}.dz{font-weight:700}
+.rp-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}
+@media (max-width:1100px){.rp-grid{grid-template-columns:minmax(0,1fr)}}
+.rp-take{background:#F3F6F8;border-radius:12px;padding:14px 16px}
+.rp-take h3{margin:0 0 8px;font:700 15px var(--font-display);color:#0B3D33}
+.rp-take ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;line-height:1.45;font-size:13.5px}
+.rp-chart{position:relative}
+.rp-chart svg{display:block;width:100%;overflow:visible}
+.rp-chart .axis text{font-size:11px;fill:#6b7a77}
+.rp-chart .grid line{stroke:#e6ecea}
+.rp-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;margin:4px 0 6px}
+.rp-legend span{display:inline-flex;align-items:center;gap:6px}
+.rp-legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.rp-tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--line-strong);border-radius:8px;box-shadow:0 8px 24px rgba(15,47,41,.18);padding:8px 10px;font-size:12px;min-width:150px;z-index:5}
+.rp-tip b{display:block;margin-bottom:4px}
+.rp-tip div{display:flex;justify-content:space-between;gap:12px}
+.rp-tip i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+table.rt{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
+.rt th{background:#123F3A;color:#fff;font-weight:600;letter-spacing:0;padding:7px 4px;text-align:right;white-space:nowrap;position:sticky;top:0;z-index:2}
+.rt th:first-child{text-align:left;left:0;z-index:3}
+.rt td{padding:5px 4px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.rt td:first-child{text-align:left;position:sticky;left:0;background:var(--panel);z-index:1;font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.rt tr.net td{background:#D7E7E3;font-weight:700}.rt tr.net td:first-child{background:#D7E7E3}
+.rt tr.reg td{background:#E8F2EF;font-weight:700;border-top:2px solid #9CC9BC}.rt tr.reg td:first-child{background:#E8F2EF}
+.rt tr.dc td:first-child{padding-left:20px}
+.rt tr.oth td{color:var(--muted);font-style:italic}
+.rt td.avg{background:#F3F6F8;font-weight:700}
+.rt td.u2{background:#B9E3CC}.rt td.u1{background:#E2F3E9}.rt td.d1{background:#FBE3E0}.rt td.d2{background:#F3BFB8}
+.rt td.sp{padding:2px 6px}
+.rt-wrap{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:10px}
+.rp-legend2{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin:2px 0 10px}
+.rp-legend2 span{display:inline-flex;align-items:center;gap:5px}.rp-legend2 i{width:14px;height:10px;border-radius:2px;display:inline-block}
+.rp-notes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media (max-width:900px){.rp-notes{grid-template-columns:1fr}}
+.rp-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rp-chk{display:inline-flex;gap:6px;align-items:center;font-size:13px}
+`;document.head.appendChild(css);
+
+async function load(fresh){
+  if(DATA&&!fresh)return DATA;if(LOADING&&!fresh)return LOADING;
+  LOADING=API('reports',{fresh:!!fresh}).then(r=>{DATA=r;LOADING=null;return r}).catch(e=>{LOADING=null;throw e});return LOADING;
+}
+function head(title,eyebrow,sub){
+  const at=DATA&&DATA.fetchedAt?new Date(DATA.fetchedAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+  return `<div class="rp-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><div class="note">${sub}${at?` · data read ${esc(at)}`:''}${DATA&&DATA.scoped?' · showing your DCs only':''}</div></div>
+    <div class="rp-tools"><button class="btn ghost" type="button" data-refresh>Refresh from sheet</button></div></div>`;
+}
+// ---------- multi-select dropdown ----------
+function ms(k,label,opts,set,search){
+  const v=!set.size?'All':set.size===1?(opts.find(o=>set.has(o.v))||{t:[...set][0]}).t:set.size+' selected';
+  const pop=OPEN===k?`<div class="pop" data-pop="${k}">${search?`<input type="search" placeholder="Search" data-q>`:''}<div class="acts"><button class="mini" data-a="all" type="button">Select all</button><button class="mini" data-a="none" type="button">Clear</button></div>
+    <div class="opts">${opts.map(o=>`<label class="opt"><input type="checkbox" data-v="${esc(o.v)}" ${set.has(o.v)?'checked':''}><span>${esc(o.t)}</span>${o.n!=null?`<em>${esc(o.n)}</em>`:''}</label>`).join('')||'<div class="note">Nothing to pick</div>'}</div></div>`:'';
+  return `<div class="ms rp-ms" data-ms="${k}"><button type="button" class="${set.size?'on':''}" aria-expanded="${OPEN===k}"><span class="k">${label}:</span><span class="v">${esc(v)}</span>${caret}</button>${pop}</div>`;
+}
+function bindMs(root,map,rerender){
+  root.querySelectorAll('[data-ms]').forEach(el=>{const k=el.dataset.ms;const set=map[k];
+    el.querySelector('button').onclick=e=>{e.stopPropagation();OPEN=OPEN===k?null:k;rerender()};
+    const pop=el.querySelector('.pop');if(!pop)return;pop.onclick=e=>e.stopPropagation();
+    pop.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.onchange=()=>{cb.checked?set.add(cb.dataset.v):set.delete(cb.dataset.v);rerender()});
+    pop.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{if(b.dataset.a==='none')set.clear();else pop.querySelectorAll('label.opt:not([hidden]) input').forEach(cb=>set.add(cb.dataset.v));rerender()});
+    const q=pop.querySelector('[data-q]');if(q){q.focus();q.oninput=()=>{const s=q.value.toLowerCase();pop.querySelectorAll('label.opt').forEach(l=>l.hidden=!l.textContent.toLowerCase().includes(s))}}});
+}
+document.addEventListener('click',e=>{if(OPEN&&!e.target.closest('.rp-ms')){OPEN=null;const v=X.view();if(v==='proc')renderProc();if(v==='closure')renderClosure()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&OPEN){OPEN=null;const v=X.view();if(v==='proc')renderProc();if(v==='closure')renderClosure()}});
+const seg=(k,opts,cur)=>`<div class="seg" role="group">${opts.map(([v,t])=>`<button type="button" data-seg="${k}" data-v="${esc(v)}" aria-pressed="${String(cur)===String(v)}">${esc(t)}</button>`).join('')}</div>`;
+function spark(vals,color,avg){
+  const w=84,h=24,p=3;const mx=Math.max(...vals,avg||0,1e-9),mn=Math.min(...vals,avg||0);const rg=mx-mn||1;
+  const x=i=>p+(vals.length<2?0:i*(w-2*p)/(vals.length-1)),y=v=>h-p-(v-mn)*(h-2*p)/rg;
+  const pts=vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');const pk=vals.indexOf(Math.max(...vals));
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${avg!=null?`<line x1="${p}" x2="${w-p}" y1="${y(avg).toFixed(1)}" y2="${y(avg).toFixed(1)}" stroke="#9aa8a5" stroke-dasharray="2 2" stroke-width="1"/>`:''}<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${x(pk)}" cy="${y(vals[pk])}" r="2.4" fill="#1d2b29"/><circle cx="${x(vals.length-1)}" cy="${y(vals[vals.length-1])}" r="2.4" fill="${color}"/></svg>`;
+}
+// ---------- line chart (one y-axis, end labels + legend, crosshair tooltip) ----------
+function lineChart(el,dates,series,unit){
+  const W=Math.max(320,el.clientWidth||900),H=330,m={l:44,r:92,t:10,b:30};
+  const all=series.flatMap(s=>s.v);let mx=Math.max(...all,0),mn=Math.min(...all,0);if(mn>0)mn=0;
+  const step=niceStep((mx-mn)/5);const top=Math.ceil(mx/step)*step||step;const ticks=[];for(let v=0;v<=top+1e-9;v+=step)ticks.push(v);
+  const x=i=>m.l+(dates.length<2?0:i*(W-m.l-m.r)/(dates.length-1)),y=v=>m.t+(H-m.t-m.b)*(1-v/top);
+  const every=Math.ceil(dates.length/12);
+  // end labels, nudged apart so they don't collide
+  const ends=series.map(s=>({s,y:y(s.v[s.v.length-1])})).sort((a,b)=>a.y-b.y);for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<13)ends[i].y=ends[i-1].y+13;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(series.map(s=>s.name).join(', '))} by day">
+   <g class="grid">${ticks.map(v=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/>`).join('')}</g>
+   <g class="axis">${ticks.map(v=>`<text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${fmtTick(v,step)}</text>`).join('')}${dates.map((d,i)=>i%every===0||i===dates.length-1?`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${dShort(d)}</text>`:'').join('')}</g>
+   ${series.map(s=>`<polyline points="${s.v.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
+   ${series.map(s=>`<circle cx="${x(s.v.length-1)}" cy="${y(s.v[s.v.length-1])}" r="4" fill="${s.c}" stroke="#fff" stroke-width="2"/>`).join('')}
+   ${ends.map(e=>`<text x="${W-m.r+8}" y="${e.y+4}" font-size="11.5" fill="#1d2b29">${esc(e.s.short||e.s.name)} ${e.s.v[e.s.v.length-1].toFixed(2)}</text>`).join('')}
+   <line class="xh" x1="0" x2="0" y1="${m.t}" y2="${H-m.b}" stroke="#9aa8a5" stroke-width="1" visibility="hidden"/>
+   <rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="transparent" data-hit/></svg><div class="rp-tip" hidden></div>`;
+  const svg=el.querySelector('svg'),tip=el.querySelector('.rp-tip'),xh=el.querySelector('.xh');
+  const move=e=>{const r=svg.getBoundingClientRect();const px=(e.clientX-r.left)*W/r.width;let i=Math.round((px-m.l)/((W-m.l-m.r)/Math.max(dates.length-1,1)));i=Math.max(0,Math.min(dates.length-1,i));
+    xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.setAttribute('visibility','visible');
+    tip.hidden=false;tip.innerHTML=`<b>${dShort(dates[i])}</b>${series.slice().sort((a,b)=>b.v[i]-a.v[i]).map(s=>`<div><span><i style="background:${s.c}"></i>${esc(s.name)}</span><b style="margin:0">${s.v[i].toFixed(2)} ${unit}</b></div>`).join('')}`;
+    const tx=x(i)*r.width/W;tip.style.left=Math.min(r.width-tip.offsetWidth-4,Math.max(4,tx+12))+'px';tip.style.top='8px'};
+  svg.querySelector('[data-hit]').addEventListener('mousemove',move);svg.querySelector('[data-hit]').addEventListener('mouseleave',()=>{tip.hidden=true;xh.setAttribute('visibility','hidden')});
+}
+function niceStep(r){if(r<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(r)));const f=r/p;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p}
+function fmtTick(v,step){return step<1?v.toFixed(step<0.1?2:1):String(Math.round(v))}
+
+// ================= DC processing volumes =================
+function procModel(){
+  const P=DATA.proc;const s=ST.proc;const T=P[s.type];const dates=T.dates;if(!dates.length)return null;
+  let e=s.end!=null?dates.indexOf(s.end):dates.length-1;if(e<0)e=dates.length-1;const b=Math.max(0,e-s.days+1);
+  const win=dates.slice(b,e+1);
+  const regions=sortRegions([...new Set(T.rows.map(r=>r[1]))]);
+  const rows=T.rows.filter(r=>(!s.region.size||s.region.has(r[1]))&&(!s.dc.size||s.dc.has(r[0])));
+  const wk=(arr,a,z)=>{let t=0,n=0;for(let i=Math.max(0,a);i<=z;i++){t+=arr[i]||0;n++}return n?t/n:null};
+  const mk=(name,arr)=>{const v=arr.slice(b,e+1);const sum=v.reduce((x,y)=>x+y,0);const l7=e>=6?wk(arr,e-6,e):null,p7=e>=14?wk(arr,e-14,e-8):null;/* last 7 days vs the first 7 of the 15-day span, as in the shared images */return {name,arr,v,sum,avg:sum/v.length,l7,p7,chg:l7!=null&&p7?l7/p7-1:null}};
+  const add=(rs)=>{const a=dates.map((_,i)=>rs.reduce((t,r)=>t+(r[2][i]||0),0));return a};
+  const net=mk(s.region.size||s.dc.size?'Selected total':'Network total',add(rows));
+  const byReg=regions.filter(r=>rows.some(x=>x[1]===r)).map(r=>{const rs=rows.filter(x=>x[1]===r);const g=mk(r,add(rs));
+    g.dcs=rs.map(x=>Object.assign(mk(x[0],x[2]),{region:r})).sort((a,c)=>c.sum-a.sum);g.share=net.sum?g.sum/net.sum:0;return g}).filter(g=>g.sum>0||s.region.has(g.name));
+  return {dates,win,b,e,net,byReg,regions,allRows:T.rows};
+}
+function cls(v,avg){if(!avg)return '';const r=v/avg-1;return r>=0.3?'u2':r>=0.15?'u1':r<=-0.3?'d2':r<=-0.15?'d1':''}
+function procTable(M){
+  const typeL=ST.proc.type==='fwd'?'Forward':'Reverse';
+  const head=`<tr><th>Region / DC</th>${M.win.map(d=>`<th>${dShort(d)}</th>`).join('')}<th>${M.win.length}D Avg</th><th title="Last 7 days vs the prior 7">L7D vs P7D</th><th>Trend</th></tr>`;
+  const row=(g,kind,color)=>`<tr class="${kind}"><td title="${esc(g.name)}">${esc(g.name)}${kind==='reg'?` (${Math.round(g.share*100)}%)`:''}</td>${g.v.map(v=>`<td class="${kind==='dc'?cls(v,g.avg):''}" title="${fmt(v)} shipments">${L(v)}</td>`).join('')}<td class="avg">${L(g.avg)}</td><td>${arrow(g.chg)}</td><td class="sp">${spark(g.v,color,g.avg)}</td></tr>`;
+  let body=row(M.net,'net','#123F3A');
+  M.byReg.forEach(g=>{const c=REG_COLOR[g.name]||'#6250d6';body+=row(g,'reg',c);
+    const big=g.dcs.filter(d=>d.avg>=1000),small=g.dcs.filter(d=>d.avg<1000);
+    big.forEach(d=>body+=row(d,'dc',c));
+    if(small.length){const arr=M.dates.map((_,i)=>small.reduce((t,d)=>t+(d.arr[i]||0),0));const v=arr.slice(M.b,M.e+1);const sum=v.reduce((x,y)=>x+y,0);
+      const l7=M.e>=6?arr.slice(M.e-6,M.e+1).reduce((x,y)=>x+y,0)/7:null,p7=M.e>=14?arr.slice(M.e-14,M.e-7).reduce((x,y)=>x+y,0)/7:null;
+      body+=row({name:`Others (${small.length})`,v,sum,avg:sum/v.length,chg:l7!=null&&p7?l7/p7-1:null},'dc oth',c)}});
+  return `<div class="rp-legend2"><span><i style="background:#B9E3CC"></i>≥30% above DC's ${M.win.length}D avg</span><span><i style="background:#E2F3E9"></i>15–30% above</span><span><i style="background:#FBE3E0"></i>15–30% below</span><span><i style="background:#F3BFB8"></i>≥30% below</span><span>Trend: dashed line = ${M.win.length}D avg, dark dot = peak day</span></div>
+   <div class="rt-wrap"><table class="rt" id="procTbl"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+   <p class="note" style="margin:8px 0 0">${typeL} shipments processed, in lakhs (hover a number for the exact count). Region totals include all DCs; DCs under 1,000 shipments a day are grouped as Others.</p>`;
+}
+function procStory(M){
+  const typeL=ST.proc.type==='fwd'?'Forward':'Reverse';const REAL=M.byReg.filter(g=>g.name!=='Unmapped'||ST.proc.region.has('Unmapped'));const R=REAL.filter(g=>g.chg!=null);
+  const n=M.net.chg;let hl;
+  if(R.length>1&&R.every(g=>g.chg<0)){const w=R.slice().sort((a,b)=>a.chg-b.chg)[0];hl=`${typeL} is down in every region this week; ${w.name} fell the most (${pctTxt(w.chg)})`}
+  else if(R.length>1&&R.every(g=>g.chg>0)){const w=R.slice().sort((a,b)=>b.chg-a.chg)[0];hl=`${typeL} is up in every region this week; ${w.name} rose the most (${pctTxt(w.chg)})`}
+  else if(n!=null){const lead=R.slice().sort((a,b)=>n>=0?(b.l7-b.p7)-(a.l7-a.p7):(a.l7-a.p7)-(b.l7-b.p7))[0];hl=`${typeL} is ${n>=0?'up':'down'} ${Math.abs(Math.round(n*100))}% this week${lead?`, ${n>=0?'led by':'mostly'} ${lead.name}${n>=0?'':` (${pctTxt(lead.chg)})`}`:''}`}
+  else hl=`${typeL} shipments processed`;
+  const take=[];
+  const sh=REAL.slice().sort((a,b)=>b.share-a.share);
+  if(sh.length>1)take.push(`${typeL} by region: ${sh.map(g=>`${esc(g.name)} ${Math.round(g.share*100)}%`).join(', ')}.`);
+  if(R.length){const up=R.filter(g=>g.chg>0.005).sort((a,b)=>b.chg-a.chg),dn=R.filter(g=>g.chg<-0.005).sort((a,b)=>a.chg-b.chg),fl=R.filter(g=>Math.abs(g.chg)<=0.005);
+    take.push([up.length?`Up: ${up.map(g=>`${esc(g.name)} ${pctTxt(g.chg)}`).join(', ')}`:'',dn.length?`Down: ${dn.map(g=>`${esc(g.name)} ${pctTxt(g.chg)}`).join(', ')}`:'',fl.length?`Flat: ${fl.map(g=>esc(g.name)).join(', ')}`:''].filter(Boolean).join('. ')+' (last 7 days vs prior 7).')}
+  const v=M.net.v;const pk=v.indexOf(Math.max(...v)),lo=v.indexOf(Math.min(...v));
+  take.push(`${esc(M.net.name)} peaked on ${dShort(M.win[pk])} (${L(v[pk])} L) and was lowest on ${dShort(M.win[lo])} (${L(v[lo])} L).`);
+  const dcs=M.byReg.flatMap(g=>g.dcs).filter(d=>d.avg>=10000&&d.chg!=null);
+  const mover=dcs.slice().sort((a,b)=>Math.abs(b.l7-b.p7)-Math.abs(a.l7-a.p7))[0];
+  if(mover)take.push(`${esc(mover.name)} moved the most: ${pctTxt(mover.chg)} week on week (${L(mover.v[0])} L on ${dShort(M.win[0])}, ${L(mover.v[mover.v.length-1])} L on ${dShort(M.win[M.win.length-1])}).`);
+  // DC callouts per region
+  const call=REAL.map(g=>{const ds=g.dcs.filter(d=>d.avg>=5000);const bits=[];
+    ds.forEach(d=>{let z=0;for(let i=d.v.length-1;i>=0&&d.v[i]===0;i--)z++;if(z>=2)bits.push({w:1e9,t:`${esc(d.name)} processed nothing on the last ${z} days (${pctTxt(d.chg)} for the week), worth confirming`})});
+    ds.filter(d=>d.chg!=null).sort((a,b)=>Math.abs(b.chg)-Math.abs(a.chg)).slice(0,3).forEach(d=>{if(!bits.some(x=>x.t.startsWith(esc(d.name))))bits.push({w:Math.abs(d.chg),t:`${esc(d.name)} ${pctTxt(d.chg)}`})});
+    ds.forEach(d=>{const last=d.v[d.v.length-1];if(d.v.length>3&&last===Math.min(...d.v)&&last>0&&!bits.some(x=>x.t.startsWith(esc(d.name))))bits.push({w:0,t:`${esc(d.name)} hit its ${M.win.length}-day low of ${L(last)} L on ${dShort(M.win[M.win.length-1])}`})});
+    return bits.length?`<li><b>${esc(g.name)}:</b> ${g.chg!=null?`${g.chg>=0?'Up':'Down'} ${Math.abs(Math.round(g.chg*100))}%. `:''}${bits.slice(0,4).map(x=>x.t).join('; ')}.</li>`:''}).join('');
+  return {hl,take,call};
+}
+function renderProc(){
+  const root=document.getElementById('procRoot');if(!root)return;
+  if(!DATA){root.innerHTML=head('DC processing volumes','Reports','Reading the DC Processing Volumes sheet…');return}
+  if(!DATA.proc){root.innerHTML=head('DC processing volumes','Reports','')+`<div class="banner warn">${esc((DATA.errors||[]).join(' ')||'The DC Processing Volumes sheet could not be read.')}</div>`;bindHead(root);return}
+  const s=ST.proc;const T=DATA.proc[s.type];
+  const regs=sortRegions([...new Set(T.rows.map(r=>r[1]))]);
+  const dcOpts=T.rows.filter(r=>!s.region.size||s.region.has(r[1])).map(r=>({v:r[0],t:r[0],n:r[1]})).sort((a,b)=>a.t.localeCompare(b.t));
+  [...s.dc].forEach(d=>{if(!dcOpts.some(o=>o.v===d))s.dc.delete(d)});
+  const M=procModel();
+  const typeL=s.type==='fwd'?'Forward':'Reverse';
+  const filters=`<div class="rp-filters"><span class="flabel">Filters</span>${seg('type',[['fwd','Forward'],['rev','Reverse']],s.type)}
+    ${ms('region','Region',regs.map(r=>({v:r,t:r})),s.region)}${ms('dc','DC',dcOpts,s.dc,true)}
+    ${seg('days',[[7,'7 days'],[15,'15 days'],[30,'30 days']],s.days)}
+    <label class="rp-chk">Up to <select data-end>${(M?M.dates:[]).slice().reverse().map(d=>`<option value="${d}" ${(s.end||M.dates[M.dates.length-1])===d?'selected':''}>${dShort(d)}</option>`).join('')}</select></label>
+    <button class="reset" type="button" data-reset>Reset</button></div>`;
+  if(!M||!M.byReg.length){root.innerHTML=head('DC processing volumes','Reports',`${typeL} shipments processed per DC per day`)+filters+'<div class="card empty">No DCs match these filters.</div>';bindProc(root);return}
+  const st=procStory(M);
+  // chart series: regions, or the chosen DCs (up to 8) when DCs are picked
+  let series,chartNote='';
+  if(s.dc.size){const ds=M.byReg.flatMap(g=>g.dcs).sort((a,b)=>b.sum-a.sum);const pick=ds.slice(0,8);if(ds.length>8)chartNote=`Showing the 8 largest of ${ds.length} selected DCs.`;
+    const order=dcOpts.map(o=>o.v);series=pick.map(d=>({name:d.name,short:d.name.replace(/ DC$/,''),v:d.v.map(x=>x/1e5),c:SERIES[order.indexOf(d.name)%SERIES.length],g:d}))}
+  else series=M.byReg.filter(g=>g.name!=='Unmapped'||s.region.has('Unmapped')).map(g=>({name:g.name,short:g.name.replace(' Region',''),v:g.v.map(x=>x/1e5),c:REG_COLOR[g.name]||'#6250d6',g}));
+  const cards=series.map(x=>`<div class="rp-k"><div class="t"><i style="background:${x.c}"></i>${esc(x.name)}${x.g.share!=null?` · ${Math.round(x.g.share*100)}%`:''}</div><div class="v">${x.g.l7!=null?L(x.g.l7):L(x.g.avg)} L/day</div><div class="s">${arrow(x.g.chg)} L7D vs P7D</div></div>`).join('');
+  root.innerHTML=head('DC processing volumes','Reports',`${typeL} shipments processed per DC per day · ${dShort(M.win[0])} to ${dShort(M.win[M.win.length-1])}`)+filters+`
+   <section class="rp-card"><h2>${esc(st.hl)}</h2><div class="sub">${typeL} shipments processed per day by ${s.dc.size?'DC':'region'} · cards show last-7D avg${s.dc.size?'':' and share of the period volume'}</div>
+    <div class="rp-cards">${cards}</div>
+    <div class="rp-grid"><div><div class="rp-legend">${series.map(x=>`<span><i style="background:${x.c}"></i>${esc(x.name)}</span>`).join('')}</div><div class="rp-chart" id="procChart"></div>${chartNote?`<p class="note">${chartNote}</p>`:''}</div>
+    <div class="rp-take"><h3>Key takeaways</h3><ul>${st.take.map(t=>`<li>${t}</li>`).join('')}</ul></div></div></section>
+   <section class="rp-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><h2>${typeL} shipments processed – region &amp; DC-wise, last ${M.win.length} days</h2><div class="sub">${dShort(M.win[0])} to ${dShort(M.win[M.win.length-1])} · volumes in lakhs · region % = share of the period's volume · DCs sorted by volume within region</div></div><button class="mini" type="button" data-csv>Download CSV</button></div>
+    ${procTable(M)}
+    <div class="rp-notes"><div class="rp-take"><h3>Region view</h3><ul>${st.take.slice(0,3).map(t=>`<li>${t}</li>`).join('')}</ul></div><div class="rp-take"><h3>DC callouts</h3><ul>${st.call||'<li>No DC stands out.</li>'}</ul></div></div></section>`;
+  lineChart(document.getElementById('procChart'),M.win,series,'L');
+  bindProc(root);
+}
+function bindProc(root){
+  bindHead(root);const s=ST.proc;
+  bindMs(root,{region:s.region,dc:s.dc},renderProc);
+  root.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{const k=b.dataset.seg;if(k==='type'){s.type=b.dataset.v;s.end=null}else if(k==='days')s.days=+b.dataset.v;renderProc()});
+  const se=root.querySelector('[data-end]');if(se)se.onchange=()=>{s.end=se.value;renderProc()};
+  root.querySelector('[data-reset]')?.addEventListener('click',()=>{s.region.clear();s.dc.clear();s.days=15;s.end=null;renderProc()});
+  root.querySelector('[data-csv]')?.addEventListener('click',()=>X.tableCsv(document.getElementById('procTbl'),`DC processing ${s.type==='fwd'?'Forward':'Reverse'}`));
+}
+function bindHead(root){root.querySelector('[data-refresh]')?.addEventListener('click',async e=>{e.target.disabled=true;e.target.textContent='Refreshing…';try{await load(true);toast('Reports refreshed from the sheets')}catch(err){toast(err.message||'Refresh failed')}renderProc();renderClosure()})}
+
+// ================= Closure tracker =================
+const VIEW_ORDER=['Fwd Dock (Excluding Hold)','Fwd Dock (Including Hold)','Fwd Dock (Hold)','Fwd Rec at DC','Fwd Picked From Client','Fwd BRSNR','Fwd Short Dispatched - DCH2','Fwd Short Dispatched - DC-DC','Rev At Dock','Rev Rec at DC','Rev BRSNR','LMODC (Reverse Short Shipment)'];
+const INCL='Fwd Dock (Including Hold)';
+function clModel(){
+  const C=DATA.closure;const s=ST.cl;
+  const di=C.dates.map((d,i)=>[d,i]).sort((a,b)=>a[0].localeCompare(b[0]));const dates=di.map(x=>x[0]);const pos={};di.forEach(([d,i],k)=>pos[i]=k);
+  const regOf={};if(DATA.proc)['fwd','rev'].forEach(k=>DATA.proc[k].rows.forEach(r=>{if(r[1]&&r[1]!=='Unmapped')regOf[r[0]]=r[1]}));
+  const region=site=>regOf[site]||(X.locRegion||{})[site]||'Unmapped';
+  const views=[...C.views];if(views.includes('Fwd Dock (Excluding Hold)')&&views.includes('Fwd Dock (Hold)'))views.push(INCL);
+  views.sort((a,b)=>{const i=VIEW_ORDER.indexOf(a),j=VIEW_ORDER.indexOf(b);return (i<0?99:i)-(j<0?99:j)||a.localeCompare(b)});
+  let a=s.from?dates.indexOf(s.from):Math.max(0,dates.length-15),z=s.to?dates.indexOf(s.to):dates.length-1;if(a<0)a=0;if(z<0)z=dates.length-1;if(a>z)[a,z]=[z,a];
+  const win=dates.slice(a,z+1);
+  const vi=C.views.map(v=>v);const inView=(vname,raw)=>vname===INCL?(raw==='Fwd Dock (Excluding Hold)'||raw==='Fwd Dock (Hold)'):raw===vname;
+  const okSite=st=>(!s.site.size||s.site.has(st))&&(!s.region.size||s.region.has(region(st)));
+  const rows=C.rows.map(r=>({d:pos[r[0]],v:vi[r[1]],s:C.sites[r[2]],c:r[3],t:r[4]})).filter(r=>r.d>=a&&r.d<=z&&okSite(r.s));
+  return {dates,win,a,z,views,rows,region,inView,sites:C.sites};
+}
+function agg(rows,M,vname){const c=M.win.map(()=>0),t=M.win.map(()=>0);rows.forEach(r=>{if(!M.inView(vname,r.v))return;c[r.d-M.a]+=r.c;t[r.d-M.a]+=r.t});return {c,t}}
+const cellTxt=(c,t,metric)=>!t?'':metric==='pct'?Math.round(c*100/t)+'%':metric==='total'?fmt(t):fmt(c);
+const heat=(c,t)=>{if(!t)return '';const p=c/t;return `background:rgba(0,135,113,${(0.06+p*0.7).toFixed(2)});${p>0.62?'color:#fff;':''}`};
+function renderClosure(){
+  const root=document.getElementById('closureRoot');if(!root)return;
+  if(!DATA){root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports','Reading the closure tracker sheet…');return}
+  if(!DATA.closure||!DATA.closure.rows.length){root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports','')+`<div class="banner warn">${esc((DATA.errors||[]).join(' ')||'No rows in the Daily Log tab yet.')}</div>`;bindHead(root);return}
+  const s=ST.cl;const M=clModel();
+  const selViews=M.views.filter(v=>!s.view.size||s.view.has(v));
+  if(!M.views.includes(s.siteView))s.siteView=M.views[0];
+  const regs=sortRegions([...new Set(M.sites.map(M.region))]);
+  const siteOpts=M.sites.filter(st=>!s.region.size||s.region.has(M.region(st))).map(st=>({v:st,t:st,n:M.region(st)})).sort((a,b)=>a.t.localeCompare(b.t));
+  const met=s.metric;const metL={pct:'Closure %',total:'AWBs in scope (3–20 days)',closed:'AWBs closed'}[met];
+  const dOpts=sel=>M.dates.map(d=>`<option value="${d}" ${sel===d?'selected':''}>${dShort(d)}</option>`).join('');
+  const filters=`<div class="rp-filters"><span class="flabel">Filters</span>
+    ${ms('view','Pendency view',M.views.map(v=>({v,t:v})),s.view)}${ms('region','Region',regs.map(r=>({v:r,t:r})),s.region)}${ms('site','Site',siteOpts,s.site,true)}
+    <label class="rp-chk">From <select data-from>${dOpts(M.win[0])}</select></label><label class="rp-chk">to <select data-to>${dOpts(M.win[M.win.length-1])}</select></label>
+    ${seg('metric',[['pct','Closure %'],['total','AWBs in scope'],['closed','Closed']],met)}
+    <button class="reset" type="button" data-reset>Reset</button></div>`;
+  // network daily by view
+  const NV=selViews.map(v=>{const g=agg(M.rows,M,v);const C=g.c.reduce((x,y)=>x+y,0),T=g.t.reduce((x,y)=>x+y,0);
+    const pc=g.c.map((c,i)=>g.t[i]?c/g.t[i]:null);const last=pc.length-1;const prev=pc.slice(Math.max(0,last-7),last).filter(x=>x!=null);
+    return {v,g,C,T,pc,last:pc[last],prevAvg:prev.length?prev.reduce((x,y)=>x+y,0)/prev.length:null}});
+  const cards=NV.filter(x=>x.T).map(x=>`<div class="rp-k"><div class="t">${esc(x.v)}</div><div class="v">${x.last!=null?Math.round(x.last*100)+'%':'–'}</div><div class="s">${x.last!=null&&x.prevAvg!=null?`${x.last>=x.prevAvg?'<span class="up">▲':'<span class="dn">▼'} ${Math.abs(Math.round((x.last-x.prevAvg)*100))} pts</span> vs prior 7-day avg · `:''}${fmt(x.g.t[x.g.t.length-1]||0)} AWBs on ${dShort(M.win[M.win.length-1])}</div></div>`).join('');
+  const nHead=`<tr><th>View</th>${M.win.map(d=>`<th>${dShort(d)}</th>`).join('')}<th>Period</th><th>Trend</th></tr>`;
+  const nBody=NV.map(x=>`<tr class="dc"><td>${esc(x.v)}</td>${x.g.c.map((c,i)=>`<td style="${met==='pct'?heat(c,x.g.t[i]):''}" title="${fmt(c)} closed of ${fmt(x.g.t[i])}">${cellTxt(c,x.g.t[i],met)}</td>`).join('')}<td class="avg">${cellTxt(x.C,x.T,met)}</td><td class="sp">${x.pc.filter(p=>p!=null).length>1?spark(x.pc.map(p=>p==null?0:p*100),'#13896B',x.T?x.C*100/x.T:null):''}</td></tr>`).join('');
+  // site trend for one view
+  const sv=s.siteView;const bySite=new Map();M.rows.forEach(r=>{if(!M.inView(sv,r.v))return;let o=bySite.get(r.s);if(!o){o={s:r.s,c:M.win.map(()=>0),t:M.win.map(()=>0)};bySite.set(r.s,o)}o.c[r.d-M.a]+=r.c;o.t[r.d-M.a]+=r.t});
+  let sites=[...bySite.values()].map(o=>Object.assign(o,{C:o.c.reduce((x,y)=>x+y,0),T:o.t.reduce((x,y)=>x+y,0),mx:Math.max(...o.t),lastT:o.t[o.t.length-1],reg:M.region(o.s)}));
+  const hidden=s.min20?sites.filter(o=>o.mx<20).length:0;if(s.min20)sites=sites.filter(o=>o.mx>=20);
+  const sReg=sortRegions([...new Set(sites.map(o=>o.reg))]);
+  const sRow=(o,kind)=>`<tr class="${kind}"><td title="${esc(o.s)}">${esc(o.s)}</td>${o.c.map((c,i)=>`<td style="${met==='pct'?heat(c,o.t[i]):''}" title="${fmt(c)} closed of ${fmt(o.t[i])}">${cellTxt(c,o.t[i],met)}</td>`).join('')}<td class="avg">${cellTxt(o.C,o.T,met)}</td><td>${fmt(o.lastT||0)}</td></tr>`;
+  const sBody=sReg.map(r=>{const L=sites.filter(o=>o.reg===r).sort((a,b)=>b.lastT-a.lastT||b.T-a.T);const g={s:r,c:M.win.map((_,i)=>L.reduce((t,o)=>t+o.c[i],0)),t:M.win.map((_,i)=>L.reduce((t,o)=>t+o.t[i],0))};
+    g.C=g.c.reduce((x,y)=>x+y,0);g.T=g.t.reduce((x,y)=>x+y,0);g.lastT=g.t[g.t.length-1];return sRow(g,'reg')+L.map(o=>sRow(o,'dc')).join('')}).join('');
+  const sHead=`<tr><th>Site</th>${M.win.map(d=>`<th>${dShort(d)}</th>`).join('')}<th>Period</th><th title="AWBs in scope on ${dShort(M.win[M.win.length-1])}">Last day AWBs</th></tr>`;
+  root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports',`Day-on-day closures from the Daily Log · AWBs aged 3–20 days · ${dShort(M.win[0])} to ${dShort(M.win[M.win.length-1])}`)+filters+`
+   <section class="rp-card"><h2>Network daily · ${esc(metL)}</h2><div class="sub">Each day's base compared with the next day's: closed = AWB left that pivot or site. ${s.region.size||s.site.size?'For the selected regions and sites. ':''}"Fwd Dock (Including Hold)" adds the hold and non-hold At Dock views together.</div>
+    <div class="rp-cards">${cards}</div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button class="mini" type="button" data-csv="clNet">Download CSV</button></div>
+    <div class="rt-wrap"><table class="rt" id="clNet"><thead>${nHead}</thead><tbody>${nBody}</tbody></table></div></section>
+   <section class="rp-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><h2>Site trend · ${esc(metL)}</h2><div class="sub">Pick a view to see each site's daily ${met==='pct'?'closure %':'numbers'}; region rows add up their sites. Blank = no AWBs aged 3–20 days at that site that day.</div></div>
+     <div class="rp-tools"><label class="rp-chk">View <select data-siteview>${M.views.map(v=>`<option ${v===sv?'selected':''}>${esc(v)}</option>`).join('')}</select></label>
+     <label class="rp-chk"><input type="checkbox" data-min20 ${s.min20?'checked':''}> Hide sites under 20 AWBs${hidden?` (${hidden})`:''}</label><button class="mini" type="button" data-csv="clSite">Download CSV</button></div></div>
+    ${sites.length?`<div class="rt-wrap"><table class="rt" id="clSite"><thead>${sHead}</thead><tbody>${sBody}</tbody></table></div>`:'<div class="empty">No sites for this view and these filters.</div>'}</section>`;
+  bindHead(root);
+  bindMs(root,{view:s.view,region:s.region,site:s.site},renderClosure);
+  root.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{s.metric=b.dataset.v;renderClosure()});
+  root.querySelector('[data-from]').onchange=e=>{s.from=e.target.value;s.to=s.to||M.win[M.win.length-1];renderClosure()};
+  root.querySelector('[data-to]').onchange=e=>{s.to=e.target.value;s.from=s.from||M.win[0];renderClosure()};
+  root.querySelector('[data-siteview]').onchange=e=>{s.siteView=e.target.value;renderClosure()};
+  root.querySelector('[data-min20]').onchange=e=>{s.min20=e.target.checked;renderClosure()};
+  root.querySelector('[data-reset]').onclick=()=>{s.view.clear();s.region.clear();s.site.clear();s.from=s.to=null;s.metric='pct';s.min20=true;renderClosure()};
+  root.querySelectorAll('[data-csv]').forEach(b=>b.onclick=()=>X.tableCsv(document.getElementById(b.dataset.csv),b.dataset.csv==='clNet'?'Closure network daily':'Closure site trend '+sv));
+}
+
+// ---------- wiring ----------
+async function show(v){
+  const r=v==='proc'?renderProc:renderClosure;r();
+  if(!DATA){try{await load(false)}catch(e){const root=document.getElementById(v==='proc'?'procRoot':'closureRoot');if(root)root.innerHTML=`<div class="banner warn">Couldn't read the report sheet: ${esc(e.message||e)}</div>`;return}r()}
+}
+let rz=null;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(X.view()==='proc'&&DATA)renderProc()},200)});
+const prev=X.onView;X.onView=v=>{prev&&prev(v);if(v==='proc'||v==='closure')show(v)};
+const v0=X.view();if(v0==='proc'||v0==='closure')show(v0);
+};
+
+</script>
+<script>
 (function(){
 const TK='sfx_pd_token';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1777,6 +2103,7 @@ async function boot(){
   try{window.startDash(B.data||EMPTY,{noBase:!B.data,base:B.config&&B.config.base,admin:!!(B.me&&B.me.admin)})}
   catch(e){console.error('dashboard',e);const p=document.getElementById('pivots');if(p)p.innerHTML='<div class="card"><p class="err">The pivot view hit an error with this base file. Upload the base again from Upload base file; the task screens still work.</p></div>'}
   try{window.startTasks(B)}catch(e){console.error('tasks',e)}
+  try{window.startReports&&window.startReports(B)}catch(e){console.error('reports',e)}
   if(!window.SFX){showGate('<p class="err">The dashboard could not start. Refresh the page; if it keeps happening, upload the base again.</p>');return}
   const X=window.SFX;const prev=X.onView;X.onView=v=>{prev&&prev(v);if(v==='upload')renderUpload(B)};
   document.querySelectorAll('.side-nav [data-upload]').forEach(a=>a.hidden=!B.me.admin);
