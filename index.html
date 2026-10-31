@@ -1843,8 +1843,8 @@ function spark(vals,color,avg){
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${avg!=null?`<line x1="${p}" x2="${w-p}" y1="${y(avg).toFixed(1)}" y2="${y(avg).toFixed(1)}" stroke="#9aa8a5" stroke-dasharray="2 2" stroke-width="1"/>`:''}<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${x(pk)}" cy="${y(vals[pk])}" r="2.4" fill="#1d2b29"/><circle cx="${x(vals.length-1)}" cy="${y(vals[vals.length-1])}" r="2.4" fill="${color}"/></svg>`;
 }
 // ---------- line chart (one y-axis, end labels + legend, crosshair tooltip) ----------
-function lineChart(el,dates,series,unit){
-  const W=Math.max(320,el.clientWidth||900),H=330,m={l:44,r:92,t:10,b:30};
+function lineChart(el,dates,series,unit,dec){
+  dec=dec==null?2:dec;const W=Math.max(320,el.clientWidth||900),H=series.length>3?500:380,m={l:44,r:92,t:22,b:30};
   const all=series.flatMap(s=>s.v);let mx=Math.max(...all,0),mn=Math.min(...all,0);if(mn>0)mn=0;
   const step=niceStep((mx-mn)/5);const top=Math.ceil(mx/step)*step||step;const ticks=[];for(let v=0;v<=top+1e-9;v+=step)ticks.push(v);
   const x=i=>m.l+(dates.length<2?0:i*(W-m.l-m.r)/(dates.length-1)),y=v=>m.t+(H-m.t-m.b)*(1-v/top);
@@ -1855,8 +1855,9 @@ function lineChart(el,dates,series,unit){
    <g class="grid">${ticks.map(v=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/>`).join('')}</g>
    <g class="axis">${ticks.map(v=>`<text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${fmtTick(v,step)}</text>`).join('')}${dates.map((d,i)=>i%every===0||i===dates.length-1?`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${dShort(d)}</text>`:'').join('')}</g>
    ${series.map(s=>`<polyline points="${s.v.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
-   ${series.map(s=>`<circle cx="${x(s.v.length-1)}" cy="${y(s.v[s.v.length-1])}" r="4" fill="${s.c}" stroke="#fff" stroke-width="2"/>`).join('')}
-   ${ends.map(e=>`<text x="${W-m.r+8}" y="${e.y+4}" font-size="11.5" fill="#1d2b29">${esc(e.s.short||e.s.name)} ${e.s.v[e.s.v.length-1].toFixed(2)}</text>`).join('')}
+   ${series.map(s=>s.v.map((v,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${i===s.v.length-1?4:3}" fill="${s.c}" stroke="#fff" stroke-width="${i===s.v.length-1?2:1}"/>`).join('')).join('')}
+   ${dayLabels(dates,series,x,y,dec,W,m)}
+   ${ends.map(e=>`<text x="${W-m.r+8}" y="${e.y+4}" font-size="11.5" fill="#1d2b29">${esc(e.s.short||e.s.name)} ${e.s.v[e.s.v.length-1].toFixed(dec)}</text>`).join('')}
    <line class="xh" x1="0" x2="0" y1="${m.t}" y2="${H-m.b}" stroke="#9aa8a5" stroke-width="1" visibility="hidden"/>
    <rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="transparent" data-hit/></svg><div class="rp-tip" hidden></div>`;
   const svg=el.querySelector('svg'),tip=el.querySelector('.rp-tip'),xh=el.querySelector('.xh');
@@ -1866,12 +1867,25 @@ function lineChart(el,dates,series,unit){
     const tx=x(i)*r.width/W;tip.style.left=Math.min(r.width-tip.offsetWidth-4,Math.max(4,tx+12))+'px';tip.style.top='8px'};
   svg.querySelector('[data-hit]').addEventListener('mousemove',move);svg.querySelector('[data-hit]').addEventListener('mouseleave',()=>{tip.hidden=true;xh.setAttribute('visibility','hidden')});
 }
+// a value label above every point; on each day the labels are stacked in the same order as the lines so they never sit on top of each other
+function dayLabels(dates,series,x,y,dec,W,m){
+  const fs=dates.length>16?9.5:11;const gap=fs+1;let out='';
+  dates.forEach((_,i)=>{if(i===dates.length-1&&series.length>1)return; // the last day is labelled at the line ends
+    const it=series.map(s=>({s,py:y(s.v[i])})).sort((a,b)=>a.py-b.py);
+    // 1-D label placement: overlapping labels form a cluster that is spaced evenly and centred on where its labels want to be
+    let cl=it.map(o=>({items:[o],want:o.py-7}));const pos=c=>c.want-(c.items.length-1)*gap/2;
+    for(let moved=true;moved;){moved=false;for(let k=1;k<cl.length;k++){const a=cl[k-1],b=cl[k];if(pos(b)-(pos(a)+(a.items.length-1)*gap)<gap){
+      const n=a.items.length+b.items.length;const w=(a.want*a.items.length+b.want*b.items.length)/n;cl.splice(k-1,2,{items:a.items.concat(b.items),want:w});moved=true;break}}}
+    cl.forEach(c=>c.items.forEach((o,k)=>{o.ly=pos(c)+k*gap}));
+    out+=it.map(o=>`<text x="${x(i).toFixed(1)}" y="${o.ly.toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="#22312e" paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round">${o.s.v[i].toFixed(dec)}</text>`).join('')});
+  return out;
+}
 function niceStep(r){if(r<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(r)));const f=r/p;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p}
 function fmtTick(v,step){return step<1?v.toFixed(step<0.1?2:1):String(Math.round(v))}
 
 // ================= DC processing volumes =================
-function procModel(){
-  const P=DATA.proc;const s=ST.proc;const T=P[s.type];const dates=T.dates;if(!dates.length)return null;
+function procModel(type){
+  const P=DATA.proc;const s=ST.proc;const T=P[type||s.type];const dates=T.dates;if(!dates.length)return null;
   let e=s.end!=null?dates.indexOf(s.end):dates.length-1;if(e<0)e=dates.length-1;const b=Math.max(0,e-s.days+1);
   const win=dates.slice(b,e+1);
   const regions=sortRegions([...new Set(T.rows.map(r=>r[1]))]);
@@ -1925,6 +1939,36 @@ function procStory(M){
     return bits.length?`<li><b>${esc(g.name)}:</b> ${g.chg!=null?`${g.chg>=0?'Up':'Down'} ${Math.abs(Math.round(g.chg*100))}%. `:''}${bits.slice(0,4).map(x=>x.t).join('; ')}.</li>`:''}).join('');
   return {hl,take,call};
 }
+// ---------- network view: forward and reverse together (follows region, DC, window and date filters) ----------
+const FWD_C='#13896B',REV_C='#D9791A';
+function netSection(){
+  const Mf=procModel('fwd'),Mr=procModel('rev');if(!Mf||!Mr||!Mf.net.sum)return '';
+  const rv=new Map(Mr.dates.map((d,i)=>[d,Mr.net.arr[i]||0]));const F=Mf.net.v,R=Mf.win.map(d=>rv.get(d)||0),W=Mf.win;
+  const sumF=F.reduce((a,b)=>a+b,0),sumR=R.reduce((a,b)=>a+b,0);
+  const fc=Mf.net.chg,rc=Mr.net.chg;const dir=x=>x==null?'':`${x>=0?'up':'down'} ${Math.abs(Math.round(x*100))}%`;
+  const mi=F.indexOf(Math.min(...F)),after=F.slice(mi);const steady=mi<=F.length-4&&after.every(v=>v<=F[mi]*1.25);
+  const hl=`Forward ${dir(fc)||'flat'} on the week${steady?` but steady since ${dShort(W[mi])}`:''}; reverse ${dir(rc)||'flat'}`;
+  const T=[];const l=v=>(v/1e5).toFixed(1);
+  const pk=F.indexOf(Math.max(...F));
+  T.push(steady?`FWD fell from ${l(F[0])} L (${dShort(W[0])}) to a low of ${l(F[mi])} L on ${dShort(W[mi])}, and has held at ${l(Math.min(...after))}–${l(Math.max(...after))} L since. It was ${l(F[F.length-1])} L on ${dShort(W[W.length-1])}.`
+    :`FWD went from ${l(F[0])} L on ${dShort(W[0])} to ${l(F[F.length-1])} L on ${dShort(W[W.length-1])}; its high was ${l(F[pk])} L (${dShort(W[pk])}) and its low ${l(F[mi])} L (${dShort(W[mi])}).`);
+  if(Mf.net.l7!=null)T.push(`The FWD L7D avg is ${l(Mf.net.l7)} L/day${fc!=null?`, ${fc>=0?'up':'down'} ${Math.abs(Math.round(fc*100))}% from ${l(Mf.net.p7)} L/day the week before`:''}.`);
+  if(Mr.net.l7!=null&&R[0]&&R[R.length-1])T.push(`The REV L7D avg is ${l(Mr.net.l7)} L/day${rc!=null?`, ${pctTxt(rc)} week on week`:''}. The FWD:REV ratio went from ${(F[0]/R[0]).toFixed(1)}x on ${dShort(W[0])} to ${(F[F.length-1]/R[R.length-1]).toFixed(1)}x.`);
+  const short=n=>n.replace(/ DC$/,'');const share=(L,k)=>L.slice(0,k).reduce((a,d)=>a+d.sum,0);
+  const fd=Mf.byReg.flatMap(g=>g.dcs).sort((a,b)=>b.sum-a.sum),rd=Mr.byReg.flatMap(g=>g.dcs).sort((a,b)=>b.sum-a.sum);
+  if(fd.length>=4)T.push(`FWD is concentrated: ${fd.slice(0,3).map(d=>short(d.name)).join(', ').replace(/, ([^,]*)$/,' and $1')} handle ${pctS0(share(fd,3),Mf.net.sum)} of FWD${fd.length>10?`; the top 10 DCs handle ${pctS0(share(fd,10),Mf.net.sum)}`:''}.`);
+  if(rd.length>=5){let t=`${rd.slice(0,5).map(d=>short(d.name)).join(', ').replace(/, ([^,]*)$/,' and $1')} handle ${pctS0(share(rd,5),Mr.net.sum)} of REV.`;
+    const byL=rd.filter(d=>d.l7!=null&&d.p7!=null);const rl=byL.slice().sort((a,b)=>b.l7-a.l7),rp=byL.slice().sort((a,b)=>b.p7-a.p7);
+    const rise=rl.slice(0,5).map((d,i)=>({d,now:i+1,was:rp.indexOf(d)+1})).filter(x=>x.was-x.now>=2).sort((a,b)=>(b.was-b.now)-(a.was-a.now))[0];
+    const ord=['','largest','second-largest','third-largest','fourth-largest','fifth-largest'];
+    if(rise)t+=` ${short(rise.d.name)} is now the ${ord[rise.now]} REV DC (was ${rise.was}${rise.was===2?'nd':rise.was===3?'rd':'th'} the week before).`;T.push(t)}
+  const filt=ST.proc.region.size||ST.proc.dc.size;
+  return `<section class="rp-card"><h2>${esc(hl)}</h2><div class="sub">${filt?'Shipments processed per day for the selected regions and DCs':'Network-level shipments processed per day across all DCs'}, ${dShort(W[0])} to ${dShort(W[W.length-1])} (in lakhs) · ${l(sumF)} L forward and ${l(sumR)} L reverse in ${W.length} days</div>
+    <div class="rp-legend"><span><i style="background:${FWD_C}"></i>Forward</span><span><i style="background:${REV_C}"></i>Reverse</span></div><div class="rp-chart" id="netChart"></div></section>`;
+}
+function pctS0(a,b){return b?Math.round(a*100/b)+'%':'0%'}
+function drawNet(){const el=document.getElementById('netChart');if(!el)return;const Mf=procModel('fwd'),Mr=procModel('rev');const rv=new Map(Mr.dates.map((d,i)=>[d,Mr.net.arr[i]||0]));
+  lineChart(el,Mf.win,[{name:'Forward',short:'FWD',v:Mf.net.v.map(x=>x/1e5),c:FWD_C},{name:'Reverse',short:'REV',v:Mf.win.map(d=>(rv.get(d)||0)/1e5),c:REV_C}],'L',1)}
 function renderProc(){
   const root=document.getElementById('procRoot');if(!root)return;
   if(!DATA){root.innerHTML=head('DC processing volumes','Reports','Reading the DC Processing Volumes sheet…');return}
@@ -1948,14 +1992,15 @@ function renderProc(){
     const order=dcOpts.map(o=>o.v);series=pick.map(d=>({name:d.name,short:d.name.replace(/ DC$/,''),v:d.v.map(x=>x/1e5),c:SERIES[order.indexOf(d.name)%SERIES.length],g:d}))}
   else series=M.byReg.filter(g=>g.name!=='Unmapped'||s.region.has('Unmapped')).map(g=>({name:g.name,short:g.name.replace(' Region',''),v:g.v.map(x=>x/1e5),c:REG_COLOR[g.name]||'#6250d6',g}));
   const cards=series.map(x=>`<div class="rp-k"><div class="t"><i style="background:${x.c}"></i>${esc(x.name)}${x.g.share!=null?` · ${Math.round(x.g.share*100)}%`:''}</div><div class="v">${x.g.l7!=null?L(x.g.l7):L(x.g.avg)} L/day</div><div class="s">${arrow(x.g.chg)} L7D vs P7D</div></div>`).join('');
-  root.innerHTML=head('DC processing volumes','Reports',`${typeL} shipments processed per DC per day · ${dShort(M.win[0])} to ${dShort(M.win[M.win.length-1])}`)+filters+`
+  let net='';try{net=netSection()}catch(e){console.error('network view',e)}
+  root.innerHTML=head('DC processing volumes','Reports',`${typeL} shipments processed per DC per day · ${dShort(M.win[0])} to ${dShort(M.win[M.win.length-1])}`)+filters+net+`
    <section class="rp-card"><h2>${esc(st.hl)}</h2><div class="sub">${typeL} shipments processed per day by ${s.dc.size?'DC':'region'} · cards show last-7D avg${s.dc.size?'':' and share of the period volume'}</div>
     <div class="rp-cards">${cards}</div>
-    <div class="rp-grid"><div><div class="rp-legend">${series.map(x=>`<span><i style="background:${x.c}"></i>${esc(x.name)}</span>`).join('')}</div><div class="rp-chart" id="procChart"></div>${chartNote?`<p class="note">${chartNote}</p>`:''}</div>
-    <div class="rp-take"><h3>Key takeaways</h3><ul>${st.take.map(t=>`<li>${t}</li>`).join('')}</ul></div></div></section>
+    <div class="rp-legend">${series.map(x=>`<span><i style="background:${x.c}"></i>${esc(x.name)}</span>`).join('')}</div><div class="rp-chart" id="procChart"></div>${chartNote?`<p class="note">${chartNote}</p>`:''}</section>
    <section class="rp-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><h2>${typeL} shipments processed – region &amp; DC-wise, last ${M.win.length} days</h2><div class="sub">${dShort(M.win[0])} to ${dShort(M.win[M.win.length-1])} · volumes in lakhs · region % = share of the period's volume · DCs sorted by volume within region</div></div><button class="mini" type="button" data-csv>Download CSV</button></div>
     ${procTable(M)}
     <div class="rp-notes"><div class="rp-take"><h3>Region view</h3><ul>${st.take.slice(0,3).map(t=>`<li>${t}</li>`).join('')}</ul></div><div class="rp-take"><h3>DC callouts</h3><ul>${st.call||'<li>No DC stands out.</li>'}</ul></div></div></section>`;
+  if(net)try{drawNet()}catch(e){console.error(e)}
   lineChart(document.getElementById('procChart'),M.win,series,'L');
   bindProc(root);
 }
