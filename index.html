@@ -481,8 +481,12 @@ for(let i=0;i<N;i++)regLocs[C.r[i]].add(C.l[i]);
 // detail cube (from the parser): manifest destination / hub / RTO for At Dock, bin level / message / action user / MPSR for Received at DC,
 // client / seller / product for Picked from Client, manifest origin for BRSNR. Older uploads don't have it; the page falls back gracefully.
 const X=D.det?D.det.cols:null,XD=D.det?D.det.dims:{},XN=X?X.n.length:0;
+// bases uploaded by an earlier build lack some detail fields: fill them so nothing breaks, and switch off the features that need them
+const DET_FULL=!!(X&&X.vol&&X.esd&&X.rca&&X.ln&&X.bn&&X.ssm);
+if(X){['vol','ssm','mp','rto','v'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(0)});
+  ['md','hub','mo','cl','se','bin','msg','au','pd','esd','rca','ln','bn'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(-1);if(!XD[k])XD[k]=[]})}
 const XL=(f,k)=>{if(k==null||k<0)return '';const v=XD[f][k];if(v===''||v==null)return f==='bin'?'No bin scan':f==='se'?'(no seller name)':f==='pd'?'(no description)':'(blank)';return f==='bin'?'Bin level '+v:f==='ln'?'Layout '+v:f==='bn'?'Bin '+v:f==='au'?'User '+v:v};
-const DRILL={'At Dock':['md'],'RECEIVED_AT_DC':['bin','msg','ln','bn','au'],'Picked_From_Client':['cl','se'],'BRSNR':['mo']};
+const DRILL={'At Dock':['md'],'RECEIVED_AT_DC':DET_FULL?['bin','msg','ln','bn','au']:['bin','msg','au'],'Picked_From_Client':['cl','se'],'BRSNR':['mo']};
 const DRILL_LBL={md:'manifest destinations',bin:'bin levels',msg:'messages',ln:'layouts',bn:'bin names',au:'action users',cl:'clients',se:'sellers',mo:'manifest origins'};
 
 // state: Set of selected values (indices / age keys); empty = all
@@ -529,7 +533,8 @@ const DIMDEF={
   bin:{k:'Bin level (RDC)',opts:()=>(XD.bin||[]).map((v,i)=>({v:i,t:v?'Bin level '+v:'No bin scan'}))},
   msg:{k:'Message (RDC)',opts:()=>(XD.msg||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))}
 };
-if(!X)document.querySelectorAll('.ms.xf').forEach(e=>e.remove());
+if(!DET_FULL){document.querySelectorAll('.ms.xf').forEach(e=>e.remove());['cl','vol','mp','esd','bin','msg'].forEach(d=>S[d].clear())}
+if(X&&!DET_FULL){const nb=document.getElementById('noBase');if(nb){nb.hidden=false;nb.innerHTML=OPT&&OPT.admin?'This base was uploaded before the latest update. <b>Upload it again</b> (sidebar › Upload base file) to turn on the new filters, summary cuts and drop-down levels.':'Some new filters and summary sections switch on after the central team uploads the next base file.'}}
 const caret='<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
 let openDim=null;
 function label(dim){
@@ -683,11 +688,11 @@ function insAtDock(i,ages){
   // cuts by shipment / manifest type: top 5 DCs, or every DC of the region when a region is selected
   const cut=(L,title)=>{const n=sumN(L);if(!n)return '';const lc=topBy(L,j=>X.l[j]);const show=S.region.size?lc:lc.slice(0,5);
     return sec(`${title} · ${fmt(n)} (${pctS(n,tot)})`,il(show.map(([l,v])=>`<b>${LN(l)}</b> ${fmt(v)}`))+(!S.region.size&&lc.length>5?`<p class="note" style="margin:2px 0 0">+${lc.length-5} more DCs</p>`:''))};
-  const SHIP=XD.rca?XD.rca.indexOf('Manifest Processed at Shipment Level'):-1,NORM=XD.rca?XD.rca.indexOf('Normal Manifest'):-1;
-  h+=cut(J.filter(j=>X.vol[j]===1),'Volumetric shipments');
-  h+=cut(J.filter(j=>X.ssm[j]===1),'SSM bags (1 AWB in manifest, not volumetric)');
-  h+=cut(J.filter(j=>X.rca[j]===SHIP),'Processed at shipment level');
-  h+=cut(J.filter(j=>X.rca[j]===NORM),'Normal manifests');
+  const SHIP=XD.rca.indexOf('Manifest Processed at Shipment Level'),NORM=XD.rca.indexOf('Normal Manifest');
+  if(DET_FULL)h+=cut(J.filter(j=>X.vol[j]===1),'Volumetric shipments');
+  if(DET_FULL)h+=cut(J.filter(j=>X.ssm[j]===1),'SSM bags (1 AWB in manifest, not volumetric)');
+  if(DET_FULL)h+=cut(J.filter(j=>X.rca[j]===SHIP),'Processed at shipment level');
+  if(DET_FULL)h+=cut(J.filter(j=>X.rca[j]===NORM),'Normal manifests');
   return h;
 }
 function insRdc(i,ages){
@@ -765,7 +770,9 @@ const INS={'At Dock':insAtDock,'RECEIVED_AT_DC':insRdc,'Picked_From_Client':insP
 function renderInsights(){
   if(!LAST)return;if(!X){renderInsightsBasic();return}
   const tasks=(window.SFX&&window.SFX.getTasks)?window.SFX.getTasks():[];
-  LAST.showPv.forEach(i=>{const el=document.getElementById('ins-'+i);if(!el)return;const name=dims.pivot[i];
+  LAST.showPv.forEach(i=>{const el=document.getElementById('ins-'+i);if(!el)return;try{insOne(i,el,tasks)}catch(e){console.error('summary',e);el.innerHTML='<p class="note">Summary unavailable for this pivot.</p>'}});
+}
+function insOne(i,el,tasks){{const name=dims.pivot[i];
     const T=TBL[i+'cnt'];const ages=T?T.ages:[];const fn=INS[name];const body=fn?fn(i,ages):'';
     if(!body){el.innerHTML='';return}
     const f=fieldBlock(name,tasks);
@@ -778,7 +785,7 @@ function renderInsights(){
       w.style.maxHeight=(side&&tb?Math.max(260,tb.offsetHeight-64):380)+'px'}else w.style.maxHeight='none';
     if(!open&&w.scrollHeight<=w.clientHeight+4){bt.hidden=true;w.classList.add('fits')}
     bt.onclick=()=>{if(INS_OPEN.has(name))INS_OPEN.delete(name);else INS_OPEN.add(name);renderInsights()};
-  });
+  }
 }
 
 // ---------- drop-downs under each current location ----------
@@ -893,7 +900,7 @@ document.getElementById('pivots').addEventListener('dblclick',e=>{
   window.SFX.closePeek&&window.SFX.closePeek();
   window.SFX.onCell&&window.SFX.onCell(c);
 });
-drawButtons();render();
+drawButtons();try{render()}catch(e){console.error('render',e);document.getElementById('pivots').innerHTML='<div class="card"><p class="err">The pivot view hit an error with this base file. Upload the base again from Upload base file; the task screens still work.</p></div>'}
 window.SFX=Object.assign(window.SFX||{},{esc,fmt,rs,toast,dims,D,
   setScope(sc){
     const R=sc&&sc.regions||[],L=sc&&sc.locs||[];
@@ -1765,8 +1772,12 @@ async function boot(){
   showGate('<p class="note">Loading your dashboard…</p>');
   let B;try{B=await window.API('bootstrap')}catch(e){if(e.code!=='auth')showGate(`<p class="err">${esc(e.message)}</p><p><button class="btn" type="button" onclick="location.reload()">Try again</button></p>`);return}
   hideGate();
-  window.startDash(B.data||EMPTY,{noBase:!B.data,base:B.config&&B.config.base});
-  window.startTasks(B);
+  // each part starts on its own, so a problem in one view can't hide the menu or the task screens
+  document.querySelectorAll('.side-nav [data-upload]').forEach(a=>a.hidden=!B.me.admin);
+  try{window.startDash(B.data||EMPTY,{noBase:!B.data,base:B.config&&B.config.base,admin:!!(B.me&&B.me.admin)})}
+  catch(e){console.error('dashboard',e);const p=document.getElementById('pivots');if(p)p.innerHTML='<div class="card"><p class="err">The pivot view hit an error with this base file. Upload the base again from Upload base file; the task screens still work.</p></div>'}
+  try{window.startTasks(B)}catch(e){console.error('tasks',e)}
+  if(!window.SFX){showGate('<p class="err">The dashboard could not start. Refresh the page; if it keeps happening, upload the base again.</p>');return}
   const X=window.SFX;const prev=X.onView;X.onView=v=>{prev&&prev(v);if(v==='upload')renderUpload(B)};
   document.querySelectorAll('.side-nav [data-upload]').forEach(a=>a.hidden=!B.me.admin);
   if(X.view()==='upload')renderUpload(B);
