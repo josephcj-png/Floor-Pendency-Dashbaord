@@ -389,6 +389,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="side-sep"><span>Reports</span></div>
     <a href="#proc" data-view="proc"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5h11M4 11V8M7 11V5M10 11V7M13 11V3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>DC processing</span></a>
     <a href="#closure" data-view="closure"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.2l1.7 1.7L10.7 6.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Closure tracker</span></a>
+    <a href="#floor" data-view="floor"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5l3.5-4 3 2.5L14 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 4.5H14V8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Floor trends</span></a>
     <div class="side-sep"><span>Tasks</span></div>
     <a href="#tasks" data-view="tasks"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5l1.3 1.3L7 3M3 10.5l1.3 1.3L7 9M9 5h4.5M9 11h4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="navTasksLbl">Task assigner</span><b class="badge" id="taskBadge" hidden></b></a>
     <a href="#pocs" data-view="pocs" data-admin hidden><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.5" r="2.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 13c.6-2.2 2.1-3.3 4-3.3s3.4 1.1 4 3.3M11 5.5h3M12.5 4v3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>POC mapping</span></a>
@@ -448,6 +449,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 <div id="view-upload" hidden><main class="wrap"><div class="inner" id="uploadRoot"></div></main></div>
 <div id="view-proc" hidden><main class="wrap"><div class="inner" id="procRoot"></div></main></div>
 <div id="view-closure" hidden><main class="wrap"><div class="inner" id="closureRoot"></div></main></div>
+<div id="view-floor" hidden><main class="wrap"><div class="inner" id="floorRoot"></div></main></div>
 <footer class="wrap"><div class="inner" id="foot"></div></footer>
 </div></div>
 <div class="scrim" id="scrim" hidden></div>
@@ -875,7 +877,7 @@ function renderHold(idx){
 // ---------- header, tabs ----------
 if(OPT.noBase)document.getElementById('meta').innerHTML='<span class="chip">No base file uploaded yet</span>';else document.getElementById('meta').innerHTML=`<span class="chip">Base file <b>${esc(D.asOf)}</b></span><span class="chip"><b>${fmt(D.total-D.excludedNA)}</b> AWBs considered</span><span class="chip"><b>${fmt(D.excludedNA)}</b> excluded (Ecom Data #N/A)</span>`;
 document.getElementById('foot').textContent=`Source: Forward Overall Pendency base ${D.asOf}. Ageing = Ageing_from_Bag_Rec (At Dock 5–20 + 21+, Received at DC up to 20, Picked from Client 3–20, BRSNR all days); Region = Region (pivot "Region2"); HOV value = product_value (pivot "product_value2") where HOV2 = HOV. AWBs with Ecom Data = #N/A are excluded throughout.`;
-const VIEWS=['forward','reverse','tasks','pocs','custom','proc','closure','upload'];
+const VIEWS=['forward','reverse','tasks','pocs','custom','proc','closure','floor','upload'];
 function setTab(t){if(!VIEWS.includes(t))t='forward';VIEWS.forEach(v=>document.getElementById('view-'+v).hidden=v!==t);document.querySelectorAll('.side-nav a').forEach(a=>{if(a.dataset.view===t)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});document.getElementById('foot').hidden=t!=='forward';if(matchMedia('(max-width:760px)').matches)setSide(true);window.SFX&&window.SFX.onView&&window.SFX.onView(t)}
 // sidebar collapse
 const side=document.getElementById('side');
@@ -1833,8 +1835,8 @@ function bindMs(root,map,rerender){
     pop.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{if(b.dataset.a==='none')set.clear();else pop.querySelectorAll('label.opt:not([hidden]) input').forEach(cb=>set.add(cb.dataset.v));rerender()});
     const q=pop.querySelector('[data-q]');if(q){q.focus();q.oninput=()=>{const s=q.value.toLowerCase();pop.querySelectorAll('label.opt').forEach(l=>l.hidden=!l.textContent.toLowerCase().includes(s))}}});
 }
-document.addEventListener('click',e=>{if(OPEN&&!e.target.closest('.rp-ms')){OPEN=null;const v=X.view();if(v==='proc')renderProc();if(v==='closure')renderClosure()}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&OPEN){OPEN=null;const v=X.view();if(v==='proc')renderProc();if(v==='closure')renderClosure()}});
+document.addEventListener('click',e=>{if(OPEN&&!e.target.closest('.rp-ms')){OPEN=null;const v=X.view();if(v==='proc')renderProc();if(v==='closure')renderClosure();if(v==='floor')renderFloor()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&OPEN){OPEN=null;const v=X.view();if(v==='proc')renderProc();if(v==='closure')renderClosure();if(v==='floor')renderFloor()}});
 const seg=(k,opts,cur)=>`<div class="seg" role="group">${opts.map(([v,t])=>`<button type="button" data-seg="${k}" data-v="${esc(v)}" aria-pressed="${String(cur)===String(v)}">${esc(t)}</button>`).join('')}</div>`;
 function spark(vals,color,avg){
   const w=84,h=24,p=3;const mx=Math.max(...vals,avg||0,1e-9),mn=Math.min(...vals,avg||0);const rg=mx-mn||1;
@@ -1851,6 +1853,8 @@ function lineChart(el,dates,series,unit,dec){
   const every=Math.ceil(dates.length/12);
   // end labels, nudged apart so they don't collide
   const ends=series.map(s=>({s,y:y(s.v[s.v.length-1])})).sort((a,b)=>a.y-b.y);for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<13)ends[i].y=ends[i-1].y+13;
+  // keep the stack inside the plot: if it runs off the bottom, slide it back up
+  if(ends.length&&ends[ends.length-1].y>H-m.b){ends[ends.length-1].y=H-m.b;for(let i=ends.length-2;i>=0;i--)if(ends[i+1].y-ends[i].y<13)ends[i].y=ends[i+1].y-13}
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(series.map(s=>s.name).join(', '))} by day">
    <g class="grid">${ticks.map(v=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/>`).join('')}</g>
    <g class="axis">${ticks.map(v=>`<text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${fmtTick(v,step)}</text>`).join('')}${dates.map((d,i)=>i%every===0||i===dates.length-1?`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${dShort(d)}</text>`:'').join('')}</g>
@@ -2086,14 +2090,107 @@ function renderClosure(){
   root.querySelectorAll('[data-csv]').forEach(b=>b.onclick=()=>X.tableCsv(document.getElementById(b.dataset.csv),b.dataset.csv==='clNet'?'Closure network daily':'Closure site trend '+sv));
 }
 
+// ================= Floor trends (one trend per tab of the FLOOR TRENDS sheet) =================
+let FDATA=null,FLOAD=null;const FL={tab:'',region:new Set(),from:null,to:null};
+async function loadFloor(fresh){if(FDATA&&!fresh)return FDATA;if(FLOAD&&!fresh)return FLOAD;FLOAD=API('floor',{fresh:!!fresh}).then(r=>{FDATA=r;FLOAD=null;PARSED={};return r}).catch(e=>{FLOAD=null;throw e});return FLOAD}
+const MONI={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function dayLabel(v){ // 05-Feb · 2-Mar · 28-02-2026 · 5-Oct-26 · 20th Nov · 2026-10-30 → {d,m,y|null}
+  const t=String(v||'').trim();let m;
+  if((m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)))return {y:+m[1],m:+m[2],d:+m[3]};
+  if((m=t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/)))return {d:+m[1],m:+m[2],y:+m[3]<100?2000+ +m[3]:+m[3]};
+  if((m=t.match(/^(\d{1,2})(?:st|nd|rd|th)?[-\s]?([A-Za-z]{3})[A-Za-z]*(?:[-\s,]+(\d{2,4}))?$/))&&MONI[m[2].toLowerCase()])return {d:+m[1],m:MONI[m[2].toLowerCase()],y:m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):null};
+  return null;
+}
+let PARSED={};
+function parseTab(tab){
+  if(PARSED[tab.name])return PARSED[tab.name];
+  const V=tab.values;let h=-1,cols=[];
+  for(let r=0;r<Math.min(V.length,40)&&h<0;r++){const c=[];for(let j=1;j<(V[r]||[]).length;j++){const d=dayLabel(V[r][j]);if(d)c.push([j,d])}if(c.length>=3){h=r;cols=c}}
+  if(h<0)return PARSED[tab.name]=null;
+  // years: take them from the header when given; otherwise walk the columns and roll the year over when the month goes back
+  if(cols.some(([,d])=>d.y==null)){let roll=0;for(let k=1;k<cols.length;k++)if(cols[k][1].m<cols[k-1][1].m)roll++;
+    const today=new Date();const last=cols[cols.length-1][1];let ly=today.getFullYear();if(last.m>today.getMonth()+1||(last.m===today.getMonth()+1&&last.d>today.getDate()))ly--;
+    let y=ly-roll;cols.forEach(([,d],k)=>{if(k&&d.m<cols[k-1][1].m)y++;if(d.y==null)d.y=y})}
+  const p=n=>(n<10?'0':'')+n;const dates=cols.map(([,d])=>`${d.y}-${p(d.m)}-${p(d.d)}`);
+  const rows=[];
+  for(let r=h+1;r<V.length;r++){const row=V[r]||[];const lab=String(row[0]||'').trim();if(!lab){if(rows.length)break;else continue}
+    if(/^(row labels|site name|dc)$/i.test(lab))break;if(/^grand total$/i.test(lab))continue;
+    rows.push({name:lab,v:cols.map(([j])=>{const n=parseFloat(String(row[j]==null?'':row[j]).replace(/[,%\s]/g,''));return isFinite(n)?n:null})})}
+  // if the tab mixes named rows with numeric breakdown rows (ageing buckets), keep the named rows only
+  const named=rows.filter(x=>!/^\d+$/.test(x.name));const keep=named.length&&named.length<rows.length?named:rows;
+  // keep the columns in date order
+  const ord=dates.map((d,i)=>i).sort((a,b)=>dates[a].localeCompare(dates[b]));
+  return PARSED[tab.name]={dates:ord.map(i=>dates[i]),rows:keep.map(x=>({name:x.name,v:ord.map(i=>x.v[i])}))};
+}
+const normDc=n=>String(n).replace(/_/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+function regionMap(){const m={};const lr=X.locRegion||{};Object.keys(lr).forEach(k=>m[normDc(k)]=lr[k]);
+  if(DATA&&DATA.proc)['fwd','rev'].forEach(k=>DATA.proc[k].rows.forEach(r=>{if(r[1]&&r[1]!=='Unmapped')m[normDc(r[0])]=r[1]}));return m}
+function renderFloor(){
+  const root=document.getElementById('floorRoot');if(!root)return;
+  const H=head('Floor trends','Reports','Trend views from the FLOOR TRENDS sheet').replace(/data read [^<·]*/, FDATA&&FDATA.fetchedAt?`data read ${esc(new Date(FDATA.fetchedAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}))}`:'');
+  if(!FDATA){root.innerHTML=H+'<div class="card empty">Reading the FLOOR TRENDS sheet…</div>';bindFloorHead(root);return}
+  if((FDATA.errors||[]).length){root.innerHTML=H+`<div class="banner warn">${esc(FDATA.errors.join(' '))}</div>`;bindFloorHead(root);return}
+  const tabs=FDATA.tabs.filter(t=>parseTab(t));
+  if(FL.tab&&!tabs.some(t=>t.name===FL.tab))FL.tab='';
+  const P=FL.tab?parseTab(tabs.find(t=>t.name===FL.tab)):null;
+  const RM=regionMap();const regOf=n=>RM[normDc(n)]||'Unmapped';
+  const regs=P?sortRegions([...new Set(P.rows.map(r=>regOf(r.name)))]):[];
+  [...FL.region].forEach(r=>{if(P&&!regs.includes(r))FL.region.delete(r)});
+  let a=0,z=-1;if(P){z=P.dates.length-1;a=Math.max(0,z-14);if(FL.from&&P.dates.includes(FL.from))a=P.dates.indexOf(FL.from);if(FL.to&&P.dates.includes(FL.to))z=P.dates.indexOf(FL.to);if(a>z)[a,z]=[z,a]}
+  const dOpts=sel=>P?P.dates.map(d=>`<option value="${d}" ${sel===d?'selected':''}>${dShort(d)} ${d.slice(0,4)}</option>`).join(''):'';
+  const filters=`<div class="rp-filters"><span class="flabel">Filters</span>
+    <label class="rp-chk">Trend <select data-ftab><option value="">Pick a tab…</option>${tabs.map(t=>`<option ${t.name===FL.tab?'selected':''}>${esc(t.name.trim())}</option>`).join('')}</select></label>
+    ${P?ms('fregion','Region',regs.map(r=>({v:r,t:r})),FL.region):''}
+    ${P?`<label class="rp-chk">From <select data-ffrom>${dOpts(P.dates[a])}</select></label><label class="rp-chk">to <select data-fto>${dOpts(P.dates[z])}</select></label>`:''}
+    ${P?'<button class="reset" type="button" data-freset>Reset</button>':''}</div>`;
+  if(!P){root.innerHTML=H+filters+`<div class="card empty">Pick a trend from the Trend filter above to see its chart and numbers.</div>`;bindFloor(root,null);return}
+  const win=P.dates.slice(a,z+1);const sl=v=>v.slice(a,z+1).map(x=>x==null?0:x);
+  const rows=P.rows.filter(r=>!FL.region.size||FL.region.has(regOf(r.name))).map(r=>({name:r.name,reg:regOf(r.name),v:sl(r.v),raw:r.v.slice(a,z+1)}));
+  const tot=win.map((_,i)=>rows.reduce((t,r)=>t+r.v[i],0));
+  const totName=FL.region.size?([...FL.region].join(' + ')+' total'):'All DCs';
+  // chart: one line overall; with a region picked, one line per DC (largest 7, the rest folded into "Other DCs")
+  let series;if(!FL.region.size)series=[{name:totName,short:'Total',v:tot,c:'#13896B'}];
+  else{const by=rows.slice().sort((x,y)=>y.v.reduce((s,n)=>s+n,0)-x.v.reduce((s,n)=>s+n,0));const top=by.slice(0,7),rest=by.slice(7);
+    series=top.map((r,k)=>({name:r.name,short:r.name.replace(/ DC$/,''),v:r.v,c:SERIES[k]})); // 7 distinct slots, never repeated
+    if(rest.length)series.push({name:`Other ${rest.length} DCs`,short:`Other ${rest.length}`,v:win.map((_,i)=>rest.reduce((t,r)=>t+r.v[i],0)),c:'#8a9693'})}
+  const chg=tot[0]?tot[tot.length-1]/tot[0]-1:null;
+  const lo=tot.indexOf(Math.min(...tot)),hi=tot.indexOf(Math.max(...tot));
+  const sorted=rows.slice().sort((x,y)=>(y.v[y.v.length-1]-x.v[x.v.length-1])||y.v.reduce((s,n)=>s+n,0)-x.v.reduce((s,n)=>s+n,0));
+  const mx=Math.max(1,...sorted.flatMap(r=>r.v));
+  const cell=(v,raw)=>raw==null?'<td></td>':`<td style="background:rgba(0,135,113,${(0.04+0.7*Math.sqrt(v/mx)).toFixed(2)});${v/mx>0.45?'color:#fff;':''}">${fmt(v)}</td>`;
+  const avg=v=>v.reduce((s,n)=>s+n,0)/v.length;
+  const table=`<div class="rt-wrap"><table class="rt" id="flTbl"><thead><tr><th>${FL.region.size?'DC':'Site'}</th>${win.map(d=>`<th>${dShort(d)}</th>`).join('')}<th>Avg</th><th title="Last day vs first day of the range">Change</th></tr></thead><tbody>
+    <tr class="net"><td>${esc(totName)}</td>${tot.map(v=>`<td>${fmt(v)}</td>`).join('')}<td>${fmt(avg(tot))}</td><td>${arrow(chg)}</td></tr>
+    ${sorted.map(r=>`<tr class="dc"><td title="${esc(r.name)} · ${esc(r.reg)}">${esc(r.name)}</td>${r.v.map((v,i)=>cell(v,r.raw[i])).join('')}<td class="avg">${fmt(avg(r.v))}</td><td>${r.v[0]>=10?arrow(r.v[r.v.length-1]/r.v[0]-1):'<span class="note" title="First day under 10, so a % would mislead">–</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+  root.innerHTML=H+filters+`
+   <section class="rp-card"><h2>${esc(FL.tab.trim())}</h2><div class="sub">${esc(totName)} · ${dShort(win[0])} ${win[0].slice(0,4)} to ${dShort(win[win.length-1])} ${win[win.length-1].slice(0,4)} · ${fmt(tot[tot.length-1])} on the last day${chg!=null?` (${pctTxt(chg)} vs the first day)`:''} · high ${fmt(tot[hi])} on ${dShort(win[hi])}, low ${fmt(tot[lo])} on ${dShort(win[lo])}</div>
+    ${series.length>1?`<div class="rp-legend">${series.map(x=>`<span><i style="background:${x.c}"></i>${esc(x.name)}</span>`).join('')}</div>`:''}<div class="rp-chart" id="flChart"></div></section>
+   <section class="rp-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><h2>Numbers</h2><div class="sub">${FL.region.size?'DCs in the selected region':'All sites'}, sorted by the last day. Blank = no value in the sheet that day.</div></div><button class="mini" type="button" data-fcsv>Download CSV</button></div>${table}</section>`;
+  lineChart(document.getElementById('flChart'),win,series,'',0);
+  bindFloor(root,P,win);
+}
+function bindFloorHead(root){root.querySelector('[data-refresh]')?.addEventListener('click',async e=>{e.target.disabled=true;e.target.textContent='Refreshing…';try{await loadFloor(true);toast('Floor trends refreshed from the sheet')}catch(err){toast(err.message||'Refresh failed')}renderFloor()})}
+function bindFloor(root,P,win){
+  bindFloorHead(root);
+  root.querySelector('[data-ftab]').onchange=e=>{FL.tab=e.target.value;FL.region.clear();FL.from=FL.to=null;renderFloor()};
+  if(!P)return;
+  bindMs(root,{fregion:FL.region},renderFloor);
+  root.querySelector('[data-ffrom]').onchange=e=>{FL.from=e.target.value;FL.to=FL.to||win[win.length-1];renderFloor()};
+  root.querySelector('[data-fto]').onchange=e=>{FL.to=e.target.value;FL.from=FL.from||win[0];renderFloor()};
+  root.querySelector('[data-freset]').onclick=()=>{FL.region.clear();FL.from=FL.to=null;renderFloor()};
+  root.querySelector('[data-fcsv]').onclick=()=>X.tableCsv(document.getElementById('flTbl'),'Floor trend '+FL.tab.trim());
+}
+
 // ---------- wiring ----------
 async function show(v){
+  if(v==='floor'){renderFloor();if(!FDATA){try{await loadFloor(false)}catch(e){const root=document.getElementById('floorRoot');if(root)root.innerHTML=`<div class="banner warn">Couldn't read the FLOOR TRENDS sheet: ${esc(e.message||e)}</div>`;return}renderFloor()}
+    if(!DATA)load(false).then(()=>{if(X.view()==='floor')renderFloor()}).catch(()=>{});return}
   const r=v==='proc'?renderProc:renderClosure;r();
   if(!DATA){try{await load(false)}catch(e){const root=document.getElementById(v==='proc'?'procRoot':'closureRoot');if(root)root.innerHTML=`<div class="banner warn">Couldn't read the report sheet: ${esc(e.message||e)}</div>`;return}r()}
 }
-let rz=null;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(X.view()==='proc'&&DATA)renderProc()},200)});
-const prev=X.onView;X.onView=v=>{prev&&prev(v);if(v==='proc'||v==='closure')show(v)};
-const v0=X.view();if(v0==='proc'||v0==='closure')show(v0);
+let rz=null;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(X.view()==='proc'&&DATA)renderProc();if(X.view()==='floor'&&FDATA)renderFloor()},200)});
+const prev=X.onView;X.onView=v=>{prev&&prev(v);if(v==='proc'||v==='closure'||v==='floor')show(v)};
+const v0=X.view();if(v0==='proc'||v0==='closure'||v0==='floor')show(v0);
 };
 
 </script>
