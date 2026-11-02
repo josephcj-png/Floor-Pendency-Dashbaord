@@ -2226,9 +2226,9 @@ function showLogin(err){
    <p class="note" style="margin-top:14px">Lost your code? Ask the central team for a new one.</p>`);
   document.getElementById('loginForm').onsubmit=async e=>{e.preventDefault();
     const email=document.getElementById('lgEmail').value.trim().toLowerCase(),code=document.getElementById('lgCode').value;lastEmail=email;
-    if(!email||!code)return showLogin('Enter your work email and access code.');
+    if(!email)return showLogin('Enter your work email.');
     const b=document.getElementById('lgBtn');b.disabled=true;b.textContent='Signing in…';
-    try{const r=await window.API('login',{email,code});saveToken(r.token);location.reload()}catch(x){if(x.code!=='auth')showLogin(x.code==='bad_login'?'That email and access code don’t match. Check both and try again.':x.message)}};
+    try{const r=await window.API('login',{email,code});saveToken(r.token);location.reload()}catch(x){if(x.code!=='auth')showLogin(x.code==='bad_login'?'That email and access code don’t match. Check both and try again.':x.code==='need_code'?'Enter your access code.':x.message)}};
   setTimeout(()=>document.getElementById(lastEmail?'lgCode':'lgEmail')?.focus(),0);
 }
 window.APP={logout:async()=>{try{await window.API('logout')}catch(e){}saveToken(null);location.hash='';location.reload()}};
