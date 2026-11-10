@@ -2414,7 +2414,45 @@ async function boot(){
   if(!B.data){const nb=document.getElementById('noBase');if(nb){nb.hidden=false;nb.innerHTML=B.me.admin?'No base file has been uploaded yet. <a href="#upload">Upload today’s Forward pendency base</a> to fill the dashboard and the task suggestions.':'The central team hasn’t uploaded today’s base file yet. Check back later.'}}
   if(!B.revData){const nb=document.getElementById('rnoBase');if(nb){nb.hidden=false;nb.innerHTML=B.me.admin?'No reverse base has been uploaded yet. <a href="#upload">Upload the Reverse_Overall_Base_Final file</a> to fill this view and its task suggestions.':'The central team hasn’t uploaded the reverse base file yet. Check back later.'}}
   RAW=(B.config&&B.config.raw)||{};
+  setTimeout(()=>backfillProducts(B),2500);
   ['dlbase','rdlbase'].forEach(id=>{const b=document.getElementById(id);if(b&&!RAW[id==='dlbase'?'fwd':'rev'])b.title='The full base file becomes downloadable after the next upload';});
+}
+
+// ---------- HOV product details for a base uploaded before they were saved with it ----------
+// read once from the stored full file (in an admin's browser, in the background) and kept on the server
+async function rawText(side,x,onChunk){
+  const parts=[];for(let i=0;i<x.n;i++){const r=await window.API('rawGet',{side,idx:i});const bin=atob(r.b64);const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);parts.push(u)}
+  const rd=new Blob(parts).stream().pipeThrough(new DecompressionStream('gzip')).pipeThrough(new TextDecoderStream()).getReader();
+  for(;;){const {done,value}=await rd.read();if(done)break;onChunk(value)}
+}
+function csvRows(onRow){ // streaming CSV (RFC 4180) -> onRow(fields)
+  let row=[],f='',q=false,qq=false;
+  return {push(s){for(let i=0;i<s.length;i++){const ch=s.charCodeAt(i);
+      if(q){if(qq){qq=false;if(ch===34){f+='"';continue}q=false}else if(ch===34){qq=true;continue}else{f+=s[i];continue}}
+      if(ch===34&&f===''){q=true;continue}
+      if(ch===44){row.push(f);f='';continue}
+      if(ch===13)continue;
+      if(ch===10){row.push(f);f='';onRow(row);row=[];continue}
+      f+=s[i]}},
+    end(){if(f!==''||row.length){row.push(f);onRow(row)}}};
+}
+async function prodMap(side,x){
+  const map={};let H=null,ix;
+  const P=csvRows(r=>{if(!H){H=r;const at=n=>H.indexOf(n);ix={awb:at('Awb_number'),d:at('Product Description'),c:side==='rev'?at('Main Category'):at('Product Category'),s:side==='rev'?at('Sub Category'):-1,h:side==='rev'?at('PV'):at('HOV2')};if(ix.awb<0||ix.d<0||ix.h<0)throw new Error('columns not found');return}
+    const hv=(r[ix.h]||'').trim();if(side==='rev'?hv!=='1':hv!=='HOV')return;
+    map[r[ix.awb]]=[(r[ix.d]||'').slice(0,90),ix.c>=0?(r[ix.c]||''):'',ix.s>=0?(r[ix.s]||''):''];});
+  await rawText(side,x,s=>P.push(s));P.end();return map;
+}
+async function backfillProducts(B){
+  if(!B.me.admin||!window.DecompressionStream||!window.TextDecoderStream)return;
+  for(const side of ['fwd','rev']){
+    const b=side==='rev'?B.config.revBase:B.config.base,x=RAW[side],pr=(B.config.prod||{})[side];
+    if(!b||b.prodInline||!x||!x.n||(x.asOf&&b.asOf&&x.asOf!==b.asOf)||(pr&&pr.baseAt===b.uploadedAt))continue;
+    try{const map=await prodMap(side,x);const r=await window.API('prodPut',{side,baseAt:b.uploadedAt,map});
+      B.config.prod=Object.assign({},B.config.prod,{[side]:{baseAt:b.uploadedAt,n:r.n}});
+      window.SFX.toast(`${SIDE_NAME[side]} HOV product details added (${r.n.toLocaleString('en-IN')} AWBs)`)}
+    catch(e){console.warn('product backfill',side,e)}
+  }
 }
 
 // ---------- download the whole uploaded base file (gzip CSV parts on Drive, unzipped here) ----------
