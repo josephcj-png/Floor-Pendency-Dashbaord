@@ -69,7 +69,7 @@ h1{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,2.4vw,30
 .spacer{flex:1}
 @media (max-width:640px){.filters{position:static}}
 .fsum{font-size:12px;color:var(--muted)}
-.vbar .inner{display:flex;align-items:center;gap:10px;padding-block:10px 0;flex-wrap:wrap}.vtitle{font-family:var(--font-display);font-weight:700;font-size:17px}.vsub{font-size:12.5px;color:var(--muted)}
+.vbar .inner{display:flex;align-items:center;gap:10px;padding-block:10px 0;flex-wrap:wrap}.filters .vbar+.inner{padding-top:8px}.vtitle{font-family:var(--font-display);font-weight:700;font-size:17px}.vsub{font-size:12.5px;color:var(--muted)}
 .dlbase{white-space:nowrap}.dlbase[disabled]{opacity:.6;cursor:progress}
 
 main .inner{padding-block:18px 48px;display:flex;flex-direction:column;gap:18px}
@@ -411,8 +411,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 </div></header>
 
 <div id="view-forward">
-  <div class="vbar wrap"><div class="inner"><span class="vtitle">Forward pendency</span><span class="vsub" id="vsub"></span><span class="spacer"></span><button class="btn ghost dlbase" id="dlbase" type="button" title="The whole uploaded forward base file, every row and column">Download base file (CSV)</button></div></div>
-  <div class="filters wrap"><div class="inner" id="filterbar">
+  <div class="filters wrap"><div class="vbar"><div class="inner"><span class="vtitle">Forward pendency</span><span class="vsub" id="vsub"></span><span class="spacer"></span><button class="btn ghost dlbase" id="dlbase" type="button" title="The whole uploaded forward base file, every row and column">Download base file (CSV)</button></div></div><div class="inner" id="filterbar">
     <span class="flabel">Filters</span>
     <span class="chip scope" id="scopeChip" hidden></span>
     <div class="ms" data-dim="pivot"></div>
@@ -441,8 +440,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 </div>
 
 <div id="view-reverse" hidden>
-  <div class="vbar wrap"><div class="inner"><span class="vtitle">Reverse pendency</span><span class="vsub" id="rvsub"></span><span class="spacer"></span><button class="btn ghost dlbase" id="rdlbase" type="button" title="The whole uploaded reverse base file, every row and column">Download base file (CSV)</button></div></div>
-  <div class="filters wrap"><div class="inner">
+  <div class="filters wrap"><div class="vbar"><div class="inner"><span class="vtitle">Reverse pendency</span><span class="vsub" id="rvsub"></span><span class="spacer"></span><button class="btn ghost dlbase" id="rdlbase" type="button" title="The whole uploaded reverse base file, every row and column">Download base file (CSV)</button></div></div><div class="inner">
     <span class="flabel">Filters</span>
     <span class="chip scope" id="rscopeChip" hidden></span>
     <div class="ms" data-dim="pivot"></div>
@@ -1088,7 +1086,7 @@ const REV_MAP={'Ageing_from_Bag_Rec':'Ageing','Pivot':'=','Awb_number':'Awb_numb
   'Product Description':'Product Description','MPSR_Tag':'MPSR_Tag','message':'=','action_user':'=','last_action_user':'last_action_user','Product Category':'Product Category','Error Type':'Error Type',
   'bin_level':'=','bin_name':'=','layout_name':'=','srca':'Shipment RCA','dbin':'DSP bin_level','dmsg':'DSP message','dau':'DSP action_user','dln':'DSP layout_name','liq':'Liquid','auth':'Product authencity',
   'ga':'MOVED TO GA','exs':'EXP STATUS','cla':'CLOSURE ACTION','PV':'PV','Reason of Loss':'Reason of Loss',
-  '_bl':'bin_level','_bn':'bin_name','_ln':'layout_name','_msg':'message','_au':'action_user','_dbn':'DSP bin_name'};
+  '_bl':'bin_level','_bn':'bin_name','_ln':'layout_name','_msg':'message','_au':'action_user','_dbn':'DSP bin_name','_mcat':'Main Category','_scat':'Sub Category'};
 const REV_LAST={'Region':'Region','product_value':'product_value'};
 // Reason of Loss -> the dashboard bucket. At Dock = connection pendency + manifested + VIA DC pendency; Received at DC = received at DC + misrouted
 const REV_BUCKET={'connection pendency':'At Dock','manifested':'At Dock','via dc pendency':'At Dock','received_at_dc':'RECEIVED_AT_DC','received at dc':'RECEIVED_AT_DC','misrouted':'RECEIVED_AT_DC'};
@@ -1327,8 +1325,8 @@ function build(rows,COL,planRows,opts){
   const XTRA=['et','liq','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'];
   const xval=(r,k)=>k==='et'?etOf(s(g(r,'Error Type'))):k==='liq'?(REV?(s(g(r,'liq'))||'No'):liqOf(s(g(r,'Product Description')),s(g(r,'Product Category')))):s(g(r,k));
   const xon=k=>k==='et'||k==='liq'||REV;
-  const A={awb:[],p:[],l:[],a:[],h:[],md:[],mc:[],pv:[],hov:[],vol:[],mp:[],cl:[],se:[],esd:[],esl:[],bin:[],msg:[],ln:[],bn:[],au:[],mo:[]};XTRA.forEach(k=>A[k]=[]);
-  const AD={cl:new Map(),se:new Map(),esd:new Map(),esl:new Map(),bin:new Map(),msg:new Map(),ln:new Map(),bn:new Map(),au:new Map(),mo:new Map()};XTRA.forEach(k=>AD[k]=new Map());
+  const A={awb:[],p:[],l:[],a:[],h:[],md:[],mc:[],pv:[],hov:[],vol:[],mp:[],cl:[],se:[],esd:[],esl:[],bin:[],msg:[],ln:[],bn:[],au:[],mo:[],pdc:[],pcat:[],psub:[]};XTRA.forEach(k=>A[k]=[]);
+  const AD={cl:new Map(),se:new Map(),esd:new Map(),esl:new Map(),bin:new Map(),msg:new Map(),ln:new Map(),bn:new Map(),au:new Map(),mo:new Map(),pdc:new Map(),pcat:new Map(),psub:new Map()};XTRA.forEach(k=>AD[k]=new Map());
   const ai2=(k,v)=>{const m=AD[k];if(!m.has(v))m.set(v,m.size);return m.get(v)};
   for(const r of base){const piv=s(g(r,'Pivot'));const w=WIN[piv];if(!w)continue;const a=g(r,'Ageing_from_Bag_Rec');if(typeof a!=='number')continue;const ai=Math.trunc(a);if(ai<w[0]||ai>w[1])continue;
     A.awb.push(s(g(r,'Awb_number')));A.p.push(pIdx.indexOf(piv));A.l.push(lIdx.indexOf(s(g(r,'Current_location'))));A.a.push(ai);A.h.push(hIdx.indexOf(s(g(r,'Hold_Flag'))));
@@ -1337,7 +1335,9 @@ function build(rows,COL,planRows,opts){
     A.vol.push(s(g(r,'Volumetric_flag'))==='Volumetric'?1:0);A.mp.push(/^y/i.test(s(g(r,'MPSR_Tag')))?1:0);A.cl.push(ai2('cl',s(g(r,'Client'))));
     A.se.push(piv==='Picked_From_Client'?ai2('se',s(g(r,'seller_name'))):-1);A.esd.push(ai2('esd',s(g(r,'Error Scan Details'))));A.esl.push(ai2('esl',s(g(r,'Error Scan Location'))));
     A.bin.push(rdcR?ai2('bin',s(g(r,'bin_level'))):-1);A.msg.push(rdcR?ai2('msg',s(g(r,'message'))):-1);A.ln.push(rdcR?ai2('ln',s(g(r,'layout_name'))):-1);A.bn.push(rdcR?ai2('bn',s(g(r,'bin_name'))):-1);A.au.push(rdcR?ai2('au',s(g(r,'action_user'))):-1);
-    A.mo.push(piv==='BRSNR'?ai2('mo',s(g(r,'Manifest_origin'))):-1);XTRA.forEach(k=>A[k].push(xon(k)?ai2(k,xval(r,k)):-1))}
+    A.mo.push(piv==='BRSNR'?ai2('mo',s(g(r,'Manifest_origin'))):-1);
+    // product details for HOV AWBs (shown when a HOV cell is double-clicked); forward has no sub-category column
+    {const hv1=A.hov[A.hov.length-1]===1;A.pdc.push(hv1?ai2('pdc',s(g(r,'Product Description')).slice(0,90)):-1);A.pcat.push(hv1?ai2('pcat',s(g(r,REV?'_mcat':'Product Category'))):-1);A.psub.push(hv1&&REV?ai2('psub',s(g(r,'_scat'))):-1)}XTRA.forEach(k=>A[k].push(xon(k)?ai2(k,xval(r,k)):-1))}
   // ---- detail cube: feeds the summary panels and the drop-downs under each current location ----
   // At Dock: manifest destination, delivery hub, RTO-queued rule · Received at DC: bin level, message, action user, MPSR, HOV product
   // Picked from Client: client, seller, product · BRSNR: manifest origin
@@ -1763,11 +1763,12 @@ X.onCell=async function(c){
   if(staleBase(r,c)){bg.querySelector('.modal').innerHTML=head+staleHtml(r);bg.querySelector('#cmX').onclick=()=>bg.remove();return}
   const tk=new Map((r.tasks||[]).map(t=>[t.id,t]));
   const k=(l,v,s,cls)=>`<div class="kt ${cls||''}"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
+  const PRD=r.rows.some(a=>a.pdc||a.pcat),PSUB=r.rows.some(a=>a.psub);
   bg.querySelector('.modal').innerHTML=head+`<div class="kstrip">${k('AWBs',fmt(r.n))}${k('Shipment value',rs(r.value))}${k('HOV',fmt(r.hov),rs(r.hovValue))}${c.side==='rev'?'':k('On hold',fmt(r.held))}${k('In assigned tasks',fmt(r.assigned),r.n?Math.round(r.assigned*100/r.n)+'% of AWBs':'',r.assigned?'ok':'')}${k('Not assigned',fmt(r.n-r.assigned),'',r.n-r.assigned?'warn':'')}</div>
    ${r.tasks.length?`<h4>Tasks covering these AWBs</h4><section class="tgroup">${r.tasks.map(t=>`<div class="trow" data-cmopen="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="ktag">${KIND[t.kind]||''}</span></div><div class="ttl"></div><div class="tsub">${fmt(t.matched)} of these AWBs · with ${esc((t.owners||[]).map(pname).join(', '))}</div></div><div class="tact"><span class="st ${stCls(t.status)}">${esc(t.status)}</span></div></div>`).join('')}</section>`:`<div class="banner">None of these AWBs are in an assigned task yet.</div>`}
    ${r.pfc?`<h4>Clients and sellers (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Client</th><th>Seller</th><th style="text-align:right">AWBs</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.client)}</td><td>${esc(d.seller)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>`
    :`<h4>Manifest destinations (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Manifest destination</th><th style="text-align:right">AWBs</th><th style="text-align:right">Manifests</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.dest)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.manifests)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>`}
-   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Download CSV</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th>${r.pfc?'<th>Client</th><th>Seller</th>':'<th>Manifest destination</th><th>Manifest code</th><th>Error scan location</th><th>Error scan remarks</th>'}<th style="text-align:right">Value (₹)</th><th>HOV</th><th>Hold</th><th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td>${r.pfc?`<td>${esc(a.cl||'')}</td><td>${esc(a.se||'')}</td>`:`<td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td>${esc(a.esl||'')}</td><td>${esc(a.esd||'')}</td>`}<td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td><td>${esc(a.hold)}</td><td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
+   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Download CSV</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th>${r.pfc?'<th>Client</th><th>Seller</th>':'<th>Manifest destination</th><th>Manifest code</th><th>Error scan location</th><th>Error scan remarks</th>'}<th style="text-align:right">Value (₹)</th><th>HOV</th>${PRD?'<th>Product description</th><th>Category</th>'+(PSUB?'<th>Sub category</th>':''):''}${c.side==='rev'?'':'<th>Hold</th>'}<th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td>${r.pfc?`<td>${esc(a.cl||'')}</td><td>${esc(a.se||'')}</td>`:`<td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td>${esc(a.esl||'')}</td><td>${esc(a.esd||'')}</td>`}<td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td>${PRD?`<td>${esc(a.pdc||'')}</td><td>${esc(a.pcat||'')}</td>`+(PSUB?`<td>${esc(a.psub||'')}</td>`:''):''}${c.side==='rev'?'':`<td>${esc(a.hold)}</td>`}<td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
   bg.querySelectorAll('[data-cmopen]').forEach(row=>{row.querySelector('.ttl').textContent=tk.get(row.dataset.cmopen).title;row.onclick=()=>{bg.remove();if(RT.tasks.has(row.dataset.cmopen))openTask(row.dataset.cmopen)}});
   bg.querySelector('#cmX').onclick=()=>bg.remove();
   bg.querySelector('#cmCopy').onclick=e=>X.tableCsv(e.target.closest('h4').nextElementSibling.querySelector('table'),`${c.pivotLabel} ${c.loc} ${c.ageLabel}`);
