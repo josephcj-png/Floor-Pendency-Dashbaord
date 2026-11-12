@@ -302,6 +302,10 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .peek{position:fixed;z-index:65;width:340px;max-width:calc(100vw - 24px);background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 14px 36px rgba(15,47,41,.2);padding:12px 14px;font-size:12.5px}
 .peek h6{margin:0;font-size:13px;font-family:var(--font-display)}
 .peek .pk-sum{color:var(--muted);margin:3px 0 8px}
+.peek .pk-as{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}.peek .pk-as .btn{padding:5px 12px;font-size:12.5px}
+.peek .pk-form{border-top:1px solid var(--line);padding-top:8px;margin-top:4px;display:flex;flex-direction:column;gap:6px}
+.peek .pk-form textarea{font:13px var(--font-ui);border:1px solid var(--line-strong);border-radius:8px;padding:6px 8px;resize:vertical;width:100%;box-sizing:border-box}
+.peek .pk-row{display:flex;gap:6px;align-items:center}.peek .pk-row select{font:13px var(--font-ui);border:1px solid var(--line-strong);border-radius:8px;padding:5px 6px}.peek .pk-row .btn{padding:5px 12px;font-size:12.5px}
 .peek .pk-t{border-top:1px solid var(--line);padding:7px 0 5px;cursor:pointer}
 .peek .pk-t:hover{background:var(--teal-soft)}
 .peek .pk-ttl{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:3px 0 1px}
@@ -1495,7 +1499,16 @@ function build(rows,COL,planRows,opts){
   for(const [k,v] of dag){k.split(',').forEach((x,i)=>det.cols[XF[i]].push(+x));det.cols.n.push(v[0]);det.cols.pv.push(Math.round(v[1]))}
   data.det=det;
   const awbs={asOf,dims:{pivot:pIdx,loc:lIdx,hold:hIdx,md:[...MD.keys()],...Object.fromEntries(Object.keys(AD).map(k=>[k,[...AD[k].keys()]]))},cols:A};
-  return {data,suggestions:{baseDate:DATE,asOf,locsByRegion,tasks:T},awbs};
+  // ---- closures: AWBs aged 3–20 kept for tomorrow's comparison, and today's AWB + pivot + location keys ----
+  // (an AWB from yesterday's base is open only if today's base has it under the same pivot and the same current location)
+  const CLP=REV?['At Dock','RECEIVED_AT_DC','BRSNR']:['At Dock','RECEIVED_AT_DC','Picked_From_Client','BRSNR'];
+  const snap={asOf,side:SIDE,pivots:CLP,locs:[],reg:{},awb:[],p:[],l:[],a:[],h:[]};{const sl=new Map(),seen=new Set();
+    for(const r of base){const pv=s(g(r,'Pivot')),pi=CLP.indexOf(pv);if(pi<0)continue;const a0=g(r,'Ageing_from_Bag_Rec');if(typeof a0!=='number')continue;const a=Math.trunc(a0);if(a<3||a>20)continue;
+      const loc=s(g(r,'Current_location')),awb=s(g(r,'Awb_number'));const k=awb+'\u0001'+pv+'\u0001'+loc;if(seen.has(k))continue;seen.add(k);
+      let li=sl.get(loc);if(li==null){li=sl.size;sl.set(loc,li);snap.locs.push(loc);snap.reg[loc]=reg[loc]||'Unmapped'}
+      snap.awb.push(awb);snap.p.push(pi);snap.l.push(li);snap.a.push(a);snap.h.push(s(g(r,'Hold_Flag'))==='Hold'?1:0)}}
+  const keys=rows.map(r=>s(g(r,'Awb_number'))+'\u0001'+s(g(r,'Pivot'))+'\u0001'+s(g(r,'Current_location'))).join('\n');
+  return {data,suggestions:{baseDate:DATE,asOf,locsByRegion,tasks:T},awbs,snap,keys};
 }
 root.PendencyParser={parseBase,build};
 })(typeof self!=='undefined'?self:globalThis);
@@ -1862,7 +1875,28 @@ function manHtml(r,c){
   if(r.pfc){const d=(r.dests||[]).slice(0,3);return d.length?`<div class="pk-ev" style="margin:-4px 0 8px">Clients · sellers: ${d.map(x=>`<b>${esc(x.client)}</b> · ${esc(x.seller)} ${fmt(x.n)}`).join('; ')}${r.dests.length>3?` · +${r.dests.length-3} more`:''}</div>`:''}
   const m=r.manifests||[];if(!m.length)return '';
   if(c&&c.pivot==='At Dock'){const k=c.sub&&c.sub.md!=null?5:3;return `<div class="pk-man"><div class="pk-ev">Manifests (${fmt(r.manifestCount)})</div>${m.slice(0,k).map(x=>`<div class="pk-mr"><b>${esc(x.mc)}</b> · ${fmt(x.n)} AWBs${c.sub&&c.sub.md!=null?'':` · ${esc(x.md)}`}<br><span class="note">Error scan: ${esc(x.esl||'–')}${x.esd?' · '+esc(x.esd):''}</span></div>`).join('')}${r.manifestCount>k?`<div class="pk-ev">+${fmt(r.manifestCount-k)} more manifests</div>`:''}</div>`}return `<div class="pk-ev" style="margin:-4px 0 8px">Manifests: ${m.slice(0,3).map(x=>`<b>${esc(x.mc)}</b> ${fmt(x.n)}`).join(' · ')}${r.manifestCount>3?` · +${fmt(r.manifestCount-3)} more`:''}</div>`}
-X.closePeek=()=>{const p=document.getElementById('peek');if(p)p.remove()};
+X.closePeek=()=>{const p=document.getElementById('peek');if(p&&!p.dataset.busy)p.remove()};
+// ---------- assign a task straight from a pivot number (central team, or the L2 of that DC's region) ----------
+const regionOfLoc=loc=>{const g=(RT.cfg.regions||[]).find(x=>(x.dcs||[]).includes(loc));return g?g.name:''};
+const canCellTask=c=>!!c&&(canAdmin()||(!RT.preview&&RT.me&&(RT.me.l2||[]).includes(regionOfLoc(c.loc))));
+const cellOwners=c=>{const l1=(RT.cfg.l1||{})[c.loc]||[];if(l1.length)return l1;const g=(RT.cfg.regions||[]).find(x=>(x.dcs||[]).includes(c.loc));return g?(g.l2||[]):[]};
+const TASK_PV={'At Dock':'At Dock','RECEIVED_AT_DC':'Received at DC','Picked_From_Client':'Picked from Client','BRSNR':'BRSNR'};
+function cellTaskForm(p,c,r,place){
+  const box=p.querySelector('.pk-as');const who=cellOwners(c).map(pname).join(', ')||'the region L2';
+  box.outerHTML=`<form class="pk-form"><label class="pk-ev" for="pkTxt">Task for <b>${esc(who)}</b> · ${fmt(r.n)} AWBs (${esc(c.ageLabel)})</label>
+    <textarea id="pkTxt" rows="3" maxlength="200" placeholder="What should the DC do? e.g. Trace these AWBs on the floor and update by 6 pm"></textarea>
+    <div class="pk-row"><select id="pkPri" aria-label="Priority"><option>P0</option><option selected>P1</option><option>P2</option></select><button class="btn" type="submit">Assign</button><button class="mini" type="button" data-pk-x>Cancel</button></div><div class="err" id="pkErr"></div></form>`;
+  const f=p.querySelector('.pk-form'),ta=f.querySelector('textarea');ta.focus();place();
+  f.querySelector('[data-pk-x]').onclick=()=>X.closePeek();
+  f.onsubmit=async e=>{e.preventDefault();const title=ta.value.trim();if(!title){f.querySelector('#pkErr').textContent='Write what the DC should do.';return}
+    const btn=f.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Assigning…';p.dataset.busy='1';
+    const pv=(c.side==='rev'?'Rev ':'')+(TASK_PV[c.pivot]||c.pivot);
+    const details=`${c.pivotLabel}${c.hovOnly?' · HOV misses':''} · ${c.loc} · ${c.ageLabel}. Assigned from the pivot table (${fmt(r.n)} AWBs).`;
+    try{const res=await API('cellTask',{cell:{side:c.side||'fwd',pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly,sub:c.sub||{},f:c.f||{}},title,details,pivot:pv,prio:f.querySelector('#pkPri').value});
+      delete p.dataset.busy;X.closePeek();setTasks(res.tasks);
+      toast(`Task assigned to ${who}`+(res.leftOut?` · ${fmt(res.leftOut)} AWBs already in open tasks were left out`:''))}
+    catch(err){delete p.dataset.busy;btn.disabled=false;btn.textContent='Assign';f.querySelector('#pkErr').textContent=dbMsg(err)}};
+}
 X.onCellPeek=async function(c,rect){
   X.closePeek();const p=document.createElement('div');p.id='peek';p.className='peek';p.setAttribute('role','dialog');
   const place=()=>{const w=p.offsetWidth||340,h=p.offsetHeight||160;let x=rect.right+8,y=rect.top-8;if(x+w>innerWidth-12)x=Math.max(12,rect.left-w-8);if(y+h>innerHeight-12)y=Math.max(12,innerHeight-h-12);p.style.left=x+'px';p.style.top=y+'px'};
@@ -1877,14 +1911,16 @@ X.onCellPeek=async function(c,rect){
     ${manHtml(r,c)}
     ${T.slice(0,3).map(({x,t})=>`<div class="pk-t" data-pk="${esc(x.id)}"><div class="tags">${pri(x.prio)}${t?stPill(t):`<span class="st ${stCls(x.status)}">${esc(x.status)}</span>`}<span class="pk-ev">${fmt(x.matched)} here · ${esc((x.owners||[]).map(pname).join(', '))}${t?` · ${ageD(t)} d old`:''}</span></div><div class="pk-ttl"></div>${t?`<div class="pk-ev">${esc(lastEvent(t))}</div>`:''}</div>`).join('')}
     ${T.length>3?`<div class="pk-ev" style="padding:4px 0">+${T.length-3} more tasks</div>`:''}
+    ${canCellTask(c)&&r.n?`<div class="pk-as"><button class="btn" type="button" data-pk-as>Assign task</button><span class="pk-ev">to ${esc(cellOwners(c).map(pname).join(', ')||'the region L2')}</span></div>`:''}
     <div class="pk-foot">${T.length?'Click a task to open it. ':''}Double-click for all AWBs.</div>`;
   p.querySelector('h6').textContent=`${c.loc} · ${c.ageLabel}${c.hovOnly?' · HOV':''}`;
+  p.querySelector('[data-pk-as]')?.addEventListener('click',e=>{e.stopPropagation();cellTaskForm(p,c,r,place)});
   p.querySelectorAll('[data-pk]').forEach(row=>{row.querySelector('.pk-ttl').textContent=(T.find(z=>z.x.id===row.dataset.pk).x.title)||'';row.onclick=()=>{X.closePeek();if(RT.tasks.has(row.dataset.pk))openTask(row.dataset.pk)}});
   place();
 };
 document.addEventListener('click',e=>{const p=document.getElementById('peek');if(p&&!p.contains(e.target)&&!e.target.closest('td[data-l]'))p.remove()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')X.closePeek()});
-addEventListener('scroll',()=>X.closePeek(),true);
+addEventListener('scroll',e=>{const p=document.getElementById('peek');if(p&&p.contains(e.target))return;if(p&&p.querySelector('.pk-form'))return;X.closePeek()},true);
 X.onCell=async function(c){
   let bg=document.getElementById('cellModal');if(!bg){bg=document.createElement('div');bg.id='cellModal';bg.className='modal-bg';document.body.appendChild(bg);bg.addEventListener('click',e=>{if(e.target===bg)bg.remove()});}
   const head=`<div class="dh"><div><div class="eyebrow">${esc(c.pivotLabel)}${c.hovOnly?' · HOV misses':''}${c.hold.length?' · '+esc(c.hold.join(', ')):''}</div><h2>${esc(c.loc)} · ${esc(c.ageLabel)}</h2></div><button class="xbtn" type="button" aria-label="Close" id="cmX">×</button></div>`;
@@ -2085,6 +2121,14 @@ table.rt{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;fon
 .rt tr.dc td:first-child{padding-left:20px}
 .rt tr.oth td{color:var(--muted);font-style:italic}
 .rt td.avg{background:#F3F6F8;font-weight:700}
+.cd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+table.rt.cd th{text-align:center;border-left:1px solid rgba(255,255,255,.18)}table.rt.cd th.grp{background:#0B3D33}
+table.rt.cd thead tr:nth-child(2) th{top:29px}
+table.rt.cd td{text-align:center;border-left:1px solid var(--line)}table.rt.cd td:first-child{text-align:left}
+table.rt.cd td.b{font-weight:700;color:#1d1d1d}
+table.rt.cd tfoot td{background:#D9D9D9;font-weight:700;position:sticky;bottom:0}
+.cd-bar{position:sticky;top:0;z-index:5}.cd-nav{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}.cd-nav a{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;text-decoration:none;color:var(--teal-deep);background:var(--bg)}.cd-nav a:hover{background:var(--teal-soft)}
+.cd-sec{font:700 16px var(--font-display);color:#0B3D33;margin:26px 0 10px}
 .rt td.u2{background:#B9E3CC}.rt td.u1{background:#E2F3E9}.rt td.d1{background:#FBE3E0}.rt td.d2{background:#F3BFB8}
 .rt td.sp{padding:2px 6px}
 .rt-wrap{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:10px}
@@ -2322,10 +2366,50 @@ function clModel(){
 function agg(rows,M,vname){const c=M.win.map(()=>0),t=M.win.map(()=>0);rows.forEach(r=>{if(!M.inView(vname,r.v))return;c[r.d-M.a]+=r.c;t[r.d-M.a]+=r.t});return {c,t}}
 const cellTxt=(c,t,metric)=>!t?'':metric==='pct'?Math.round(c*100/t)+'%':metric==='total'?fmt(t):fmt(c);
 const heat=(c,t)=>{if(!t)return '';const p=c/t;return `background:rgba(0,135,113,${(0.06+p*0.7).toFixed(2)});${p>0.62?'color:#fff;':''}`};
+// ---------- day-on-day closure tables (yesterday's base vs today's, worked out at upload) ----------
+let CDATA=cRead('closures'),CLOAD=null;const CD={region:'',min20:true,open:new Set()};
+async function loadCl(net){if(CDATA&&!net)return CDATA;if(CLOAD)return CLOAD;CLOAD=API('closures',{}).then(r=>{CDATA=r;CLOAD=null;cWrite('closures',r);return r}).catch(e=>{CLOAD=null;throw e});return CLOAD}
+const CL_ORDER=['Forward overall','Reverse overall','Forward At Dock','Forward At Dock · Hold','Forward At Dock · excluding Hold','Forward Received at DC','Forward BRSNR','Reverse At Dock','Reverse Received at DC','Reverse BRSNR','Forward Picked from Client'];
+const BK=['3','4','5','6','7','8','9','10','11','12','13','14','15','16 to 20 Days'];
+const mix=(a,b,t)=>{const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16));const x=h(a),y=h(b);return `rgb(${x.map((v,i)=>Math.round(v+(y[i]-v)*t)).join(',')})`};
+const scale3=t=>t<0.5?mix('#F8696B','#FFEB84',t*2):mix('#FFEB84','#63BE7B',(t-0.5)*2); // Excel's red–yellow–green
+function clDayHtml(){
+  if(!CDATA)return `<section class="rp-card"><h2>Day-on-day closures</h2><div class="sub">Loading…</div></section>`;
+  const sides=['fwd','rev'].map(s=>CDATA[s]).filter(Boolean);
+  if(!sides.length)return `<section class="rp-card"><h2>Day-on-day closures</h2><div class="sub">These tables appear after the next base upload: each upload is compared with the previous day's base (same AWB + same pivot + same current location = open, anything else = closed).</div></section>`;
+  const views=[];sides.forEach(S=>S.views.forEach(v=>views.push({S,name:v.name,rows:v.rows})));
+  views.sort((a,b)=>CL_ORDER.indexOf(a.name)-CL_ORDER.indexOf(b.name));
+  const regs=sortRegions([...new Set(sides.flatMap(S=>Object.values(S.reg||{})))]);
+  const tbl=(v,k)=>{const S=v.S;let rows=Object.keys(v.rows).map(li=>{const a=v.rows[li];const c=a.slice(0,14),o=a.slice(14);const C=c.reduce((x,y)=>x+y,0),O=o.reduce((x,y)=>x+y,0);return {loc:S.locs[li],reg:(S.reg||{})[S.locs[li]]||'Unmapped',c,o,C,O,G:C+O}});
+    if(CD.region)rows=rows.filter(r=>r.reg===CD.region);
+    const all=rows.length;if(CD.min20)rows=rows.filter(r=>r.G>=20);const hid=all-rows.length;
+    rows.sort((a,b)=>b.G-a.G);
+    const cc=BK.map((_,i)=>i).filter(i=>rows.some(r=>r.c[i])),oc=BK.map((_,i)=>i).filter(i=>rows.some(r=>r.o[i]));
+    const tot={c:BK.map((_,i)=>rows.reduce((s,r)=>s+r.c[i],0)),o:BK.map((_,i)=>rows.reduce((s,r)=>s+r.o[i],0))};tot.C=rows.reduce((s,r)=>s+r.C,0);tot.O=rows.reduce((s,r)=>s+r.O,0);tot.G=tot.C+tot.O;
+    const mxC=Math.max(1,...rows.map(r=>r.C)),mxO=Math.max(1,...rows.map(r=>r.O)),mxG=Math.max(1,...rows.map(r=>r.G)),mxP=Math.max(0.0001,...rows.map(r=>r.G?r.C/r.G:0));
+    const pc=(c,g)=>g?Math.round(c*100/g)+'%':'';
+    const tr=r=>`<tr><td title="${esc(r.loc)}">${esc(r.loc)}</td>${cc.map(i=>`<td>${r.c[i]?fmt(r.c[i]):''}</td>`).join('')}<td class="b" style="background:${r.C?mix('#FFEB84','#63BE7B',r.C/mxC):'#D9D9D9'}">${r.C?fmt(r.C):''}</td><td class="b" style="background:${scale3((r.G?r.C/r.G:0)/mxP)}">${pc(r.C,r.G)}</td>${oc.map(i=>`<td>${r.o[i]?fmt(r.o[i]):''}</td>`).join('')}<td class="b" style="background:${mix('#FFFFFF','#F8696B',r.O/mxO)}">${fmt(r.O)}</td><td class="b" style="background:${mix('#FFFFFF','#F8696B',r.G/mxG)}">${fmt(r.G)}</td></tr>`;
+    const id='cd'+k;
+    return `<section class="rp-card cd-card" id="cdv-${k}"><div class="cd-head"><div><h2>${esc(v.name)} closures</h2><div class="sub">${esc(S.from)} base vs ${esc(S.to)} · AWBs aged 3–20 days · <b>${fmt(tot.C)}</b> closed of ${fmt(tot.G)} (<b>${pc(tot.C,tot.G)||'0%'}</b>)${hid?` · ${hid} site${hid>1?'s':''} under 20 hidden`:''}</div></div><button class="mini" type="button" data-cdcsv="${id}">Download CSV</button></div>
+      ${rows.length?`<div class="rt-wrap"><table class="rt cd" id="${id}"><thead><tr><th rowspan="2">Site Name</th>${cc.length?`<th colspan="${cc.length}" class="grp">Closed</th>`:''}<th rowspan="2">Closed Total</th><th rowspan="2">Closure %</th>${oc.length?`<th colspan="${oc.length}" class="grp">Open</th>`:''}<th rowspan="2">Open Total</th><th rowspan="2">Grand Total</th></tr>
+      <tr>${cc.map(i=>`<th>${BK[i]}</th>`).join('')}${oc.map(i=>`<th>${BK[i]}</th>`).join('')}</tr></thead><tbody>${rows.map(tr).join('')}</tbody>
+      <tfoot><tr><td>Grand Total</td>${cc.map(i=>`<td>${tot.c[i]?fmt(tot.c[i]):''}</td>`).join('')}<td>${fmt(tot.C)}</td><td>${pc(tot.C,tot.G)}</td>${oc.map(i=>`<td>${tot.o[i]?fmt(tot.o[i]):''}</td>`).join('')}<td>${fmt(tot.O)}</td><td>${fmt(tot.G)}</td></tr></tfoot></table></div>`:'<div class="empty">No sites for this view and region.</div>'}</section>`};
+  const nav=views.map((v,k)=>`<a href="#cdv-${k}" data-cdjump="${k}">${esc(v.name.replace(/^Forward /,'Fwd ').replace(/^Reverse /,'Rev '))}</a>`).join('');
+  return `<div class="rp-filters cd-bar"><span class="flabel">Day-on-day closures</span><label class="rp-chk">Region <select data-cdreg><option value="">All regions</option>${regs.map(r=>`<option ${CD.region===r?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
+    <label class="rp-chk"><input type="checkbox" data-cdmin ${CD.min20?'checked':''}> Hide sites under 20 AWBs</label><span class="cd-nav">${nav}</span></div>${views.map(tbl).join('')}
+    <p class="note" style="margin:-6px 0 18px">Closed = the AWB from the earlier base is not in the later base under the same pivot (reverse: Reason of Loss bucket) and the same current location. Ageing = the earlier base's ageing. Grand Total row adds the sites shown.</p>`;
+}
+function bindClDay(root){
+  root.querySelector('[data-cdreg]')?.addEventListener('change',e=>{CD.region=e.target.value;renderClosure()});
+  root.querySelector('[data-cdmin]')?.addEventListener('change',e=>{CD.min20=e.target.checked;renderClosure()});
+  root.querySelectorAll('[data-cdcsv]').forEach(b=>b.onclick=()=>{const tb=document.getElementById(b.dataset.cdcsv);if(tb)X.tableCsv(tb,b.closest('.cd-card').querySelector('h2').textContent)});
+  root.querySelectorAll('[data-cdjump]').forEach(a=>a.onclick=e=>{e.preventDefault();document.getElementById('cdv-'+a.dataset.cdjump)?.scrollIntoView({behavior:'smooth',block:'start'})});
+}
 function renderClosure(){
   const root=document.getElementById('closureRoot');if(!root)return;
-  if(!DATA){root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports','Reading the closure tracker sheet…');return}
-  if(!DATA.closure||!DATA.closure.rows.length){root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports','')+`<div class="banner warn">${esc((DATA.errors||[]).join(' ')||'No rows in the Daily Log tab yet.')}</div>`;bindHead(root);return}
+  const top=clDayHtml();
+  if(!DATA){root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports','Reading the closure tracker sheet…')+top;bindClDay(root);return}
+  if(!DATA.closure||!DATA.closure.rows.length){root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports','')+top+`<div class="banner warn">${esc((DATA.errors||[]).join(' ')||'No rows in the Daily Log tab yet.')}</div>`;bindHead(root);bindClDay(root);return}
   const s=ST.cl;const M=clModel();
   const selViews=M.views.filter(v=>!s.view.size||s.view.has(v));
   if(!M.views.includes(s.siteView))s.siteView=M.views[0];
@@ -2354,7 +2438,7 @@ function renderClosure(){
   const sBody=sReg.map(r=>{const L=sites.filter(o=>o.reg===r).sort((a,b)=>b.lastT-a.lastT||b.T-a.T);const g={s:r,c:M.win.map((_,i)=>L.reduce((t,o)=>t+o.c[i],0)),t:M.win.map((_,i)=>L.reduce((t,o)=>t+o.t[i],0))};
     g.C=g.c.reduce((x,y)=>x+y,0);g.T=g.t.reduce((x,y)=>x+y,0);g.lastT=g.t[g.t.length-1];return sRow(g,'reg')+L.map(o=>sRow(o,'dc')).join('')}).join('');
   const sHead=`<tr><th>Site</th>${M.win.map(d=>`<th>${dShort(d)}</th>`).join('')}<th>Period</th><th title="AWBs in scope on ${dShort(M.win[M.win.length-1])}">Last day AWBs</th></tr>`;
-  root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports',`Day-on-day closures from the Daily Log · AWBs aged 3–20 days · ${dShort(M.win[0])} to ${dShort(M.win[M.win.length-1])}`)+filters+`
+  root.innerHTML=head('Fwd &amp; Rev closure tracker','Reports',`Day-on-day closures from the Daily Log · AWBs aged 3–20 days · ${dShort(M.win[0])} to ${dShort(M.win[M.win.length-1])}`)+top+`<h3 class="cd-sec">Closure trend from the Daily Log</h3>`+filters+`
    <section class="rp-card"><h2>Network daily · ${esc(metL)}</h2><div class="sub">Each day's base compared with the next day's: closed = AWB left that pivot or site. ${s.region.size||s.site.size?'For the selected regions and sites. ':''}"Fwd Dock (Including Hold)" adds the hold and non-hold At Dock views together.</div>
     <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button class="mini" type="button" data-csv="clNet">Download CSV</button></div>
     <div class="rt-wrap"><table class="rt" id="clNet"><thead>${nHead}</thead><tbody>${nBody}</tbody></table></div></section>
@@ -2362,7 +2446,7 @@ function renderClosure(){
      <div class="rp-tools"><label class="rp-chk">View <select data-siteview>${M.views.map(v=>`<option ${v===sv?'selected':''}>${esc(v)}</option>`).join('')}</select></label>
      <label class="rp-chk"><input type="checkbox" data-min20 ${s.min20?'checked':''}> Hide sites under 20 AWBs${hidden?` (${hidden})`:''}</label><button class="mini" type="button" data-csv="clSite">Download CSV</button></div></div>
     ${sites.length?`<div class="rt-wrap"><table class="rt" id="clSite"><thead>${sHead}</thead><tbody>${sBody}</tbody></table></div>`:'<div class="empty">No sites for this view and these filters.</div>'}</section>`;
-  bindHead(root);
+  bindHead(root);bindClDay(root);
   bindMs(root,{view:s.view,region:s.region,site:s.site},renderClosure);
   root.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{s.metric=b.dataset.v;renderClosure()});
   root.querySelector('[data-from]').onchange=e=>{s.from=e.target.value;s.to=s.to||M.win[M.win.length-1];renderClosure()};
@@ -2469,6 +2553,7 @@ async function show(v){
   if(v==='floor'){renderFloor();if(!FDATA){try{await loadFloor(false)}catch(e){const root=document.getElementById('floorRoot');if(root)root.innerHTML=`<div class="banner warn">Couldn't read the FLOOR TRENDS sheet: ${esc(e.message||e)}</div>`;return}renderFloor()}
     if(!DATA)load(false).then(()=>{if(X.view()==='floor')renderFloor()}).catch(()=>{});return}
   const r=v==='proc'?renderProc:renderClosure;r();
+  if(v==='closure'&&!CDATA)loadCl(false).then(()=>{if(X.view()==='closure')renderClosure()}).catch(()=>{});
   if(!DATA){try{await load(false)}catch(e){const root=document.getElementById(v==='proc'?'procRoot':'closureRoot');if(root)root.innerHTML=`<div class="banner warn">Couldn't read the report sheet: ${esc(e.message||e)}</div>`;return}r()}
 }
 let rz=null;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(X.view()==='proc'&&DATA)renderProc();if(X.view()==='floor'&&FDATA)renderFloor()},200)});
@@ -2477,6 +2562,7 @@ const v0=X.view();if(v0==='proc'||v0==='closure'||v0==='floor')show(v0);
 // preload: fetch both report payloads now so opening a tab is instant; repaint an open tab only if the data changed
 setTimeout(()=>{
   const was=DATA&&DATA.fetchedAt;load(false,true).then(r=>{const v=X.view();if(r.fetchedAt!==was){if(v==='proc')renderProc();if(v==='closure')renderClosure()}}).catch(()=>{});
+  const cw=JSON.stringify(CDATA&&[CDATA.fwd&&CDATA.fwd.at,CDATA.rev&&CDATA.rev.at]);loadCl(true).then(r=>{if(JSON.stringify([r.fwd&&r.fwd.at,r.rev&&r.rev.at])!==cw&&X.view()==='closure')renderClosure()}).catch(()=>{});
   const fw=FDATA&&FDATA.fetchedAt;loadFloor(false,true).then(r=>{if(r.fetchedAt!==fw&&X.view()==='floor')renderFloor()}).catch(()=>{});
 },300);
 };
@@ -2552,8 +2638,8 @@ async function boot(){
 
 // ---------- HOV product details for a base uploaded before they were saved with it ----------
 // read once from the stored full file (in an admin's browser, in the background) and kept on the server
-async function rawText(side,x,onChunk){
-  const parts=[];for(let i=0;i<x.n;i++){const r=await window.API('rawGet',{side,idx:i});const bin=atob(r.b64);const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);parts.push(u)}
+async function rawText(side,x,onChunk,onPct){
+  const parts=[];for(let i=0;i<x.n;i++){if(onPct)onPct(i/x.n);const r=await window.API('rawGet',{side,idx:i});const bin=atob(r.b64);const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);parts.push(u)}
   const rd=new Blob(parts).stream().pipeThrough(new DecompressionStream('gzip')).pipeThrough(new TextDecoderStream()).getReader();
   for(;;){const {done,value}=await rd.read();if(done)break;onChunk(value)}
 }
@@ -2585,6 +2671,38 @@ async function backfillProducts(B){
       window.SFX.toast(`${SIDE_NAME[side]} HOV product details added (${r.n.toLocaleString('en-IN')} AWBs)`)}
     catch(e){console.warn('product backfill',side,e)}
   }
+}
+
+// ---------- closures: yesterday's base (AWBs aged 3–20) against today's ----------
+// open = today's base has the same AWB under the same pivot (reverse: Reason of Loss bucket) and the same current location; anything else = closed
+const REV_BUCKET_={'connection pendency':'At Dock','manifested':'At Dock','via dc pendency':'At Dock','received_at_dc':'RECEIVED_AT_DC','received at dc':'RECEIVED_AT_DC','misrouted':'RECEIVED_AT_DC','brsnr':'BRSNR'};
+const CL_VIEWS={fwd:[['Forward overall',()=>true],['Forward At Dock',p=>p==='At Dock'],['Forward At Dock · Hold',(p,h)=>p==='At Dock'&&h],['Forward At Dock · excluding Hold',(p,h)=>p==='At Dock'&&!h],['Forward Received at DC',p=>p==='RECEIVED_AT_DC'],['Forward BRSNR',p=>p==='BRSNR'],['Forward Picked from Client',p=>p==='Picked_From_Client']],
+  rev:[['Reverse overall',()=>true],['Reverse At Dock',p=>p==='At Dock'],['Reverse Received at DC',p=>p==='RECEIVED_AT_DC'],['Reverse BRSNR',p=>p==='BRSNR']]};
+function closureOf(prev,keys,asOf,side){
+  const T=new Set(keys.split('\n'));const bk=a=>a<=15?a-3:13; // 3…15, then 16–20
+  const views=CL_VIEWS[side].map(([name,f])=>({name,f,rows:{}}));
+  for(let j=0;j<prev.awb.length;j++){const pv=prev.pivots[prev.p[j]],loc=prev.locs[prev.l[j]];const open=T.has(prev.awb[j]+'\u0001'+pv+'\u0001'+loc);const b=bk(prev.a[j])+(open?14:0);
+    for(const v of views){if(!v.f(pv,prev.h[j]))continue;const r=v.rows[prev.l[j]]||(v.rows[prev.l[j]]=new Array(28).fill(0));r[b]++}}
+  return {side,from:prev.asOf,to:asOf,at:new Date().toISOString(),locs:prev.locs,reg:prev.reg,views:views.map(v=>({name:v.name,rows:v.rows}))};
+}
+// the previous base's AWBs, read once from its stored full file when no snapshot was saved with it (bases uploaded before this feature)
+async function snapFromRaw(side,x,onPct){
+  const out={asOf:x.asOf||'',side,pivots:side==='rev'?['At Dock','RECEIVED_AT_DC','BRSNR']:['At Dock','RECEIVED_AT_DC','Picked_From_Client','BRSNR'],locs:[],reg:{},awb:[],p:[],l:[],a:[],h:[]};
+  const sl=new Map(),seen=new Set();let H=null,ix;
+  const P=csvRows(r=>{if(!H){H=r;const at=n=>H.indexOf(n),last=n=>H.lastIndexOf(n);ix={awb:at('Awb_number'),loc:at('Current_location'),na:at('Ecom Data'),age:side==='rev'?at('Ageing'):at('Ageing_from_Bag_Rec'),pv:side==='rev'?at('Reason of Loss'):at('Pivot'),h:at('Hold_Flag'),reg:last('Region')};
+      if(ix.awb<0||ix.loc<0||ix.age<0||ix.pv<0)throw new Error('columns not found');return}
+    const na=(r[ix.na]||'').trim();if(ix.na>=0&&(na===''||na==='#N/A'))return;
+    const pv=side==='rev'?REV_BUCKET_[(r[ix.pv]||'').trim().toLowerCase()]:(r[ix.pv]||'').trim();const pi=out.pivots.indexOf(pv);if(pi<0)return;
+    const a0=parseFloat(r[ix.age]);if(!isFinite(a0))return;const a=Math.trunc(a0);if(a<3||a>20)return;
+    const loc=(r[ix.loc]||'').trim(),awb=(r[ix.awb]||'').trim();const k=awb+'\u0001'+pv+'\u0001'+loc;if(seen.has(k))return;seen.add(k);
+    let li=sl.get(loc);if(li==null){li=sl.size;sl.set(loc,li);out.locs.push(loc);out.reg[loc]=(ix.reg>=0&&(r[ix.reg]||'').trim())||'Unmapped'}
+    out.awb.push(awb);out.p.push(pi);out.l.push(li);out.a.push(a);out.h.push(ix.h>=0&&(r[ix.h]||'').trim()==='Hold'?1:0)});
+  await rawText(side,x,s=>P.push(s),onPct);P.end();return out;
+}
+async function prevSnap(side,asOf,onPct){
+  const r=await window.API('snapGet',{side,asOf});if(r&&r.snap)return r.snap;
+  const x=RAW[side];if(x&&x.n&&x.asOf&&x.asOf!==asOf&&window.DecompressionStream)return snapFromRaw(side,x,onPct);
+  return null;
 }
 
 // ---------- download the whole uploaded base file (gzip CSV parts on Drive, unzipped here) ----------
@@ -2637,7 +2755,7 @@ function renderUpload(B){
     ${up.busy||up.phase?`<div class="prog"><div class="bar"><span style="width:${Math.round(up.pct*100)}%"></span></div><div class="note">${esc(up.phase)} ${up.busy?Math.round(up.pct*100)+'%':''}</div></div>`:''}
     ${up.err?`<div class="err" style="margin-top:10px">${esc(up.err)}</div>`:''}
   </div>
-  ${up.done?`<div class="card"><h2>Published · ${esc(SIDE_NAME[up.done.side]||'')} base</h2><div class="facts" style="margin-top:6px"><div><span>HOV${up.done.side==='rev'?'':' + RTO'} tasks auto-assigned</span>${up.done.autoAssigned||0}</div><div><span>Assigned tasks still pending</span>${up.done.carried||0}</div><div><span>Closed (cleared from pendency)</span>${up.done.cleared||0}</div><div><span>New AWBs added to existing tasks</span>${up.done.added||0}</div></div><p class="note">Only ${esc((SIDE_NAME[up.done.side]||'').toLowerCase())} tasks are checked against this file. Tasks still in pendency keep their age; tasks with no AWBs left at the same DC and pivot were closed automatically.${up.done.rawWarn?' <b>'+esc(up.done.rawWarn)+'</b>':up.done.raw?' The full file is ready under “Download base file”.':''}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" onclick="location.hash='${up.done.side==='rev'?'reverse':'forward'}';location.reload()">Open the updated dashboard</button><button class="btn ghost" type="button" onclick="location.hash='tasks';location.reload()">Open the task assigner</button></div></div>`:''}
+  ${up.done?`<div class="card"><h2>Published · ${esc(SIDE_NAME[up.done.side]||'')} base</h2><div class="facts" style="margin-top:6px"><div><span>HOV${up.done.side==='rev'?'':' + RTO'} tasks auto-assigned</span>${up.done.autoAssigned||0}</div><div><span>Assigned tasks still pending</span>${up.done.carried||0}</div><div><span>Closed (cleared from pendency)</span>${up.done.cleared||0}</div><div><span>New AWBs added to existing tasks</span>${up.done.added||0}</div></div><p class="note">${esc(up.done.clNote||'')} Only ${esc((SIDE_NAME[up.done.side]||'').toLowerCase())} tasks are checked against this file. Tasks still in pendency keep their age; tasks with no AWBs left at the same DC and pivot were closed automatically.${up.done.rawWarn?' <b>'+esc(up.done.rawWarn)+'</b>':up.done.raw?' The full file is ready under “Download base file”.':''}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" onclick="location.hash='${up.done.side==='rev'?'reverse':'forward'}';location.reload()">Open the updated dashboard</button><button class="btn ghost" type="button" onclick="location.hash='tasks';location.reload()">Open the task assigner</button></div></div>`:''}
   ${o&&!up.done?`<div class="card"><h2>Ready to publish · ${nm} base ${esc(o.data.asOf)}</h2>
     <div class="facts" style="margin-top:6px">${facts}</div>
     <p class="note">Publishing replaces the ${nm.toLowerCase()} dashboard data for everyone, assigns HOV${side==='rev'?'':' and RTO-queued'} tasks automatically, and checks every assigned ${nm.toLowerCase()} task against this base: tasks still pending carry forward, tasks with no AWBs left are closed. ${side==='rev'?'Forward':'Reverse'} data and tasks are not touched.</p>
@@ -2667,8 +2785,15 @@ const b64Of=blob=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok
 async function publish(B){
   up.busy=true;up.phase='Sending to the server…';up.pct=1;renderUpload(B);
   try{const o=up.out;const side=o.side==='rev'?'rev':'fwd';
-    const res=await window.API('uploadBase',{side,data:o.data,suggestions:o.suggestions,awbs:o.awbs,asOf:o.data.asOf,baseDate:o.suggestions.baseDate,fileName:up.file.name});
-    const rc=Object.assign({side},res.reconcile||{});
+    // closures against the previous base of the same side (skipped quietly if there is none yet)
+    let closure=null,clNote='';
+    if(o.snap&&o.keys){try{up.phase='Comparing with the previous base for closures…';renderUpload(B);
+      const prev=await prevSnap(side,o.data.asOf,f=>{up.phase=`Reading the previous base for closures… ${Math.round(f*100)}%`;up.pct=f;renderUpload(B)});
+      if(prev){closure=closureOf(prev,o.keys,o.data.asOf,side);clNote=`Closures: ${prev.asOf} base vs ${o.data.asOf}.`}else clNote='Closures start from the next upload (no earlier base to compare with).'}
+      catch(e){console.warn('closure',e);clNote='Closures couldn’t be worked out this time ('+(e.message||e)+').'}}
+    up.phase='Sending to the server…';up.pct=1;renderUpload(B);
+    const res=await window.API('uploadBase',{side,data:o.data,suggestions:o.suggestions,awbs:o.awbs,snap:o.snap||null,closure,asOf:o.data.asOf,baseDate:o.suggestions.baseDate,fileName:up.file.name});
+    const rc=Object.assign({side,clNote},res.reconcile||{});
     if(side==='rev')B.config.revBase=res.base;else B.config.base=res.base;
     // the full file, compressed, in ~6 MB parts, for "Download base file"
     if(o.raw&&o.raw.length){
