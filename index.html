@@ -1514,11 +1514,11 @@ root.PendencyParser={parseBase,build};
 })(typeof self!=='undefined'?self:globalThis);
 
 self.onmessage=async e=>{
-  const {file,asOf,baseDate}=e.data;
+  const {file,asOf,baseDate,raw}=e.data;
   const getChunks=async function*(){const r=file.stream().getReader();for(;;){const {done,value}=await r.read();if(done)return;yield value}};
   let last=0;
   try{
-    const out=await PendencyParser.parseBase(getChunks,file.size,{asOf,baseDate,onProgress:(phase,f)=>{const now=Date.now();if(now-last<200&&phase!=='Building views')return;last=now;
+    const out=await PendencyParser.parseBase(getChunks,file.size,{asOf,baseDate,raw,onProgress:(phase,f)=>{const now=Date.now();if(now-last<200&&phase!=='Building views')return;last=now;
       const pct=phase==='Reading shared text'?f*0.45:phase==='Reading base rows'?0.45+f*0.5:0.97;self.postMessage({type:'progress',phase:phase+'…',f:Math.min(pct,0.99)})}});
     self.postMessage({type:'done',out},out.raw&&out.raw.buffer?[out.raw.buffer]:[]);
   }catch(err){self.postMessage({type:'error',message:(err&&err.message)||String(err)})}
@@ -2129,6 +2129,7 @@ table.rt.cd td.b{font-weight:700;color:#1d1d1d}
 table.rt.cd tfoot td{background:#D9D9D9;font-weight:700;position:sticky;bottom:0}
 .cd-bar{position:sticky;top:0;z-index:5}.cd-nav{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}.cd-nav a{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;text-decoration:none;color:var(--teal-deep);background:var(--bg)}.cd-nav a:hover{background:var(--teal-soft)}
 .cd-sec{font:700 16px var(--font-display);color:#0B3D33;margin:26px 0 10px}
+.cd-fill{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}.cd-fill .note{font-size:12.5px}
 .rt td.u2{background:#B9E3CC}.rt td.u1{background:#E2F3E9}.rt td.d1{background:#FBE3E0}.rt td.d2{background:#F3BFB8}
 .rt td.sp{padding:2px 6px}
 .rt-wrap{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:10px}
@@ -2376,7 +2377,7 @@ const scale3=t=>t<0.5?mix('#F8696B','#FFEB84',t*2):mix('#FFEB84','#63BE7B',(t-0.
 function clDayHtml(){
   if(!CDATA)return `<section class="rp-card"><h2>Day-on-day closures</h2><div class="sub">Loading…</div></section>`;
   const sides=['fwd','rev'].map(s=>CDATA[s]).filter(Boolean);
-  if(!sides.length)return `<section class="rp-card"><h2>Day-on-day closures</h2><div class="sub">These tables appear after the next base upload: each upload is compared with the previous day's base (same AWB + same pivot + same current location = open, anything else = closed).</div></section>`;
+  if(!sides.length)return `<section class="rp-card"><h2>Day-on-day closures</h2><div class="sub">Each base upload is compared with the previous day's base (same AWB + same pivot + same current location = open, anything else = closed). The tables fill with the next upload.</div>${clFillTool()}</section>`;
   const views=[];sides.forEach(S=>S.views.forEach(v=>views.push({S,name:v.name,rows:v.rows})));
   views.sort((a,b)=>CL_ORDER.indexOf(a.name)-CL_ORDER.indexOf(b.name));
   const regs=sortRegions([...new Set(sides.flatMap(S=>Object.values(S.reg||{})))]);
@@ -2395,11 +2396,20 @@ function clDayHtml(){
       <tr>${cc.map(i=>`<th>${BK[i]}</th>`).join('')}${oc.map(i=>`<th>${BK[i]}</th>`).join('')}</tr></thead><tbody>${rows.map(tr).join('')}</tbody>
       <tfoot><tr><td>Grand Total</td>${cc.map(i=>`<td>${tot.c[i]?fmt(tot.c[i]):''}</td>`).join('')}<td>${fmt(tot.C)}</td><td>${pc(tot.C,tot.G)}</td>${oc.map(i=>`<td>${tot.o[i]?fmt(tot.o[i]):''}</td>`).join('')}<td>${fmt(tot.O)}</td><td>${fmt(tot.G)}</td></tr></tfoot></table></div>`:'<div class="empty">No sites for this view and region.</div>'}</section>`};
   const nav=views.map((v,k)=>`<a href="#cdv-${k}" data-cdjump="${k}">${esc(v.name.replace(/^Forward /,'Fwd ').replace(/^Reverse /,'Rev '))}</a>`).join('');
-  return `<div class="rp-filters cd-bar"><span class="flabel">Day-on-day closures</span><label class="rp-chk">Region <select data-cdreg><option value="">All regions</option>${regs.map(r=>`<option ${CD.region===r?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
+  return (B.me&&B.me.admin&&sides.length<2?`<section class="rp-card">${clFillTool()}</section>`:'')+`<div class="rp-filters cd-bar"><span class="flabel">Day-on-day closures</span><label class="rp-chk">Region <select data-cdreg><option value="">All regions</option>${regs.map(r=>`<option ${CD.region===r?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
     <label class="rp-chk"><input type="checkbox" data-cdmin ${CD.min20?'checked':''}> Hide sites under 20 AWBs</label><span class="cd-nav">${nav}</span></div>${views.map(tbl).join('')}
     <p class="note" style="margin:-6px 0 18px">Closed = the AWB from the earlier base is not in the later base under the same pivot (reverse: Reason of Loss bucket) and the same current location. Ageing = the earlier base's ageing. Grand Total row adds the sites shown.</p>`;
 }
+// admins: fill the tables now from the previous day's base file (forward or reverse, picked from the computer)
+let CLF='';
+function clFillTool(){if(!(B.me&&B.me.admin))return '';const have=CDATA?['fwd','rev'].filter(s=>CDATA[s]).map(s=>s==='fwd'?'forward':'reverse'):[];
+  return `<div class="cd-fill"><b>Fill now from the previous day's base</b><span class="note">${have.length?`Showing ${have.join(' and ')}. `:''}Pick yesterday's Forward or Reverse base .xlsx; it is compared with the base that is live now. Nothing else changes.</span>
+    <label class="btn ghost" style="cursor:pointer">Choose file<input type="file" accept=".xlsx" data-clfile hidden></label><span class="note" data-clmsg>${esc(CLF)}</span></div>`}
 function bindClDay(root){
+  root.querySelectorAll('[data-clfile]').forEach(inp=>inp.onchange=async()=>{const f=inp.files[0];if(!f)return;const msg=()=>root.querySelector('[data-clmsg]');
+    const set=s=>{CLF=s;const m=msg();if(m)m.textContent=s};set('Starting…');
+    try{const r=await window.APP.closureFromFile(f,set);CLF='';await loadCl(true);toast(`${r.side==='rev'?'Reverse':'Forward'} closures: ${r.from} vs ${r.to}`);renderClosure()}
+    catch(e){set('Couldn’t work out closures: '+(e.message||e))}});
   root.querySelector('[data-cdreg]')?.addEventListener('change',e=>{CD.region=e.target.value;renderClosure()});
   root.querySelector('[data-cdmin]')?.addEventListener('change',e=>{CD.min20=e.target.checked;renderClosure()});
   root.querySelectorAll('[data-cdcsv]').forEach(b=>b.onclick=()=>{const tb=document.getElementById(b.dataset.cdcsv);if(tb)X.tableCsv(tb,b.closest('.cd-card').querySelector('h2').textContent)});
@@ -2704,6 +2714,30 @@ async function prevSnap(side,asOf,onPct){
   const x=RAW[side];if(x&&x.n&&x.asOf&&x.asOf!==asOf&&window.DecompressionStream)return snapFromRaw(side,x,onPct);
   return null;
 }
+
+// today's AWB + pivot + location keys from the live base's stored full file
+async function keysFromRaw(side,x,onPct){
+  const out=[];let H=null,ix;
+  const P=csvRows(r=>{if(!H){H=r;const at=n=>H.indexOf(n);ix={awb:at('Awb_number'),loc:at('Current_location'),pv:side==='rev'?at('Reason of Loss'):at('Pivot')};if(ix.awb<0||ix.loc<0||ix.pv<0)throw new Error('columns not found');return}
+    const pv=side==='rev'?(REV_BUCKET_[(r[ix.pv]||'').trim().toLowerCase()]||'OTHER'):(r[ix.pv]||'').trim();out.push((r[ix.awb]||'').trim()+'\u0001'+pv+'\u0001'+(r[ix.loc]||'').trim())});
+  await rawText(side,x,s=>P.push(s),onPct);P.end();return out.join('\n');
+}
+// closures for the live base from an earlier base file the admin picks (for days uploaded before closures were saved)
+window.APP.closureFromFile=function(file,onStep){return new Promise((ok,no)=>{
+  const src=document.getElementById('worker-src').textContent;const w=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+  w.onmessage=async e=>{const m=e.data;
+    if(m.type==='progress'){onStep('Reading '+file.name+'… '+Math.round(m.f*100)+'%');return}
+    if(m.type==='error'){w.terminate();no(new Error(m.message));return}
+    w.terminate();const o=m.out;try{
+      const side=o.side==='rev'?'rev':'fwd',x=RAW[side];
+      if(!x||!x.n)throw new Error('The live '+SIDE_NAME[side].toLowerCase()+' base has no stored full file. Upload today’s base again first.');
+      if(x.asOf&&o.snap.asOf===x.asOf)throw new Error('This file is the same day as the live base ('+x.asOf+'). Pick the previous day’s file.');
+      const keys=await keysFromRaw(side,x,f=>onStep('Reading the live '+SIDE_NAME[side].toLowerCase()+' base… '+Math.round(f*100)+'%'));
+      onStep('Working out closures…');const cl=closureOf(o.snap,keys,x.asOf||'',side);
+      await window.API('closurePut',{side,closure:cl});ok({side,from:o.snap.asOf,to:x.asOf})}catch(err){no(err)}};
+  w.onerror=e=>{w.terminate();no(new Error(e.message||'Couldn’t read the file'))};
+  const d=dateFromName(file.name);w.postMessage({file,asOf:asOfFrom(d),baseDate:d,raw:false});
+})};
 
 // ---------- download the whole uploaded base file (gzip CSV parts on Drive, unzipped here) ----------
 let RAW={};const DL={};
