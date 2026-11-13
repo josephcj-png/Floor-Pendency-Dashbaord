@@ -314,6 +314,15 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .peek{position:fixed;z-index:65;width:340px;max-width:calc(100vw - 24px);background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 14px 36px rgba(15,47,41,.2);padding:12px 14px;font-size:12.5px}
 .peek h6{margin:0;font-size:13px;font-family:var(--font-display)}
 .peek .pk-sum{color:var(--muted);margin:3px 0 8px}
+.imgc{min-width:64px}.thumb{position:relative;display:inline-block;padding:0;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden;width:56px;height:42px;background:var(--bg);cursor:zoom-in}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}.thumb span{position:absolute;right:2px;bottom:2px;background:rgba(0,0,0,.65);color:#fff;font-size:10.5px;font-weight:700;border-radius:4px;padding:0 4px}
+.imgbox{position:fixed;inset:0;z-index:200;background:rgba(10,20,18,.88);display:flex;flex-direction:column;color:#fff}
+.ib-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px;font-size:13.5px}.ib-top a{color:#9FE3CF;margin-right:14px}
+.ib-x{appearance:none;border:0;background:rgba(255,255,255,.12);color:#fff;width:34px;height:34px;border-radius:8px;font-size:22px;line-height:1;cursor:pointer}
+.ib-main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:12px;padding:0 12px}.ib-main img{max-width:calc(100vw - 140px);max-height:calc(100vh - 170px);object-fit:contain;border-radius:6px;background:#111}
+.ib-nav{appearance:none;border:0;background:rgba(255,255,255,.14);color:#fff;width:44px;height:64px;border-radius:10px;font-size:34px;cursor:pointer}.ib-nav:hover,.ib-x:hover{background:rgba(255,255,255,.25)}
+.ib-strip{display:flex;gap:6px;justify-content:center;padding:10px;overflow-x:auto}.ib-strip button{padding:0;border:2px solid transparent;border-radius:6px;width:58px;height:44px;overflow:hidden;background:#222;cursor:pointer;flex:none}.ib-strip button.on{border-color:#5ED3AE}.ib-strip img{width:100%;height:100%;object-fit:cover}
+.ib-err{background:#222;padding:30px;border-radius:8px;font-size:14px}
 .peek .pk-as{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}.peek .pk-as .btn{padding:5px 12px;font-size:12.5px}
 .peek .pk-form{border-top:1px solid var(--line);padding-top:8px;margin-top:4px;display:flex;flex-direction:column;gap:6px}
 .peek .pk-form textarea{font:13px var(--font-ui);border:1px solid var(--line-strong);border-radius:8px;padding:6px 8px;resize:vertical;width:100%;box-sizing:border-box}
@@ -1969,17 +1978,40 @@ X.onCell=async function(c){
   if(staleBase(r,c)){bg.querySelector('.modal').innerHTML=head+staleHtml(r);bg.querySelector('#cmX').onclick=()=>bg.remove();return}
   const tk=new Map((r.tasks||[]).map(t=>[t.id,t]));
   const k=(l,v,s,cls)=>`<div class="kt ${cls||''}"><span>${l}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
-  const PRD=r.rows.some(a=>a.pdc||a.pcat),PSUB=r.rows.some(a=>a.psub);
+  const PRD=r.rows.some(a=>a.pdc||a.pcat),PSUB=r.rows.some(a=>a.psub),IMG=r.rows.some(a=>a.hov);
   bg.querySelector('.modal').innerHTML=head+`<div class="kstrip">${k('AWBs',fmt(r.n))}${k('Shipment value',rs(r.value))}${k('HOV',fmt(r.hov),rs(r.hovValue))}${c.side==='rev'?'':k('On hold',fmt(r.held))}${k('In assigned tasks',fmt(r.assigned),r.n?Math.round(r.assigned*100/r.n)+'% of AWBs':'',r.assigned?'ok':'')}${k('Not assigned',fmt(r.n-r.assigned),'',r.n-r.assigned?'warn':'')}</div>
    ${r.tasks.length?`<h4>Tasks covering these AWBs</h4><section class="tgroup">${r.tasks.map(t=>`<div class="trow" data-cmopen="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="ktag">${KIND[t.kind]||''}</span></div><div class="ttl"></div><div class="tsub">${fmt(t.matched)} of these AWBs · with ${esc((t.owners||[]).map(pname).join(', '))}</div></div><div class="tact"><span class="st ${stCls(t.status)}">${esc(t.status)}</span></div></div>`).join('')}</section>`:`<div class="banner">None of these AWBs are in an assigned task yet.</div>`}
    ${r.pfc?`<h4>Clients and sellers (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Client</th><th>Seller</th><th style="text-align:right">AWBs</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.client)}</td><td>${esc(d.seller)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>`
    :`<h4>Manifest destinations (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Manifest destination</th><th style="text-align:right">AWBs</th><th style="text-align:right">Manifests</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.dest)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.manifests)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>`}
-   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Download CSV</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th>${r.pfc?'<th>Client</th><th>Seller</th>':'<th>Manifest destination</th><th>Manifest code</th><th>Error scan location</th><th>Error scan remarks</th>'}<th style="text-align:right">Value (₹)</th><th>HOV</th>${PRD?'<th>Product description</th><th>Category</th>'+(PSUB?'<th>Sub category</th>':''):''}${c.side==='rev'?'':'<th>Hold</th>'}<th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td>${r.pfc?`<td>${esc(a.cl||'')}</td><td>${esc(a.se||'')}</td>`:`<td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td>${esc(a.esl||'')}</td><td>${esc(a.esd||'')}</td>`}<td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td>${PRD?`<td>${esc(a.pdc||'')}</td><td>${esc(a.pcat||'')}</td>`+(PSUB?`<td>${esc(a.psub||'')}</td>`:''):''}${c.side==='rev'?'':`<td>${esc(a.hold)}</td>`}<td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
+   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Download CSV</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th>${r.pfc?'<th>Client</th><th>Seller</th>':'<th>Manifest destination</th><th>Manifest code</th><th>Error scan location</th><th>Error scan remarks</th>'}<th style="text-align:right">Value (₹)</th><th>HOV</th>${IMG?'<th>Images</th>':''}${PRD?'<th>Product description</th><th>Category</th>'+(PSUB?'<th>Sub category</th>':''):''}${c.side==='rev'?'':'<th>Hold</th>'}<th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td>${r.pfc?`<td>${esc(a.cl||'')}</td><td>${esc(a.se||'')}</td>`:`<td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td>${esc(a.esl||'')}</td><td>${esc(a.esd||'')}</td>`}<td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td>${IMG?`<td class="imgc" data-img="${esc(a.awb)}">${a.hov?'<span class="note">…</span>':''}</td>`:''}${PRD?`<td>${esc(a.pdc||'')}</td><td>${esc(a.pcat||'')}</td>`+(PSUB?`<td>${esc(a.psub||'')}</td>`:''):''}${c.side==='rev'?'':`<td>${esc(a.hold)}</td>`}<td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
   bg.querySelectorAll('[data-cmopen]').forEach(row=>{row.querySelector('.ttl').textContent=tk.get(row.dataset.cmopen).title;row.onclick=()=>{bg.remove();if(RT.tasks.has(row.dataset.cmopen))openTask(row.dataset.cmopen)}});
   bg.querySelector('#cmX').onclick=()=>bg.remove();
+  if(IMG)loadHovImages(bg,r.rows.filter(a=>a.hov).map(a=>a.awb));
   bg.querySelector('#cmCopy').onclick=e=>X.tableCsv(e.target.closest('h4').nextElementSibling.querySelector('table'),`${c.pivotLabel} ${c.loc} ${c.ageLabel}`);
 };
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('cellModal');if(m)m.remove()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(document.getElementById('imgBox'))return;const m=document.getElementById('cellModal');if(m)m.remove()}});
+// ---------- HOV shipment images (from the "HOV Images" tab, filled by BigQuery after each upload) ----------
+async function loadHovImages(bg,awbs){
+  let res;try{res=await API('hovImages',{awbs:awbs.slice(0,600)})}catch(e){bg.querySelectorAll('td.imgc .note').forEach(n=>n.textContent='–');return}
+  const IM=res.img||{};
+  bg.querySelectorAll('td.imgc[data-img]').forEach(td=>{const L=IM[td.dataset.img]||[];if(!td.querySelector('.note'))return;
+    if(!L.length){td.innerHTML='<span class="note">No image</span>';return}
+    td.innerHTML=`<button class="thumb" type="button" aria-label="Open ${L.length} image${L.length>1?'s':''} of ${esc(td.dataset.img)}"><img src="${esc(L[0].url)}" alt="" loading="lazy" referrerpolicy="no-referrer">${L.length>1?`<span>+${L.length-1}</span>`:''}</button>`;
+    const im=td.querySelector('img');im.onerror=()=>{im.replaceWith(Object.assign(document.createElement('span'),{className:'note',textContent:'View'}))};
+    td.querySelector('.thumb').onclick=()=>imgBox(td.dataset.img,L,0)});
+}
+function imgBox(awb,L,i){
+  let box=document.getElementById('imgBox');if(!box){box=document.createElement('div');box.id='imgBox';box.className='imgbox';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');document.body.appendChild(box)}
+  const draw=()=>{const it=L[i];box.innerHTML=`<div class="ib-top"><div><b>${esc(awb)}</b> · ${esc(it.src)} image · ${i+1} of ${L.length}</div><div><a href="${esc(it.url)}" target="_blank" rel="noopener">Open original</a><button type="button" class="ib-x" aria-label="Close">×</button></div></div>
+    <div class="ib-main">${L.length>1?'<button type="button" class="ib-nav" data-d="-1" aria-label="Previous image">‹</button>':''}<img src="${esc(it.url)}" alt="${esc(awb)} ${esc(it.src)} image ${i+1}" referrerpolicy="no-referrer">${L.length>1?'<button type="button" class="ib-nav" data-d="1" aria-label="Next image">›</button>':''}</div>
+    ${L.length>1?`<div class="ib-strip">${L.map((x,k)=>`<button type="button" class="${k===i?'on':''}" data-k="${k}" aria-label="Image ${k+1}"><img src="${esc(x.url)}" alt="" loading="lazy" referrerpolicy="no-referrer"></button>`).join('')}</div>`:''}`;
+    box.querySelector('.ib-x').onclick=close;box.querySelectorAll('.ib-nav').forEach(b=>b.onclick=()=>go(+b.dataset.d));box.querySelectorAll('.ib-strip button').forEach(b=>b.onclick=()=>{i=+b.dataset.k;draw()});
+    box.querySelector('.ib-main img').onerror=e=>{e.target.replaceWith(Object.assign(document.createElement('div'),{className:'ib-err',textContent:'This image could not be loaded here. Use “Open original”.'}))}};
+  const go=d=>{i=(i+d+L.length)%L.length;draw()};
+  const key=e=>{if(e.key==='Escape'){e.stopPropagation();close()}else if(e.key==='ArrowRight')go(1);else if(e.key==='ArrowLeft')go(-1)};
+  function close(){document.removeEventListener('keydown',key,true);box.remove()}
+  box.onclick=e=>{if(e.target===box)close()};document.addEventListener('keydown',key,true);draw();
+}
 
 function copyText(txt,msg){const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();toast(ok?msg:'Copy was blocked by the browser.')};try{navigator.clipboard.writeText(txt).then(()=>toast(msg),fb)}catch(e){fb()}}
 const TYPES={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',mp4:'video/mp4',webm:'video/webm',pdf:'application/pdf'};
@@ -2812,6 +2844,12 @@ window.APP.downloadBase=async function(side,btn){
 let up={file:null,phase:'',pct:0,out:null,err:'',busy:false,date:''};
 function dateFromName(n){const m=/(\d{2})[-_.](\d{2})[-_.](\d{4})/.exec(n||'');return m?`${m[3]}-${m[2]}-${m[1]}`:new Date(Date.now()+19800000).toISOString().slice(0,10)}
 const asOfFrom=d=>{const [y,m,dd]=d.split('-');return `${dd}-${m}-${y}`};
+// HOV shipment images: BigQuery lookup for new HOV AWBs, closed ones removed (runs after every upload, or on demand)
+const IMGS={fwd:'',rev:''};
+function hovImgSync(B,side){IMGS[side]='Updating HOV images from BigQuery…';renderUpload(B);
+  window.API('hovSync',{side}).then(x=>{IMGS[side]=`${fmtN(x.hovAwbs)} HOV AWBs · ${fmtN(x.lookedUp)} looked up · ${fmtN(x.newImages)} new images (${fmtN(x.withImages)} AWBs) · ${fmtN(x.removed)} closed rows removed`;renderUpload(B)})
+    .catch(e=>{IMGS[side]='HOV images could not be updated: '+(e.message||e);renderUpload(B)})}
+const fmtN=n=>Number(n||0).toLocaleString('en-IN');
 function baseLine(b,label){return b?`<div class="banner">${label} live now: base <b>${esc(b.asOf)}</b> · ${Number(b.awbs||0).toLocaleString('en-IN')} AWBs · ${b.suggestions} suggested tasks · uploaded ${esc(new Date(b.uploadedAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}))} by ${esc(b.uploadedBy)}</div>`:`<div class="banner warn">No ${label.toLowerCase()} base uploaded yet.</div>`}
 function pivotCounts(d){const W={'At Dock':5,'RECEIVED_AT_DC':3,'BRSNR':3};const m={};(d.cols.p||[]).forEach((p,i)=>{const k=d.dims.pivot[p];if(d.cols.a[i]<(W[k]||0))return;m[k]=(m[k]||0)+d.cols.n[i]});return m}
 function renderUpload(B){
@@ -2842,6 +2880,10 @@ function renderUpload(B){
     <div class="facts" style="margin-top:6px">${facts}</div>
     <p class="note">Publishing replaces the ${nm.toLowerCase()} dashboard data for everyone, assigns HOV${side==='rev'?'':' and RTO-queued'} tasks automatically, and checks every assigned ${nm.toLowerCase()} task against this base: tasks still pending carry forward, tasks with no AWBs left are closed. ${side==='rev'?'Forward':'Reverse'} data and tasks are not touched.</p>
     <button class="btn" type="button" id="upPub" ${up.busy?'disabled':''}>${up.busy?'Publishing…':'Publish '+nm.toLowerCase()+' base to dashboard'}</button></div>`:''}`;
+  root.insertAdjacentHTML('beforeend',`<div class="card"><h2>HOV shipment images</h2><p class="note">After each upload the HOV AWBs are looked up in BigQuery (sorter and Muvro images, last 90 days) and kept in the “HOV Images” tab; AWBs that are no longer HOV are removed. They show when a HOV number is double-clicked.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">${['fwd','rev'].map(s=>`<button class="btn ghost" type="button" data-imgsync="${s}" ${/^Updating/.test(IMGS[s])?'disabled':''}>Update ${SIDE_NAME[s].toLowerCase()} HOV images</button>`).join('')}</div>
+    ${['fwd','rev'].filter(s=>IMGS[s]).map(s=>`<p class="note" style="margin:8px 0 0"><b>${SIDE_NAME[s]}:</b> ${esc(IMGS[s])}</p>`).join('')}</div>`);
+  root.querySelectorAll('[data-imgsync]').forEach(b=>b.onclick=()=>hovImgSync(B,b.dataset.imgsync));
   const fi=root.querySelector('#upFile');fi.onchange=()=>{const f=fi.files[0];if(f){up={file:f,phase:'',pct:0,out:null,err:'',busy:false,date:dateFromName(f.name)};renderUpload(B)}};
   const drop=root.querySelector('#drop');drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');
   drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');const f=e.dataTransfer.files[0];if(f&&!up.busy){up={file:f,phase:'',pct:0,out:null,err:'',busy:false,date:dateFromName(f.name)};renderUpload(B)}};
@@ -2886,6 +2928,7 @@ async function publish(B){
         RAW[side]=d.raw;rc.raw=true}
       catch(e){rc.rawWarn='The dashboard is updated, but the full file couldn’t be saved for download ('+e.message+'). Upload again to retry.'}}
     up.busy=false;up.phase='';up.done=rc;renderUpload(B);
+    hovImgSync(B,side);
     // the tables in this tab still hold the old base: reload on the next navigation so every view matches the new file
     if(!window.__baseReload){window.__baseReload=true;addEventListener('hashchange',()=>location.reload())}}
   catch(e){up.busy=false;up.err=e.message;renderUpload(B)}
