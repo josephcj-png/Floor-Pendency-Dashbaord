@@ -71,6 +71,10 @@ h1{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,2.4vw,30
 .fsum{font-size:12px;color:var(--muted)}
 .vbar .inner{display:flex;align-items:center;gap:10px;padding-block:10px 0;flex-wrap:wrap}.filters .vbar+.inner{padding-top:8px}.vtitle{font-family:var(--font-display);font-weight:700;font-size:17px}.vsub{font-size:12.5px;color:var(--muted)}
 .dlbase{white-space:nowrap}
+.sw21{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;border:1px solid var(--line-strong);border-radius:999px;padding:6px 12px;background:var(--panel);user-select:none}
+.sw21 input{position:absolute;opacity:0;width:1px;height:1px}.sw21 .trk{width:28px;height:16px;border-radius:8px;background:#C9D3D0;position:relative;transition:background .15s;flex:none}
+.sw21 .trk::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
+.sw21 input:checked+.trk{background:var(--teal)}.sw21 input:checked+.trk::after{left:14px}.sw21:has(input:checked){border-color:var(--teal);background:var(--teal-soft)}.sw21 input:focus-visible+.trk{outline:2px solid var(--teal);outline-offset:2px}
 .fpbtn{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.fpbtn.on{background:var(--teal-soft);border-color:var(--teal)}
 .fpane{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100vw;z-index:60;background:var(--panel);border-left:1px solid var(--line-strong);box-shadow:-12px 0 32px rgba(0,0,0,.14);display:flex;flex-direction:column;font-size:13px}
 .fp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px}.fp-head h3{margin:0;font-size:16px;font-family:var(--font-display)}
@@ -463,6 +467,9 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms xf" data-dim="et"></div>
     <div class="ms xf" data-dim="liq"></div>
     <div class="ms xf" data-dim="rq"></div>
+    <div class="ms xf" data-dim="se"></div>
+    <div class="ms xf" data-dim="sct"></div>
+    <label class="sw21"><input type="checkbox" id="show21"><span class="trk" aria-hidden="true"></span>Show 21+ ageing</label>
     <button class="reset" id="reset" type="button">Reset</button>
     <span class="spacer"></span>
     <span class="fsum" id="fsum"></span>
@@ -488,6 +495,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms xf" data-dim="dmsg"></div>
     <div class="ms xf" data-dim="dau"></div>
     <div class="ms xf" data-dim="dln"></div>
+    <div class="ms xf" data-dim="sct"></div>
     <div class="ms xf" data-dim="cl"></div>
     <div class="ms xf" data-dim="pvf"></div>
     <div class="ms xf" data-dim="et"></div>
@@ -499,6 +507,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms xf" data-dim="cla"></div>
     <div class="ms xf" data-dim="vol"></div>
     <div class="ms xf" data-dim="mp"></div>
+    <label class="sw21"><input type="checkbox" id="rshow21"><span class="trk" aria-hidden="true"></span>Show 21+ ageing</label>
     <button class="reset" id="rreset" type="button">Reset</button>
     <span class="spacer"></span>
     <span class="fsum" id="rfsum"></span>
@@ -562,10 +571,10 @@ for(let i=0;i<N;i++)regLocs[C.r[i]].add(C.l[i]);
 const X=D.det?D.det.cols:null,XD=D.det?D.det.dims:{},XN=X?X.n.length:0;
 // bases uploaded by an earlier build lack some detail fields: fill them so nothing breaks, and switch off the features that need them
 const DET_FULL=!!(X&&X.vol&&X.esd&&X.rca&&X.ln&&X.bn&&X.ssm);
-const NAMEDX=['cl','esd','bin','msg','et','liq','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'],FLAGX=['vol','mp','pvf','rq'];
+const NAMEDX=['cl','se','esd','bin','msg','et','liq','sct','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'],FLAGX=['vol','mp','pvf','rq'];
 const RQ_OK=!!(X&&X.rq); // RTO queued flag (forward bases uploaded from now on)
 if(X){['vol','ssm','mp','rto','v','rq'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(0)});
-  ['md','hub','mo','cl','se','bin','msg','au','pd','esd','rca','ln','bn','et','liq','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(-1);if(!XD[k])XD[k]=[]})}
+  ['md','hub','mo','cl','se','bin','msg','au','pd','esd','rca','ln','bn','et','liq','sct','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(-1);if(!XD[k])XD[k]=[]})}
 // reverse: Received at DC drills through the shipment RCA; for reverse-side RCAs the bin level / message / action user come from the DSP columns
 const REV_RCA=/^(reverse leg miss|post bbb miss|no landroval details)$/i;
 const isRevRca=k=>k!=null&&k>=0&&REV_RCA.test(XD.srca[k]||'');
@@ -588,9 +597,10 @@ FL.hold={lbl:'Hold flag',get:j=>X.h[j],parse:s=>+s,name:v=>dims.hold[v]||'(blank
 FL.vol={lbl:'Volumetric',get:j=>X.vol[j],parse:s=>+s,name:v=>v?'Volumetric':'Normal'};
 FL.mp={lbl:'MPSR',get:j=>X.mp[j],parse:s=>+s,name:v=>v?'MPSR':'Not MPSR'};
 FL.pvf={lbl:REV?'PV (HOV)':'HOV',get:j=>X.v[j],parse:s=>+s,name:v=>v?'HOV':'Not HOV'};
+dictF('sct',REV?'DSP scan time':'Scan time');FL.sct.name=v=>v<0?'(blank)':SCT_LBL(XD.sct[v]);
 FL.rq={lbl:'RTO queued',get:j=>X.rq[j],parse:s=>+s,name:v=>v?'RTO queued':'Not RTO queued'};
 FL.age={lbl:REV?'Ageing':'Ageing from bag rec.',get:j=>ageKey(X.a[j]),parse:s=>s,name:v=>v==='NA'?'Blank':'Day '+v};
-const FL_ORDER=['age','md','mo','cl','se','bin','msg','ln','bn','au','srca','dbin','dmsg','dau','dln','esd','et','liq','vol','mp','rq','pvf','hold','auth','ga','exs','cla'];
+const FL_ORDER=['age','md','mo','cl','se','bin','msg','ln','bn','au','srca','dbin','dmsg','dau','dln','esd','et','liq','sct','vol','mp','rq','pvf','hold','auth','ga','exs','cla'];
 const FL_OK={}; // fields that carry data for a pivot
 function fieldsFor(pi){if(FL_OK[pi])return FL_OK[pi];const ok=new Set(['age','vol','mp','pvf']);if(!REV&&RQ_OK)ok.add('rq');if(!REV&&dims.hold.length>1)ok.add('hold');
   if(X)for(let j=0;j<XN;j++){if(X.p[j]!==pi)continue;for(const k of FL_ORDER){if(ok.has(k)||!XD[k])continue;const v=X[k][j];if(v>=0&&XD[k][v]!=='')ok.add(k)}}
@@ -617,10 +627,13 @@ const save=()=>{try{const o={};for(const k in S){if(NAMEDX.includes(k))continue;
 const FIELD={pivot:'p',hold:'h',region:'r',loc:'l'};
 let SCOPE=null; // region indices a POC is limited to
 let SCOPE_L=null; // location indices (L1 POC)
+// 21+ ageing stays out of every table, total and summary unless the "Show 21+ ageing" switch is on (off on every load)
+let SHOW21=false;
 function pass(i,skip){
   if(!inWin[i])return false;
   if((SCOPE||SCOPE_L)&&!((SCOPE&&SCOPE.has(C.r[i]))||(SCOPE_L&&SCOPE_L.has(C.l[i]))))return false;
   for(const d of ['pivot','hold','region','loc']){if(d===skip)continue;const s=S[d];if(s.size&&!s.has(C[FIELD[d]][i]))return false}
+  if(!SHOW21&&ALL_AGE[ageIdx[i]]==='21+')return false;
   if(skip!=='age'&&S.age.size&&!S.age.has(ALL_AGE[ageIdx[i]]))return false;
   return true;
 }
@@ -631,6 +644,7 @@ const RDC_ONLY=REV?{dbin:1,dmsg:1,dau:1,dln:1}:{bin:1,msg:1};const RDC_I=dims.pi
 function passX(j,skip){
   if((SCOPE||SCOPE_L)&&!((SCOPE&&SCOPE.has(X.r[j]))||(SCOPE_L&&SCOPE_L.has(X.l[j]))))return false;
   for(const d in FIELDX){if(d===skip)continue;const s=S[d];if(!s.size)continue;if(RDC_ONLY[d]&&X.p[j]!==RDC_I)continue;if(!s.has(X[FIELDX[d]][j]))return false}
+  if(!SHOW21&&ageKey(X.a[j])==='21+')return false;
   if(skip!=='age'&&S.age.size&&!S.age.has(ageKey(X.a[j])))return false;
   return true;
 }
@@ -664,8 +678,13 @@ const DIMDEF={
   exs:{k:'EXP status',opts:()=>(XD.exs||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
   cla:{k:'Closure action',search:true,opts:()=>(XD.cla||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))},
   pvf:{k:'PV (HOV)',opts:()=>[{v:0,t:'PV ≠ 1'},{v:1,t:'PV = 1 (HOV)'}]},
-  rq:{k:'RTO queued',opts:()=>[{v:1,t:'RTO queued'},{v:0,t:'Not RTO queued'}]}
+  rq:{k:'RTO queued',opts:()=>[{v:1,t:'RTO queued'},{v:0,t:'Not RTO queued'}]},
+  se:{k:'Seller',search:true,cap:150,opts:()=>(XD.se||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
+  sct:{k:REV?'DSP scan time':'Scan time',opts:()=>['Today','Yesterday','Earlier','No scan'].map(c=>({v:(XD.sct||[]).indexOf(c),t:SCT_LBL(c)})).filter(o=>o.v>=0)}
 };
+// scan recency against the base date (forward: scanned_time; reverse: DSP scanned_time)
+function SCT_LBL(c){const m=/^(\d{2})-(\d{2})-(\d{4})$/.exec(D.asOf||'');const dd=k=>{if(!m)return '';const d=new Date(Date.UTC(+m[3],+m[2]-1,+m[1]-k));return ' ('+String(d.getUTCDate()).padStart(2,'0')+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]+')'};
+  return c==='Today'?'Today'+dd(0):c==='Yesterday'?'Yesterday'+dd(1):c==='Earlier'?'Before yesterday':(REV?'No DSP scan':'No scan time')}
 if(REV){DIMDEF.bin.k='Bin level';DIMDEF.msg.k='Message'}
 if(!DET_FULL){ROOT.querySelectorAll('.ms.xf').forEach(e=>e.remove());NAMEDX.concat(FLAGX).forEach(d=>S[d].clear())}
 // a filter whose column this base doesn't carry is left out
@@ -699,7 +718,8 @@ function drawPop(dim,q){
   if(!pop){pop=document.createElement('div');pop.className='pop';pop.onclick=e=>e.stopPropagation();host.appendChild(pop)}
   const def=DIMDEF[dim],cn=counts(dim),s=S[dim];q=(q||'').toLowerCase();
   let opts=def.opts();if(q)opts=opts.filter(o=>o.t.toLowerCase().includes(q));
-  if(dim==='loc')opts.sort((a,b)=>(cn.get(b.v)||0)-(cn.get(a.v)||0));
+  if(dim==='loc'||def.cap)opts.sort((a,b)=>(cn.get(b.v)||0)-(cn.get(a.v)||0));
+  let capNote='';if(def.cap&&opts.length>def.cap){const all=opts.length;opts=opts.filter((o,k)=>k<def.cap||s.has(o.v));capNote=`<p class="note" style="margin:4px 8px">Showing the ${def.cap} biggest of ${fmt(all)}. Type to search.</p>`}
   let acts=`<button class="mini" data-a="all" type="button">Select all</button><button class="mini" data-a="none" type="button">Clear</button>`;
   if(dim==='age'){
     const pre=[['2–5',k=>ageNum(k)>=2&&ageNum(k)<=5],['5–20',k=>ageNum(k)>=5&&ageNum(k)<=20],['6+',k=>ageNum(k)>=6],['11+',k=>ageNum(k)>=11]];
@@ -708,7 +728,7 @@ function drawPop(dim,q){
   }
   const items=opts.map(o=>{const n=cn.get(o.v)||0;const id=`${PF}o-${dim}-${String(o.v).replace(/\W/g,'_')}`;return `<label class="opt${n?'':' zero'}" for="${id}"><input type="checkbox" id="${id}" data-v="${esc(o.v)}" ${s.has(o.v)?'checked':''}><span>${esc(o.t)}</span><span class="n">${fmt(n)}</span></label>`}).join('');
   const searchVal=pop.querySelector('input[type=search]')?.value||'';
-  pop.innerHTML=(def.search?`<input type="search" id="${PF}ms-q-${dim}" placeholder="Search" value="${esc(searchVal)}">`:'')+`<div class="acts">${acts}</div><div class="${def.grid?'agegrid':'opts'}">${items||'<div class="note">No match</div>'}</div>`+(dim==='age'?'<p class="note" style="margin:8px 0 0">Tick any combination. Nothing ticked means all ages.</p>':'');
+  pop.innerHTML=(def.search?`<input type="search" id="${PF}ms-q-${dim}" placeholder="Search" value="${esc(searchVal)}">`:'')+`<div class="acts">${acts}</div><div class="${def.grid?'agegrid':'opts'}">${items||'<div class="note">No match</div>'}</div>${capNote}`+(dim==='age'?'<p class="note" style="margin:8px 0 0">Tick any combination. Nothing ticked means all ages.</p>':'');
   const parse=v=>dim==='age'?v:+v;
   pop.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.onchange=()=>{const v=parse(cb.dataset.v);cb.checked?s.add(v):s.delete(v);changed(dim)});
   pop.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{if(b.dataset.a==='none')s.clear();else{opts.forEach(o=>s.add(o.v))}changed(dim)});
@@ -725,6 +745,7 @@ function changed(dim){
 document.addEventListener('click',()=>{if(openDim){openDim=null;drawButtons()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openDim){const d=openDim;openDim=null;drawButtons();$id('ms-'+d)?.focus()}});
 $id('dlbase')&&($id('dlbase').onclick=e=>window.APP&&window.APP.downloadBase&&window.APP.downloadBase(SIDE,e.currentTarget));
+$id('show21')&&($id('show21').onchange=e=>{SHOW21=e.target.checked;drawButtons();render()});
 $id('reset').onclick=()=>{for(const k in S)S[k].clear();save();drawButtons();render()};
 
 // ---------- render ----------
@@ -745,7 +766,7 @@ function render(){
   for(let j=0;j<XN;j++){if(passX(j))XP[X.p[j]].J.push(j);if(passX(j,'hold'))XP[X.p[j]].Jh.push(j)}
   LAST={byPv,showPv,XP};
   $id('pivots').innerHTML=showPv.map(i=>{const p=byPv[i],name=dims.pivot[i];
-    const head=`<div class="pvhead"><div><h2>${esc(pl(name))}</h2><div class="note">${WINLBL[name]||''}${AGE_SRC}</div></div><div class="stats"><span class="chip"><b>${fmt(p.n)}</b> AWBs</span>${REV?'':`<span class="chip"><b>${fmt(p.hold)}</b> on hold</span>`}<span class="chip"><b>${p.loc.size}</b> sites</span><span class="chip"><b>${rs(p.hv)}</b> HOV value</span></div></div>`;
+    const head=`<div class="pvhead"><div><h2>${esc(pl(name))}</h2><div class="note">${SHOW21?(WINLBL[name]||''):(WINLBL[name]||'').replace(', 21+ as one column',' · 21+ hidden')}${AGE_SRC}</div></div><div class="stats"><span class="chip"><b>${fmt(p.n)}</b> AWBs</span>${REV?'':`<span class="chip"><b>${fmt(p.hold)}</b> on hold</span>`}<span class="chip"><b>${p.loc.size}</b> sites</span><span class="chip"><b>${rs(p.hv)}</b> HOV value</span></div></div>`;
     const off=INS_SIDE.has(name);
     return `<section class="pvsec" id="${PF}pv-${i}">${head}<div class="pvbody${off?' ins-off':''}"><div class="pvtables">${table(i,'cnt',p.loc,p.ages,'Count of AWB','current location × ageing (days)',fmt)}${table(i,'hov',p.hov,p.ages,'HOV misses',REV?'sum of product value (₹), PV = 1 · L = lakh, K = thousand':'sum of product value (₹), HOV2 = HOV · L = lakh, K = thousand',kfmt)}</div><aside class="insight" id="${PF}ins-${i}"></aside><button class="ins-tog" type="button" data-instog="${esc(name)}" aria-expanded="${!off}" title="${off?'Show the summary':'Hide the summary and widen the table'}"><span class="arr" aria-hidden="true">${off?'◀':'▶'}</span><span class="lbl">${off?'Show summary':'Hide summary'}</span></button></div></section>`}).join('')||'<div class="card empty">No pivot has pendency for these filters.</div>';
   renderInsights();if(FP.open)drawPane();
@@ -1240,7 +1261,7 @@ const REV_MAP={'Ageing_from_Bag_Rec':'Ageing','Pivot':'=','Awb_number':'Awb_numb
   'Product Description':'Product Description','MPSR_Tag':'MPSR_Tag','message':'=','action_user':'=','last_action_user':'last_action_user','Product Category':'Product Category','Error Type':'Error Type',
   'bin_level':'=','bin_name':'=','layout_name':'=','srca':'Shipment RCA','dbin':'DSP bin_level','dmsg':'DSP message','dau':'DSP action_user','dln':'DSP layout_name','liq':'Liquid','auth':'Product authencity',
   'ga':'MOVED TO GA','exs':'EXP STATUS','cla':'CLOSURE ACTION','PV':'PV','Reason of Loss':'Reason of Loss',
-  '_bl':'bin_level','_bn':'bin_name','_ln':'layout_name','_msg':'message','_au':'action_user','_dbn':'DSP bin_name','_mcat':'Main Category','_scat':'Sub Category'};
+  '_bl':'bin_level','_bn':'bin_name','_ln':'layout_name','_msg':'message','_au':'action_user','_dbn':'DSP bin_name','_mcat':'Main Category','_scat':'Sub Category','_sct':'DSP scanned_time'};
 const REV_LAST={'Region':'Region','product_value':'product_value'};
 // Reason of Loss -> the dashboard bucket. At Dock = connection pendency + manifested + VIA DC pendency; Received at DC = received at DC + misrouted
 const REV_BUCKET={'connection pendency':'At Dock','manifested':'At Dock','via dc pendency':'At Dock','received_at_dc':'RECEIVED_AT_DC','received at dc':'RECEIVED_AT_DC','misrouted':'RECEIVED_AT_DC','brsnr':'BRSNR'};
@@ -1274,7 +1295,8 @@ async function parseBase(getChunks,size,opts){
     if(!H){NC=Math.max(...Object.keys(all).map(Number))+1;H=[];for(let c=0;c<NC;c++)H.push(s(all[c]));
       COL={};
       if(side==='fwd'){NEED_FWD.forEach(k=>{COL[k]=H.indexOf(k)});LAST_FWD.forEach(k=>{COL[k]=H.lastIndexOf(k)});
-        const miss=Object.keys(COL).filter(k=>COL[k]<0&&k!=='Error Type');if(miss.length)throw new Error('Missing columns in base sheet: '+miss.join(', '))}
+        const miss=Object.keys(COL).filter(k=>COL[k]<0&&k!=='Error Type');if(miss.length)throw new Error('Missing columns in base sheet: '+miss.join(', '));
+        COL['_sct']=H.indexOf('scanned_time')}
       else{const miss=[];for(const k in REV_MAP){const c=REV_MAP[k];if(c==='=')COL[k]=k;else{COL[k]=H.indexOf(c);if(COL[k]<0)miss.push(c)}}
         for(const k in REV_LAST){COL[k]=H.lastIndexOf(REV_LAST[k]);if(COL[k]<0)miss.push(REV_LAST[k])}
         const must=['Ageing','Reason of Loss','Awb_number','Current_location','Shipment RCA','PV','product_value'];const bad=miss.filter(m=>must.includes(m));
@@ -1476,9 +1498,13 @@ function build(rows,COL,planRows,opts){
   const locsByRegion={};for(const k in lbr)locsByRegion[k]=[...lbr[k]].sort();
   const WIN=REV?{'At Dock':[5,1e9],'RECEIVED_AT_DC':[3,1e9],'BRSNR':[3,1e9]}:{'At Dock':[5,1e9],'RECEIVED_AT_DC':[0,20],'Picked_From_Client':[3,20],'BRSNR':[2,20]};
   const pIdx=data.dims.pivot,lIdx=data.dims.loc,hIdx=data.dims.hold;const MD=new Map();const mdi=v=>{if(!MD.has(v))MD.set(v,MD.size);return MD.get(v)};
-  const XTRA=['et','liq','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'];
-  const xval=(r,k)=>k==='et'?etOf(s(g(r,'Error Type'))):k==='liq'?(REV?(s(g(r,'liq'))||'No'):liqOf(s(g(r,'Product Description')),s(g(r,'Product Category')))):s(g(r,k));
-  const xon=k=>k==='et'||k==='liq'||REV;
+  const XTRA=['et','liq','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla','sct'];
+  // scan recency against the base date: forward = scanned_time, reverse = DSP scanned_time (Excel date serials)
+  const D0=DATE?Math.round((Date.UTC(+DATE.slice(0,4),+DATE.slice(5,7)-1,+DATE.slice(8,10))-Date.UTC(1899,11,30))/864e5):null;
+  const sctOf=r=>{const v=g(r,'_sct');let d=typeof v==='number'?Math.floor(v):NaN;if(isNaN(d)){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s(v));if(m)d=Math.round((Date.UTC(+m[1],+m[2]-1,+m[3])-Date.UTC(1899,11,30))/864e5)}
+    if(isNaN(d))return 'No scan';if(D0==null)return 'Earlier';const k=D0-d;return k<=0?'Today':k===1?'Yesterday':'Earlier'};
+  const xval=(r,k)=>k==='sct'?sctOf(r):k==='et'?etOf(s(g(r,'Error Type'))):k==='liq'?(REV?(s(g(r,'liq'))||'No'):liqOf(s(g(r,'Product Description')),s(g(r,'Product Category')))):s(g(r,k));
+  const xon=k=>k==='et'||k==='liq'||k==='sct'||REV;
   const A={awb:[],p:[],l:[],a:[],h:[],md:[],mc:[],pv:[],hov:[],vol:[],rq:[],mp:[],cl:[],se:[],esd:[],esl:[],bin:[],msg:[],ln:[],bn:[],au:[],mo:[],pdc:[],pcat:[],psub:[]};XTRA.forEach(k=>A[k]=[]);
   const AD={cl:new Map(),se:new Map(),esd:new Map(),esl:new Map(),bin:new Map(),msg:new Map(),ln:new Map(),bn:new Map(),au:new Map(),mo:new Map(),pdc:new Map(),pcat:new Map(),psub:new Map()};XTRA.forEach(k=>AD[k]=new Map());
   const ai2=(k,v)=>{const m=AD[k];if(!m.has(v))m.set(v,m.size);return m.get(v)};
@@ -1487,7 +1513,7 @@ function build(rows,COL,planRows,opts){
     A.md.push(mdi(s(g(r,'Manifest_Destination'))));A.mc.push(s(g(r,'Manifest_code')));A.pv.push(pv(r));A.hov.push(s(g(r,'HOV2'))==='HOV'?1:0);
     const rdcR=piv==='RECEIVED_AT_DC';
     A.vol.push(s(g(r,'Volumetric_flag'))==='Volumetric'?1:0);A.rq.push(!REV&&s(g(r,'rto_queue_flag')).toUpperCase()==='YES'?1:0);A.mp.push(/^y/i.test(s(g(r,'MPSR_Tag')))?1:0);A.cl.push(ai2('cl',s(g(r,'Client'))));
-    A.se.push(piv==='Picked_From_Client'?ai2('se',s(g(r,'seller_name'))):-1);A.esd.push(ai2('esd',s(g(r,'Error Scan Details'))));A.esl.push(ai2('esl',s(g(r,'Error Scan Location'))));
+    A.se.push(!REV?ai2('se',s(g(r,'seller_name'))):-1);A.esd.push(ai2('esd',s(g(r,'Error Scan Details'))));A.esl.push(ai2('esl',s(g(r,'Error Scan Location'))));
     A.bin.push(rdcR?ai2('bin',s(g(r,'bin_level'))):-1);A.msg.push(rdcR?ai2('msg',s(g(r,'message'))):-1);A.ln.push(rdcR?ai2('ln',s(g(r,'layout_name'))):-1);A.bn.push(rdcR?ai2('bn',s(g(r,'bin_name'))):-1);A.au.push(rdcR?ai2('au',s(g(r,'action_user'))):-1);
     A.mo.push(piv==='BRSNR'?ai2('mo',s(g(r,'Manifest_origin'))):-1);
     // product details for HOV AWBs (shown when a HOV cell is double-clicked); forward has no sub-category column
@@ -1497,12 +1523,16 @@ function build(rows,COL,planRows,opts){
   // Picked from Client: client, seller, product · BRSNR: manifest origin
   const DD={md:new Map(),hub:new Map(),mo:new Map(),cl:new Map(),se:new Map(),bin:new Map(),msg:new Map(),au:new Map(),pd:new Map(),esd:new Map(),rca:new Map(),ln:new Map(),bn:new Map()};XTRA.forEach(k=>DD[k]=new Map());
   const di=(k,v)=>{const m=DD[k];if(!m.has(v))m.set(v,m.size);return m.get(v)};
+  // seller filter: sellers with SELL_MIN+ AWBs in the views keep their name, the long tail is grouped (keeps the dashboard data small);
+  // Picked from Client keeps every seller for its drop-downs
+  const SELL_MIN=1,sellN=new Map();if(!REV)for(const r of base){const piv=s(g(r,'Pivot'));const w=WIN[piv];if(!w)continue;const a=g(r,'Ageing_from_Bag_Rec');if(typeof a!=='number'||a<w[0]||a>w[1])continue;const k=s(g(r,'seller_name'));sellN.set(k,(sellN.get(k)||0)+1)}
+  const SELL=v=>(sellN.get(v)||0)>=SELL_MIN?v:'Other sellers (under '+SELL_MIN+' AWBs)'; // Picked from Client sets its own seller below
   const XF=['p','l','a','h','r','v','rto','rq','mp','md','hub','mo','cl','se','bin','msg','au','pd','vol','ssm','esd','rca','ln','bn'].concat(XTRA);
   const dag=new Map();
   for(const r of base){const piv=s(g(r,'Pivot'));const w=WIN[piv];if(!w)continue;const a0=g(r,'Ageing_from_Bag_Rec');if(typeof a0!=='number')continue;const ai=Math.trunc(a0);if(ai<w[0]||ai>w[1])continue;
     const loc=s(g(r,'Current_location')),hv=s(g(r,'HOV2'))==='HOV'?1:0;
     const isVol=s(g(r,'Volumetric_flag'))==='Volumetric'?1:0;
-    const o={p:P.get(piv),l:L.get(loc),a:ai,h:Hh.get(s(g(r,'Hold_Flag'))),r:R.get(s(g(r,'Region'))||'Unmapped'),v:hv,rto:0,rq:!REV&&s(g(r,'rto_queue_flag')).toUpperCase()==='YES'?1:0,mp:/^y/i.test(s(g(r,'MPSR_Tag')))?1:0,md:-1,hub:-1,mo:-1,cl:di('cl',s(g(r,'Client'))),se:-1,bin:-1,msg:-1,au:-1,pd:-1,
+    const o={p:P.get(piv),l:L.get(loc),a:ai,h:Hh.get(s(g(r,'Hold_Flag'))),r:R.get(s(g(r,'Region'))||'Unmapped'),v:hv,rto:0,rq:!REV&&s(g(r,'rto_queue_flag')).toUpperCase()==='YES'?1:0,mp:/^y/i.test(s(g(r,'MPSR_Tag')))?1:0,md:-1,hub:-1,mo:-1,cl:di('cl',s(g(r,'Client'))),se:REV?-1:di('se',SELL(s(g(r,'seller_name')))),bin:-1,msg:-1,au:-1,pd:-1,
       vol:isVol,ssm:0,esd:di('esd',s(g(r,'Error Scan Details'))),rca:-1,ln:-1,bn:-1};XTRA.forEach(k=>o[k]=xon(k)?di(k,xval(r,k)):-1);
     const pd=()=>di('pd',s(g(r,'Product Description')).slice(0,70));
     if(piv==='At Dock'){o.md=di('md',s(g(r,'Manifest_Destination')));o.hub=di('hub',s(g(r,'Delivery_hub')));
