@@ -255,13 +255,21 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .brandlogo{height:30px;width:auto;display:block}
 .brandword{font-family:var(--font-display);font-weight:700;letter-spacing:.14em;color:var(--teal-deep);font-size:16px}
 @media (max-width:760px){.hright{align-items:flex-start}}
-.pvbody{display:grid;grid-template-columns:minmax(0,1fr) 340px}
+.pvbody{display:grid;grid-template-columns:minmax(0,1fr) 340px;position:relative}
+.ins-tog{position:absolute;top:12px;right:340px;transform:translateX(50%);z-index:4;display:flex;align-items:center;justify-content:center;width:22px;height:46px;padding:0;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel);color:var(--teal-deep);cursor:pointer;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.ins-tog:hover{background:var(--teal-soft);border-color:var(--teal)}.ins-tog .lbl{display:none}
+.pvbody.ins-off{grid-template-columns:minmax(0,1fr) 34px}.pvbody.ins-off .ins-tog{right:34px}
+.pvbody.ins-off .insight{padding:0;cursor:pointer;overflow:hidden;max-height:none}.pvbody.ins-off .insight>*{display:none}
+.pvbody.ins-off .insight::after{content:'Summary';display:block;writing-mode:vertical-rl;margin:70px auto 0;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#0B3D33}
+.pvbody.ins-off .insight:hover{background:var(--teal-soft)}
 .pvtables{min-width:0;border-right:1px solid var(--line)}
 .pvtables .tblbox{border-right:0;border-bottom:1px solid var(--line)}
 .pvtables .tblbox:last-child{border-bottom:0}
 .pvtables .pt td:first-child,.pvtables .pt th:first-child{width:1%}
 .pvtables .pt td.gt,.pvtables .pt th.gt{width:1%;padding-left:8px;padding-right:8px}
-@media (max-width:1330px){.pvbody{grid-template-columns:minmax(0,1fr)}.pvtables{border-right:0;border-bottom:1px solid var(--line)}}
+@media (max-width:1330px){.pvbody{grid-template-columns:minmax(0,1fr)}.pvtables{border-right:0;border-bottom:1px solid var(--line)}
+  .pvbody.ins-off{grid-template-columns:minmax(0,1fr)}.ins-tog,.pvbody.ins-off .ins-tog{position:static;transform:none;width:auto;height:auto;margin:8px 16px;padding:4px 10px;gap:6px;font-size:12px;justify-self:start}.ins-tog .lbl{display:inline}
+  .pvbody.ins-off .insight{display:none}.pvbody .ins-tog .arr{transform:rotate(90deg)}.pvtables{order:0}.ins-tog{order:1}.insight{order:2}}
 .pvtables .pt th,.pvtables .pt td{padding:4px 5px;font-size:11.5px}
 .pvtables .pt td:first-child,.pvtables .pt th:first-child{max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .pvtables .pt.dense th,.pvtables .pt.dense td{padding:4px 3px;font-size:11px;letter-spacing:-.1px}
@@ -738,7 +746,8 @@ function render(){
   LAST={byPv,showPv,XP};
   $id('pivots').innerHTML=showPv.map(i=>{const p=byPv[i],name=dims.pivot[i];
     const head=`<div class="pvhead"><div><h2>${esc(pl(name))}</h2><div class="note">${WINLBL[name]||''}${AGE_SRC}</div></div><div class="stats"><span class="chip"><b>${fmt(p.n)}</b> AWBs</span>${REV?'':`<span class="chip"><b>${fmt(p.hold)}</b> on hold</span>`}<span class="chip"><b>${p.loc.size}</b> sites</span><span class="chip"><b>${rs(p.hv)}</b> HOV value</span></div></div>`;
-    return `<section class="pvsec" id="${PF}pv-${i}">${head}<div class="pvbody"><div class="pvtables">${table(i,'cnt',p.loc,p.ages,'Count of AWB','current location × ageing (days)',fmt)}${table(i,'hov',p.hov,p.ages,'HOV misses',REV?'sum of product value (₹), PV = 1 · L = lakh, K = thousand':'sum of product value (₹), HOV2 = HOV · L = lakh, K = thousand',kfmt)}</div><aside class="insight" id="${PF}ins-${i}"></aside></div></section>`}).join('')||'<div class="card empty">No pivot has pendency for these filters.</div>';
+    const off=INS_SIDE.has(name);
+    return `<section class="pvsec" id="${PF}pv-${i}">${head}<div class="pvbody${off?' ins-off':''}"><div class="pvtables">${table(i,'cnt',p.loc,p.ages,'Count of AWB','current location × ageing (days)',fmt)}${table(i,'hov',p.hov,p.ages,'HOV misses',REV?'sum of product value (₹), PV = 1 · L = lakh, K = thousand':'sum of product value (₹), HOV2 = HOV · L = lakh, K = thousand',kfmt)}</div><aside class="insight" id="${PF}ins-${i}"></aside><button class="ins-tog" type="button" data-instog="${esc(name)}" aria-expanded="${!off}" title="${off?'Show the summary':'Hide the summary and widen the table'}"><span class="arr" aria-hidden="true">${off?'◀':'▶'}</span><span class="lbl">${off?'Show summary':'Hide summary'}</span></button></div></section>`}).join('')||'<div class="card empty">No pivot has pendency for these filters.</div>';
   renderInsights();if(FP.open)drawPane();
   ROOT.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyTable(b));
   renderHold(idx);
@@ -916,6 +925,9 @@ function fieldBlock(name,tasks){
   return {html,bind:el=>el.querySelectorAll('.rem q').forEach((q,j)=>{const r=top[j].u.remark;q.textContent=r.length>160?r.slice(0,157)+'…':r})};
 }
 const INS_OPEN=new Set();
+// summary panels folded sideways (per pivot, remembered in this browser) so the table gets the full width
+const INS_SK='sfx-'+SIDE+'-ins-side';const INS_SIDE=new Set();try{(JSON.parse(localStorage.getItem(INS_SK)||'[]')||[]).forEach(n=>INS_SIDE.add(n))}catch(e){}
+function togIns(name){if(INS_SIDE.has(name))INS_SIDE.delete(name);else INS_SIDE.add(name);try{localStorage.setItem(INS_SK,JSON.stringify([...INS_SIDE]))}catch(e){}render()}
 const INS=REV?{'At Dock':insAtDock,'RECEIVED_AT_DC':insRevRdc,'BRSNR':insBrsnr}:{'At Dock':insAtDock,'RECEIVED_AT_DC':insRdc,'Picked_From_Client':insPfc,'BRSNR':insBrsnr};
 let INS_DIRTY=false;
 function renderInsights(){
@@ -953,6 +965,8 @@ function drillRows(pi,kind,l,path,T){
   return {f,lv,last:path.length+1>=lv.length,rows:[...m].map(([k,r])=>({k,r}))};
 }
 $id('pivots').addEventListener('click',e=>{
+  const tg=e.target.closest('[data-instog]');if(tg){togIns(tg.dataset.instog);return}
+  const strip=e.target.closest('.pvbody.ins-off .insight');if(strip){const n=strip.closest('.pvbody').querySelector('[data-instog]');if(n)togIns(n.dataset.instog);return}
   const b=e.target.closest('[data-tg]');if(!b)return;e.stopPropagation();
   const tr=b.closest('tr'),tb=b.closest('table.pt');const T=TBL[tb.dataset.key];if(!T||!X)return;const d=+tr.dataset.d;
   if(b.getAttribute('aria-expanded')==='true'){let n=tr.nextElementSibling;while(n&&+n.dataset.d>d){const x=n.nextElementSibling;n.remove();n=x}b.setAttribute('aria-expanded','false');return}
