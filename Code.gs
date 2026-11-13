@@ -951,9 +951,26 @@ function hovImgQuery_(awbs) {
     "LEFT JOIN `data-warehousing-391512.ecommerce.awb_awbimages` ai1 ON ai1.awb_number = manifests_item.awb_number AND ai1.created >= CURRENT_DATE() - INTERVAL 90 DAY\n" +
     "WHERE manifests_item.created >= CURRENT_DATE() - INTERVAL 90 DAY AND manifests_item.awb_number IN (" + list + ")\nGROUP BY manifests_item.awb_number";
 }
-function hovSync_(r, me) {
-  admin_(me);
-  const side = r.side === 'rev' ? 'rev' : 'fwd'; const SIDE = side === 'rev' ? 'Reverse' : 'Forward';
+function hovSync_(r, me) { admin_(me); return hovSyncCore_(r.side === 'rev' ? 'rev' : 'fwd', !!r.retry); }
+
+// Scheduled run (no signed-in user): syncs both sides. Only AWBs that are not in the "HOV Images" tab yet are looked up in BigQuery;
+// images already stored are kept as they are, AWBs no longer HOV in the latest base are dropped from the tab.
+function hovSyncScheduled() {
+  ['fwd', 'rev'].forEach(side => {
+    try { Logger.log(side + ': ' + JSON.stringify(hovSyncCore_(side, false))); }
+    catch (e) { Logger.log(side + ' skipped: ' + e.message); }
+  });
+}
+// Run this once from the Apps Script editor to create the schedule (every 4 hours; safe to run again, it replaces the old one).
+function installHovTrigger() {
+  ScriptApp.getProjectTriggers().forEach(t => { if (t.getHandlerFunction() === 'hovSyncScheduled') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('hovSyncScheduled').timeBased().everyHours(4).create();
+  Logger.log('Scheduled: hovSyncScheduled every 4 hours.');
+}
+
+// retry = true also looks up again the AWBs that had no image the last time (manual sync only); the scheduled run never does.
+function hovSyncCore_(side, retry) {
+  const SIDE = side === 'rev' ? 'Reverse' : 'Forward';
   const A = readJsonFile_(sideKeys_(side).AWB); if (!A || !A.cols) throw err_('not_found', 'No ' + SIDE.toLowerCase() + ' base uploaded yet.');
   const C = A.cols, hov = new Set(); for (let i = 0; i < C.awb.length; i++) if (C.hov[i]) hov.add(String(C.awb[i]));
   return lock_(() => {
@@ -965,7 +982,7 @@ function hovSync_(r, me) {
       const awb = String(v[0]); if (!awb) return;
       if (v[1] !== SIDE) { keep.push([v[0], v[1], v[2], urls[k][0] || v[3], v[4], v[5]]); return; }
       if (!hov.has(awb)) { removed++; return; }            // closed / no longer HOV: dropped
-      if (v[2] === 'No image yet') { noImg.add(awb); return; } // looked up again below
+      if (v[2] === 'No image yet' && retry) { noImg.add(awb); return; } // looked up again below (manual sync only)
       have.add(awb); keep.push([v[0], v[1], v[2], urls[k][0] || v[3], v[4], v[5]]);
     });
     const ask = [...hov].filter(a => !have.has(a));
