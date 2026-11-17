@@ -71,6 +71,7 @@ h1{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,2.4vw,30
 .fsum{font-size:12px;color:var(--muted)}
 .vbar .inner{display:flex;align-items:center;gap:10px;padding-block:10px 0;flex-wrap:wrap}.filters .vbar+.inner{padding-top:8px}.vtitle{font-family:var(--font-display);font-weight:700;font-size:17px}.vsub{font-size:12.5px;color:var(--muted)}
 .dlbase{white-space:nowrap}
+.fx-hide{display:none!important}.fxmore{appearance:none;border:1px dashed var(--teal);background:var(--teal-soft);color:var(--teal-deep);border-radius:999px;padding:6px 12px;font:600 13px var(--font-ui);cursor:pointer;white-space:nowrap}.fxmore:hover{border-style:solid}.fxmore b{color:#B4471E}
 .sw21{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;border:1px solid var(--line-strong);border-radius:999px;padding:6px 12px;background:var(--panel);user-select:none}
 .sw21 input{position:absolute;opacity:0;width:1px;height:1px}.sw21 .trk{width:28px;height:16px;border-radius:8px;background:#C9D3D0;position:relative;transition:background .15s;flex:none}
 .sw21 .trk::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
@@ -314,7 +315,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .peek{position:fixed;z-index:65;width:340px;max-width:calc(100vw - 24px);background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 14px 36px rgba(15,47,41,.2);padding:12px 14px;font-size:12.5px}
 .peek h6{margin:0;font-size:13px;font-family:var(--font-display)}
 .peek .pk-sum{color:var(--muted);margin:3px 0 8px}
-.imgc{min-width:64px}.thumb{position:relative;display:inline-block;padding:0;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden;width:56px;height:42px;background:var(--bg);cursor:zoom-in}
+.imgc{min-width:64px}.rmc{min-width:180px;max-width:320px;white-space:normal;font-size:12.5px;line-height:1.35}.thumb{position:relative;display:inline-block;padding:0;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden;width:56px;height:42px;background:var(--bg);cursor:zoom-in}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}.thumb span{position:absolute;right:2px;bottom:2px;background:rgba(0,0,0,.65);color:#fff;font-size:10.5px;font-weight:700;border-radius:4px;padding:0 4px}
 .imgbox{position:fixed;inset:0;z-index:200;background:rgba(10,20,18,.88);display:flex;flex-direction:column;color:#fff}
 .ib-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px;font-size:13.5px}.ib-top a{color:#9FE3CF;margin-right:14px}
@@ -467,6 +468,9 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms" data-dim="region"></div>
     <div class="ms" data-dim="loc"></div>
     <div class="ms" data-dim="age"></div>
+    <div class="ms xf" data-dim="dh"></div>
+    <div class="ms xf" data-dim="ph"></div>
+    <div class="ms xf" data-dim="mor"></div>
     <div class="ms xf" data-dim="cl"></div>
     <div class="ms xf" data-dim="vol"></div>
     <div class="ms xf" data-dim="mp"></div>
@@ -476,6 +480,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms xf" data-dim="et"></div>
     <div class="ms xf" data-dim="liq"></div>
     <div class="ms xf" data-dim="rq"></div>
+    <div class="ms xf" data-dim="hrm"></div>
     <div class="ms xf" data-dim="se"></div>
     <div class="ms xf" data-dim="sct"></div>
     <label class="sw21"><input type="checkbox" id="show21"><span class="trk" aria-hidden="true"></span>Show 21+ ageing</label>
@@ -499,6 +504,9 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms" data-dim="region"></div>
     <div class="ms" data-dim="loc"></div>
     <div class="ms" data-dim="age"></div>
+    <div class="ms xf" data-dim="dh"></div>
+    <div class="ms xf" data-dim="ph"></div>
+    <div class="ms xf" data-dim="mor"></div>
     <div class="ms xf" data-dim="srca"></div>
     <div class="ms xf" data-dim="dbin"></div>
     <div class="ms xf" data-dim="dmsg"></div>
@@ -507,6 +515,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms xf" data-dim="sct"></div>
     <div class="ms xf" data-dim="cl"></div>
     <div class="ms xf" data-dim="pvf"></div>
+    <div class="ms xf" data-dim="hrm"></div>
     <div class="ms xf" data-dim="et"></div>
     <div class="ms xf" data-dim="esd"></div>
     <div class="ms xf" data-dim="liq"></div>
@@ -580,10 +589,10 @@ for(let i=0;i<N;i++)regLocs[C.r[i]].add(C.l[i]);
 const X=D.det?D.det.cols:null,XD=D.det?D.det.dims:{},XN=X?X.n.length:0;
 // bases uploaded by an earlier build lack some detail fields: fill them so nothing breaks, and switch off the features that need them
 const DET_FULL=!!(X&&X.vol&&X.esd&&X.rca&&X.ln&&X.bn&&X.ssm);
-const NAMEDX=['cl','se','esd','bin','msg','et','liq','sct','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'],FLAGX=['vol','mp','pvf','rq'];
+const NAMEDX=['dh','ph','mor','hrm','cl','se','esd','bin','msg','et','liq','sct','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'],FLAGX=['vol','mp','pvf','rq'];
 const RQ_OK=!!(X&&X.rq); // RTO queued flag (forward bases uploaded from now on)
 if(X){['vol','ssm','mp','rto','v','rq'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(0)});
-  ['md','hub','mo','cl','se','bin','msg','au','pd','esd','rca','ln','bn','et','liq','sct','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(-1);if(!XD[k])XD[k]=[]})}
+  ['md','hub','mo','cl','se','bin','msg','au','pd','esd','rca','ln','bn','et','liq','sct','dh','ph','mor','hrm','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(-1);if(!XD[k])XD[k]=[]})}
 // reverse: Received at DC drills through the shipment RCA; for reverse-side RCAs the bin level / message / action user come from the DSP columns
 const REV_RCA=/^(reverse leg miss|post bbb miss|no landroval details)$/i;
 const isRevRca=k=>k!=null&&k>=0&&REV_RCA.test(XD.srca[k]||'');
@@ -597,7 +606,7 @@ const XLP=(f,k,path)=>{const s=XL(f,k);return REV&&path&&path.length&&isRevRca(p
 // fields = the filter fields plus the drop-down fields; layouts are kept per table in this browser
 const FL={};
 const dictF=(k,lbl)=>{FL[k]={lbl,get:j=>X[k][j],parse:s=>+s,name:v=>v<0||v==null?'(blank)':XL(k,v)}};
-[['md','Manifest destination'],['mo','Manifest origin'],['cl','Client'],['se','Seller'],['bin',REV?'Bin level':'Bin level'],['msg','Message'],['ln','Layout'],['bn','Bin name'],['au','Action user'],
+[['md','Manifest destination'],['mo','Manifest origin (BRSNR)'],['dh','Delivery hub'],['ph','Pickup hub'],['mor','Manifest origin'],['hrm','HOV remarks'],['cl','Client'],['se','Seller'],['bin',REV?'Bin level':'Bin level'],['msg','Message'],['ln','Layout'],['bn','Bin name'],['au','Action user'],
  ['srca','Shipment RCA'],['dbin','DSP bin level'],['dmsg','DSP message'],['dau','DSP action user'],['dln','DSP layout'],['esd','Error scan remarks'],['et','Error scan type'],['liq','Liquid'],
  ['auth','Product authenticity'],['ga','Moved to GA'],['exs','EXP status'],['cla','Closure action']].forEach(([k,l])=>dictF(k,l));
 FL.liq.name=v=>{const s=v>=0?XD.liq[v]:'';return s==='Yes'?'Liquid':s==='No'?'Not liquid':'(blank)'};
@@ -609,7 +618,7 @@ FL.pvf={lbl:REV?'PV (HOV)':'HOV',get:j=>X.v[j],parse:s=>+s,name:v=>v?'HOV':'Not 
 dictF('sct',REV?'DSP scan time':'Scan time');FL.sct.name=v=>v<0?'(blank)':SCT_LBL(XD.sct[v]);
 FL.rq={lbl:'RTO queued',get:j=>X.rq[j],parse:s=>+s,name:v=>v?'RTO queued':'Not RTO queued'};
 FL.age={lbl:REV?'Ageing':'Ageing from bag rec.',get:j=>ageKey(X.a[j]),parse:s=>s,name:v=>v==='NA'?'Blank':'Day '+v};
-const FL_ORDER=['age','md','mo','cl','se','bin','msg','ln','bn','au','srca','dbin','dmsg','dau','dln','esd','et','liq','sct','vol','mp','rq','pvf','hold','auth','ga','exs','cla'];
+const FL_ORDER=['age','dh','ph','mor','hrm','md','mo','cl','se','bin','msg','ln','bn','au','srca','dbin','dmsg','dau','dln','esd','et','liq','sct','vol','mp','rq','pvf','hold','auth','ga','exs','cla'];
 const FL_OK={}; // fields that carry data for a pivot
 function fieldsFor(pi){if(FL_OK[pi])return FL_OK[pi];const ok=new Set(['age','vol','mp','pvf']);if(!REV&&RQ_OK)ok.add('rq');if(!REV&&dims.hold.length>1)ok.add('hold');
   if(X)for(let j=0;j<XN;j++){if(X.p[j]!==pi)continue;for(const k of FL_ORDER){if(ok.has(k)||!XD[k])continue;const v=X[k][j];if(v>=0&&XD[k][v]!=='')ok.add(k)}}
@@ -688,6 +697,10 @@ const DIMDEF={
   cla:{k:'Closure action',search:true,opts:()=>(XD.cla||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))},
   pvf:{k:'PV (HOV)',opts:()=>[{v:0,t:'PV ≠ 1'},{v:1,t:'PV = 1 (HOV)'}]},
   rq:{k:'RTO queued',opts:()=>[{v:1,t:'RTO queued'},{v:0,t:'Not RTO queued'}]},
+  hrm:{k:'HOV remarks',search:true,cap:150,opts:()=>(XD.hrm||[]).map((v,i)=>({v:i,t:v===''?'Not HOV':v.length>90?v.slice(0,88)+'…':v}))},
+  dh:{k:'Delivery hub',search:true,cap:150,opts:()=>(XD.dh||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
+  ph:{k:'Pickup hub',search:true,cap:150,opts:()=>(XD.ph||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
+  mor:{k:'Manifest origin',search:true,cap:150,opts:()=>(XD.mor||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
   se:{k:'Seller',search:true,cap:150,opts:()=>(XD.se||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
   sct:{k:REV?'DSP scan time':'Scan time',opts:()=>['Today','Yesterday','Earlier','No scan'].map(c=>({v:(XD.sct||[]).indexOf(c),t:SCT_LBL(c)})).filter(o=>o.v>=0)}
 };
@@ -708,7 +721,28 @@ function label(dim){
   const t=opts.filter(o=>s.has(o.v)).map(o=>o.t);
   return t.length===1?t[0]:t.length+' selected';
 }
-function drawButtons(){
+// filter strip: one line by default, "More filters" shows the rest (opens collapsed on every load)
+let FX_OPEN=false;const FBAR=ROOT.querySelector('.filters > .inner');
+const fxBtn=document.createElement('button');fxBtn.type='button';fxBtn.className='fxmore';fxBtn.setAttribute('aria-expanded','false');
+if(FBAR&&$id('reset'))FBAR.insertBefore(fxBtn,$id('reset'));
+fxBtn.onclick=e=>{e.stopPropagation();FX_OPEN=!FX_OPEN;fitFilters()};
+function fitFilters(){
+  if(!FBAR)return;const cands=[...FBAR.querySelectorAll('.ms, .sw21')];cands.forEach(e=>e.classList.remove('fx-hide'));
+  const label=(n,act)=>{fxBtn.innerHTML=FX_OPEN?'Fewer filters <span aria-hidden="true">▴</span>':`More filters (${n})${act?` · <b>${act} active</b>`:''} <span aria-hidden="true">▾</span>`;fxBtn.setAttribute('aria-expanded',String(FX_OPEN))};
+  if(ROOT.hidden||!FBAR.offsetWidth)return; // measured when the view opens
+  if(FX_OPEN){fxBtn.hidden=false;label(0,0);return}
+  fxBtn.hidden=false;label(cands.length,0);
+  const lab=FBAR.querySelector('.flabel');const mid=x=>{const r=x.getBoundingClientRect();return (r.top+r.bottom)/2};const line=mid(lab);
+  const fits=()=>[fxBtn,$id('reset'),$id('fsum')].every(x=>!x||x.hidden||Math.abs(mid(x)-line)<10);
+  cands.forEach(e=>e.classList.add('fx-hide'));
+  let shown=0;for(const e of cands){e.classList.remove('fx-hide');if(!fits()||Math.abs(mid(e)-line)>=10){e.classList.add('fx-hide');break}shown++}
+  const hid=cands.slice(shown);const act=hid.filter(e=>{const d=e.dataset.dim;return d&&S[d]&&S[d].size}).length+(hid.some(e=>e.classList.contains('sw21'))&&SHOW21?1:0);
+  if(!hid.length){fxBtn.hidden=true;return}
+  label(hid.length,act);if(!fits()&&shown>0){cands[shown-1].classList.add('fx-hide');label(hid.length+1,act)}
+}
+addEventListener('resize',()=>{clearTimeout(fitFilters.t);fitFilters.t=setTimeout(fitFilters,150)});
+function drawButtons(){drawButtons0();fitFilters()}
+function drawButtons0(){
   ROOT.querySelectorAll('.ms').forEach(el=>{
     const dim=el.dataset.dim;
     el.innerHTML=`<button type="button" id="${PF}ms-${dim}" aria-haspopup="true" aria-expanded="${openDim===dim}" class="${S[dim].size?'on':''}"><span class="k">${DIMDEF[dim].k}:</span><span class="v">${esc(label(dim))}</span>${caret}</button>`;
@@ -1187,7 +1221,7 @@ const API_={dims,D,
     if(!ch.hidden)ch.innerHTML='Your view: <b>'+esc(sc.label||[...R,...L].join(', '))+'</b>';
     drawButtons();render()},
   locRegion:(()=>{const m={};regLocs.forEach((s,ri)=>s.forEach(l=>{m[dims.loc[l]]=dims.region[ri]}));return m})(),
-  shown:()=>{if(INS_DIRTY)renderInsights()},
+  shown:()=>{fitFilters();if(INS_DIRTY)renderInsights()},
   closeFields:()=>{if(FP.open){FP.open=false;drawPane()}},
   refreshInsights:()=>{renderInsights();if(PRIMARY&&window.SFX.rev)window.SFX.rev.refreshInsights()}};
 if(PRIMARY)window.SFX=Object.assign(window.SFX||{},{esc,fmt,rs,toast,view:()=>location.hash.slice(1)||'forward',tableCsv:(tb,n)=>tableCsv(tb,n),downloadCsv:(n,r)=>downloadCsv(n,r)},API_);
@@ -1270,7 +1304,7 @@ const REV_MAP={'Ageing_from_Bag_Rec':'Ageing','Pivot':'=','Awb_number':'Awb_numb
   'Product Description':'Product Description','MPSR_Tag':'MPSR_Tag','message':'=','action_user':'=','last_action_user':'last_action_user','Product Category':'Product Category','Error Type':'Error Type',
   'bin_level':'=','bin_name':'=','layout_name':'=','srca':'Shipment RCA','dbin':'DSP bin_level','dmsg':'DSP message','dau':'DSP action_user','dln':'DSP layout_name','liq':'Liquid','auth':'Product authencity',
   'ga':'MOVED TO GA','exs':'EXP STATUS','cla':'CLOSURE ACTION','PV':'PV','Reason of Loss':'Reason of Loss',
-  '_bl':'bin_level','_bn':'bin_name','_ln':'layout_name','_msg':'message','_au':'action_user','_dbn':'DSP bin_name','_mcat':'Main Category','_scat':'Sub Category','_sct':'DSP scanned_time'};
+  '_bl':'bin_level','_bn':'bin_name','_ln':'layout_name','_msg':'message','_au':'action_user','_dbn':'DSP bin_name','_mcat':'Main Category','_scat':'Sub Category','_sct':'DSP scanned_time','_ph':'Pickup_hub'};
 const REV_LAST={'Region':'Region','product_value':'product_value'};
 // Reason of Loss -> the dashboard bucket. At Dock = connection pendency + manifested + VIA DC pendency; Received at DC = received at DC + misrouted
 const REV_BUCKET={'connection pendency':'At Dock','manifested':'At Dock','via dc pendency':'At Dock','received_at_dc':'RECEIVED_AT_DC','received at dc':'RECEIVED_AT_DC','misrouted':'RECEIVED_AT_DC','brsnr':'BRSNR'};
@@ -1305,7 +1339,7 @@ async function parseBase(getChunks,size,opts){
       COL={};
       if(side==='fwd'){NEED_FWD.forEach(k=>{COL[k]=H.indexOf(k)});LAST_FWD.forEach(k=>{COL[k]=H.lastIndexOf(k)});
         const miss=Object.keys(COL).filter(k=>COL[k]<0&&k!=='Error Type');if(miss.length)throw new Error('Missing columns in base sheet: '+miss.join(', '));
-        COL['_sct']=H.indexOf('scanned_time')}
+        COL['_sct']=H.indexOf('scanned_time');COL['_ph']=H.indexOf('Pickup_Hub')}
       else{const miss=[];for(const k in REV_MAP){const c=REV_MAP[k];if(c==='=')COL[k]=k;else{COL[k]=H.indexOf(c);if(COL[k]<0)miss.push(c)}}
         for(const k in REV_LAST){COL[k]=H.lastIndexOf(REV_LAST[k]);if(COL[k]<0)miss.push(REV_LAST[k])}
         const must=['Ageing','Reason of Loss','Awb_number','Current_location','Shipment RCA','PV','product_value'];const bad=miss.filter(m=>must.includes(m));
@@ -1507,13 +1541,15 @@ function build(rows,COL,planRows,opts){
   const locsByRegion={};for(const k in lbr)locsByRegion[k]=[...lbr[k]].sort();
   const WIN=REV?{'At Dock':[5,1e9],'RECEIVED_AT_DC':[3,1e9],'BRSNR':[3,1e9]}:{'At Dock':[5,1e9],'RECEIVED_AT_DC':[0,20],'Picked_From_Client':[3,20],'BRSNR':[2,20]};
   const pIdx=data.dims.pivot,lIdx=data.dims.loc,hIdx=data.dims.hold;const MD=new Map();const mdi=v=>{if(!MD.has(v))MD.set(v,MD.size);return MD.get(v)};
-  const XTRA=['et','liq','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla','sct'];
+  const XTRA=['et','liq','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla','sct','dh','ph','mor','hrm'];
+  // HOV remarks from the HOV Working sheet (as of this upload), on HOV AWBs only; same text in any case = one remark
+  const RMK=opts.remarks||{},RMC=new Map();const rmOf=r=>{if(s(g(r,'HOV2'))!=='HOV')return '';const t=String(RMK[s(g(r,'Awb_number'))]||'').replace(/\s+/g,' ').trim();if(!t)return '(no remark)';const k=t.toLowerCase();if(!RMC.has(k))RMC.set(k,t);return RMC.get(k)};
   // scan recency against the base date: forward = scanned_time, reverse = DSP scanned_time (Excel date serials)
   const D0=DATE?Math.round((Date.UTC(+DATE.slice(0,4),+DATE.slice(5,7)-1,+DATE.slice(8,10))-Date.UTC(1899,11,30))/864e5):null;
   const sctOf=r=>{const v=g(r,'_sct');let d=typeof v==='number'?Math.floor(v):NaN;if(isNaN(d)){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s(v));if(m)d=Math.round((Date.UTC(+m[1],+m[2]-1,+m[3])-Date.UTC(1899,11,30))/864e5)}
     if(isNaN(d))return 'No scan';if(D0==null)return 'Earlier';const k=D0-d;return k<=0?'Today':k===1?'Yesterday':'Earlier'};
-  const xval=(r,k)=>k==='sct'?sctOf(r):k==='et'?etOf(s(g(r,'Error Type'))):k==='liq'?(REV?(s(g(r,'liq'))||'No'):liqOf(s(g(r,'Product Description')),s(g(r,'Product Category')))):s(g(r,k));
-  const xon=k=>k==='et'||k==='liq'||k==='sct'||REV;
+  const xval=(r,k)=>k==='hrm'?rmOf(r):k==='dh'?s(g(r,'Delivery_hub')):k==='ph'?s(g(r,'_ph')):k==='mor'?s(g(r,'Manifest_origin')):k==='sct'?sctOf(r):k==='et'?etOf(s(g(r,'Error Type'))):k==='liq'?(REV?(s(g(r,'liq'))||'No'):liqOf(s(g(r,'Product Description')),s(g(r,'Product Category')))):s(g(r,k));
+  const xon=k=>k==='et'||k==='liq'||k==='sct'||k==='dh'||k==='ph'||k==='mor'||k==='hrm'||REV;
   const A={awb:[],p:[],l:[],a:[],h:[],md:[],mc:[],pv:[],hov:[],vol:[],rq:[],mp:[],cl:[],se:[],esd:[],esl:[],bin:[],msg:[],ln:[],bn:[],au:[],mo:[],pdc:[],pcat:[],psub:[]};XTRA.forEach(k=>A[k]=[]);
   const AD={cl:new Map(),se:new Map(),esd:new Map(),esl:new Map(),bin:new Map(),msg:new Map(),ln:new Map(),bn:new Map(),au:new Map(),mo:new Map(),pdc:new Map(),pcat:new Map(),psub:new Map()};XTRA.forEach(k=>AD[k]=new Map());
   const ai2=(k,v)=>{const m=AD[k];if(!m.has(v))m.set(v,m.size);return m.get(v)};
@@ -1571,11 +1607,11 @@ root.PendencyParser={parseBase,build};
 })(typeof self!=='undefined'?self:globalThis);
 
 self.onmessage=async e=>{
-  const {file,asOf,baseDate,raw}=e.data;
+  const {file,asOf,baseDate,raw,remarks}=e.data;
   const getChunks=async function*(){const r=file.stream().getReader();for(;;){const {done,value}=await r.read();if(done)return;yield value}};
   let last=0;
   try{
-    const out=await PendencyParser.parseBase(getChunks,file.size,{asOf,baseDate,raw,onProgress:(phase,f)=>{const now=Date.now();if(now-last<200&&phase!=='Building views')return;last=now;
+    const out=await PendencyParser.parseBase(getChunks,file.size,{asOf,baseDate,raw,remarks,onProgress:(phase,f)=>{const now=Date.now();if(now-last<200&&phase!=='Building views')return;last=now;
       const pct=phase==='Reading shared text'?f*0.45:phase==='Reading base rows'?0.45+f*0.5:0.97;self.postMessage({type:'progress',phase:phase+'…',f:Math.min(pct,0.99)})}});
     self.postMessage({type:'done',out},out.raw&&out.raw.buffer?[out.raw.buffer]:[]);
   }catch(err){self.postMessage({type:'error',message:(err&&err.message)||String(err)})}
@@ -1640,7 +1676,7 @@ const pri=p=>p?`<span class="pri ${esc(p)}">${esc(p)}</span>`:'';
 
 // ---------- start ----------
 async function signOut(){if(RT.preview){RT.preview=null;applyScope();renderAll();return}window.APP.logout()}
-function setTasks(list){RT.tasks=new Map((list||[]).map(t=>[t.id,t]));CELLC.clear();renderAll();if(tv.open)renderDrawer();X.refreshInsights&&X.refreshInsights()}
+function setTasks(list){RT.tasks=new Map((list||[]).map(t=>[t.id,t]));CELLC.clear();refreshTaskMaps();renderAll();if(tv.open)renderDrawer();X.refreshInsights&&X.refreshInsights()}
 async function refreshTasks(){try{const r=await API('tasks');setTasks(r.tasks)}catch(e){}}
 X.getTasks=()=>[...RT.tasks.values()].filter(sees);X.pname=e=>pname(e);
 function start(){applyScope();renderAll();X.refreshInsights&&X.refreshInsights();setInterval(()=>{if(!document.hidden&&!tv.busy)refreshTasks()},60000)}
@@ -1907,7 +1943,50 @@ function wireReassign(el,t){
 // ---------- drill-down dialog (double-click on a pivot number) ----------
 // cached cell lookups shared by the single-click popup and the double-click dialog
 const CELLC=new Map();
-function cellData(c){const k=JSON.stringify([c.side||'fwd',c.pivot,c.loc,c.ages,c.hold,c.hovOnly,c.sub||{},c.f||{}]);if(!CELLC.has(k)){const pr=API('cell',{side:c.side||'fwd',pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly,sub:c.sub||{},f:c.f||{}});pr.catch(()=>CELLC.delete(k));CELLC.set(k,pr)}return CELLC.get(k)}
+// ---------- AWB detail kept in the browser, so a double-click opens at once (loaded in the background after sign-in) ----------
+const LOCD={fwd:null,rev:null},LOADD={};
+function loadAwbData(side){if(LOCD[side])return Promise.resolve(LOCD[side]);if(LOADD[side])return LOADD[side];
+  LOADD[side]=API('awbData',{side}).then(r=>{LOADD[side]=null;if(!r||!r.A)return null;const A=r.A,C=A.cols,ix=new Map();
+    for(let i=0;i<C.awb.length;i++){const k=C.p[i]*100000+C.l[i];let a=ix.get(k);if(!a){a=[];ix.set(k,a)}a.push(i)}
+    LOCD[side]={A,ix,tmap:r.tmap||{},prod:r.prod||null,baseAt:r.baseAt||''};CELLC.clear();return LOCD[side]}).catch(()=>{LOADD[side]=null;return null});return LOADD[side]}
+X.loadAwbData=loadAwbData;
+let TMT=null;function refreshTaskMaps(){clearTimeout(TMT);TMT=setTimeout(()=>['fwd','rev'].forEach(s=>{if(LOCD[s])API('taskMap',{side:s}).then(r=>{if(LOCD[s]){LOCD[s].tmap=r.tmap||{};CELLC.clear()}}).catch(()=>{})}),400)}
+// same rules as the server's cell lookup
+function cellLocal(r,L){
+  const A=L.A,D=A.dims,C=A.cols;const side=r.side==='rev'?'rev':'fwd';
+  const pi=D.pivot.indexOf(r.pivot),li=D.loc.indexOf(r.loc);
+  const holdSet=(r.hold||[]).length?r.hold.map(h=>D.hold.indexOf(h)):null;
+  const want={};let plus=false;(r.ages||[]).forEach(k=>{if(k==='21+')plus=true;else want[+k]=1});
+  const f=r.f||{},sub=r.sub||{},conds=[];
+  const named=(field,vals)=>{if(!C[field]||!D[field])return;const set={};vals.forEach(v=>{set[D[field].indexOf(v)]=1});conds.push(i=>set[C[field][i]]===1)};
+  ['vol','mp','rq'].forEach(k=>{if((f[k]||[]).length&&C[k]){const set={};f[k].forEach(v=>set[+v]=1);conds.push(i=>set[C[k][i]]===1)}});
+  if((f.pvf||[]).length){const set={};f.pvf.forEach(v=>set[+v]=1);conds.push(i=>set[C.hov[i]?1:0]===1)}
+  Object.keys(f).forEach(k=>{if(k==='vol'||k==='mp'||k==='rq'||k==='pvf'||!(f[k]||[]).length||!D[k]||!C[k])return;if((k==='bin'||k==='msg')&&(side==='rev'||r.pivot!=='RECEIVED_AT_DC'))return;named(k,f[k])});
+  Object.keys(sub).forEach(k=>{const v=sub[k];
+    if(k==='md'){const m=D.md.indexOf(v);conds.push(i=>C.md[i]===m)}
+    else if(k==='vol'||k==='mp'||k==='rq')conds.push(i=>(C[k]?C[k][i]:0)===+v);
+    else if(k==='pvf')conds.push(i=>(C.hov[i]?1:0)===+v);
+    else if(k==='hold'){const h=D.hold.indexOf(v);conds.push(i=>C.h[i]===h)}
+    else if(D[k]&&C[k])named(k,[v])});
+  const idx=[];for(const i of (L.ix.get(pi*100000+li)||[])){const a=C.a[i];if(!(want[a]||(plus&&a>=21)))continue;if(holdSet&&holdSet.indexOf(C.h[i])<0)continue;if(r.hovOnly&&!C.hov[i])continue;
+    let ok=true;for(let q=0;q<conds.length;q++)if(!conds[q](i)){ok=false;break}if(ok)idx.push(i)}
+  const awbTask=L.tmap;const nm=(k,i)=>(D[k]&&C[k]&&C[k][i]>=0)?D[k][C[k][i]]:'';const pfc=r.pivot==='Picked_From_Client';
+  const hHold=D.hold.indexOf('Hold'),byDest={},tCount={},mcs={};let value=0,hov=0,hovV=0,held=0,assigned=0;
+  idx.forEach(i=>{const d=pfc?(nm('cl',i)||'(blank)')+'\u0001'+(nm('se',i)||'(no seller name)'):(D.md[C.md[i]]||'(blank)');
+    const o=byDest[d]||(byDest[d]={dest:d,n:0,value:0,assigned:0,mc:{}});o.n++;o.value+=C.pv[i];o.mc[C.mc[i]]=1;value+=C.pv[i];
+    const m=C.mc[i]||'(no manifest)';const mo=mcs[m]||(mcs[m]={mc:m,n:0,md:D.md[C.md[i]]||'',esl:nm('esl',i),esd:nm('esd',i),assigned:0});mo.n++;
+    if(C.hov[i]){hov++;hovV+=C.pv[i]}if(C.h[i]===hHold)held++;
+    const tid=awbTask[C.awb[i]];if(tid){assigned++;o.assigned++;mo.assigned++;tCount[tid]=(tCount[tid]||0)+1}});
+  const dests=Object.keys(byDest).map(k=>{const o=byDest[k];o.manifests=Object.keys(o.mc).length;delete o.mc;if(pfc){const p=k.split('\u0001');o.client=p[0];o.seller=p[1];o.dest=p[0]}return o}).sort((a,b)=>b.n-a.n);
+  const manifests=Object.keys(mcs).map(k=>mcs[k]).sort((a,b)=>b.n-a.n);
+  const rows=idx.slice().sort((a,b)=>C.pv[b]-C.pv[a]).slice(0,500).map(i=>({awb:C.awb[i],age:C.a[i],md:D.md[C.md[i]],mc:C.mc[i],pv:C.pv[i],hov:!!C.hov[i],hold:D.hold[C.h[i]],task:awbTask[C.awb[i]]||null,cl:nm('cl',i),se:nm('se',i),esl:nm('esl',i),esd:nm('esd',i),srca:nm('srca',i),hrm:nm('hrm',i),pdc:nm('pdc',i),pcat:nm('pcat',i),psub:nm('psub',i)}));
+  if(L.prod)rows.forEach(x=>{const m=L.prod[x.awb];if(x.hov&&m&&!x.pdc&&!x.pcat){x.pdc=m[0]||'';x.pcat=m[1]||'';x.psub=m[2]||''}});
+  const tl=[...RT.tasks.values()].filter(t=>tCount[t.id]).map(t=>({id:t.id,title:t.title,status:t.status,prio:t.prio,kind:t.kind,matched:tCount[t.id],owners:owners(t)}));
+  return {n:idx.length,value,hov,hovValue:hovV,held,assigned,dests,rows,tasks:tl,truncated:idx.length>500,pfc,manifests:manifests.slice(0,8),manifestCount:manifests.length,baseAt:L.baseAt,baseAsOf:A.asOf||'',side,local:true};
+}
+function cellData(c){const k=JSON.stringify([c.side||'fwd',c.pivot,c.loc,c.ages,c.hold,c.hovOnly,c.sub||{},c.f||{}]);
+  const L=LOCD[c.side||'fwd'];if(L&&!CELLC.has(k)){try{CELLC.set(k,Promise.resolve(cellLocal(c,L)))}catch(e){console.warn('local cell',e)}}
+  if(!CELLC.has(k)){const pr=API('cell',{side:c.side||'fwd',pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly,sub:c.sub||{},f:c.f||{}});pr.catch(()=>CELLC.delete(k));CELLC.set(k,pr)}return CELLC.get(k)}
 function lastEvent(t){
   const evs=[...(t.history||[]).map(h=>({...h,k:h.type})),...(t.updates||[]).map(u=>({...u,k:'update'}))].sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   const e=evs[0];if(!e)return '';const nm=l=>(l||[]).map(pname).join(', ');
@@ -1983,14 +2062,17 @@ X.onCell=async function(c){
    ${r.tasks.length?`<h4>Tasks covering these AWBs</h4><section class="tgroup">${r.tasks.map(t=>`<div class="trow" data-cmopen="${esc(t.id)}"><div><div class="tags">${pri(t.prio)}<span class="ktag">${KIND[t.kind]||''}</span></div><div class="ttl"></div><div class="tsub">${fmt(t.matched)} of these AWBs · with ${esc((t.owners||[]).map(pname).join(', '))}</div></div><div class="tact"><span class="st ${stCls(t.status)}">${esc(t.status)}</span></div></div>`).join('')}</section>`:`<div class="banner">None of these AWBs are in an assigned task yet.</div>`}
    ${r.pfc?`<h4>Clients and sellers (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Client</th><th>Seller</th><th style="text-align:right">AWBs</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.client)}</td><td>${esc(d.seller)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>`
    :`<h4>Manifest destinations (${r.dests.length})</h4><div class="scroll" style="max-height:260px"><table class="hp"><thead><tr><th>Manifest destination</th><th style="text-align:right">AWBs</th><th style="text-align:right">Manifests</th><th style="text-align:right">Value (₹)</th><th style="text-align:right">In tasks</th></tr></thead><tbody>${r.dests.map(d=>`<tr><td>${esc(d.dest)}</td><td class="n">${fmt(d.n)}</td><td class="n">${fmt(d.manifests)}</td><td class="n">${fmt(d.value)}</td><td class="n">${d.assigned?fmt(d.assigned):'<span class="note">–</span>'}</td></tr>`).join('')}</tbody></table></div>`}
-   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Download CSV</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th>${r.pfc?'<th>Client</th><th>Seller</th>':'<th>Manifest destination</th><th>Manifest code</th><th>Error scan location</th><th>Error scan remarks</th>'}<th style="text-align:right">Value (₹)</th><th>HOV</th>${IMG?'<th>Images</th>':''}${PRD?'<th>Product description</th><th>Category</th>'+(PSUB?'<th>Sub category</th>':''):''}${c.side==='rev'?'':'<th>Hold</th>'}<th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td>${r.pfc?`<td>${esc(a.cl||'')}</td><td>${esc(a.se||'')}</td>`:`<td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td>${esc(a.esl||'')}</td><td>${esc(a.esd||'')}</td>`}<td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td>${IMG?`<td class="imgc" data-img="${esc(a.awb)}">${a.hov?'<span class="note">…</span>':''}</td>`:''}${PRD?`<td>${esc(a.pdc||'')}</td><td>${esc(a.pcat||'')}</td>`+(PSUB?`<td>${esc(a.psub||'')}</td>`:''):''}${c.side==='rev'?'':`<td>${esc(a.hold)}</td>`}<td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
+   <h4 style="display:flex;justify-content:space-between;align-items:center">AWBs${r.truncated?' (top 500 by value)':''} <button class="mini" type="button" id="cmCopy">Download CSV</button></h4><div class="scroll" style="max-height:320px"><table class="hp"><thead><tr><th>AWB</th><th style="text-align:right">Ageing</th>${r.pfc?'<th>Client</th><th>Seller</th>':'<th>Manifest destination</th><th>Manifest code</th><th>Error scan location</th><th>Error scan remarks</th>'}<th style="text-align:right">Value (₹)</th><th>HOV</th>${IMG?'<th>Images</th><th>HOV remarks</th>':''}${PRD?'<th>Product description</th><th>Category</th>'+(PSUB?'<th>Sub category</th>':''):''}${c.side==='rev'?'':'<th>Hold</th>'}<th>Task status</th></tr></thead><tbody>${r.rows.map(a=>{const t=a.task&&tk.get(a.task);return `<tr><td>${esc(a.awb)}</td><td class="n">${a.age}</td>${r.pfc?`<td>${esc(a.cl||'')}</td><td>${esc(a.se||'')}</td>`:`<td>${esc(a.md)}</td><td>${esc(a.mc)}</td><td>${esc(a.esl||'')}</td><td>${esc(a.esd||'')}</td>`}<td class="n">${fmt(a.pv)}</td><td>${a.hov?'HOV':''}</td>${IMG?`<td class="imgc" data-img="${esc(a.awb)}">${a.hov?'<span class="note">…</span>':''}</td><td class="rmc" data-rm="${esc(a.awb)}">${a.hov?esc(a.hrm&&a.hrm!=='(no remark)'?a.hrm:''):''}</td>`:''}${PRD?`<td>${esc(a.pdc||'')}</td><td>${esc(a.pcat||'')}</td>`+(PSUB?`<td>${esc(a.psub||'')}</td>`:''):''}${c.side==='rev'?'':`<td>${esc(a.hold)}</td>`}<td>${t?`<span class="st ${stCls(t.status)}">${esc(t.status)}</span>`:'<span class="note">Not assigned</span>'}</td></tr>`}).join('')}</tbody></table></div>`;
   bg.querySelectorAll('[data-cmopen]').forEach(row=>{row.querySelector('.ttl').textContent=tk.get(row.dataset.cmopen).title;row.onclick=()=>{bg.remove();if(RT.tasks.has(row.dataset.cmopen))openTask(row.dataset.cmopen)}});
   bg.querySelector('#cmX').onclick=()=>bg.remove();
-  if(IMG)loadHovImages(bg,r.rows.filter(a=>a.hov).map(a=>a.awb));
+  if(IMG){const hv=r.rows.filter(a=>a.hov).map(a=>a.awb);loadHovImages(bg,hv);loadHovRemarks(bg,hv)}
   bg.querySelector('#cmCopy').onclick=e=>X.tableCsv(e.target.closest('h4').nextElementSibling.querySelector('table'),`${c.pivotLabel} ${c.loc} ${c.ageLabel}`);
 };
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(document.getElementById('imgBox'))return;const m=document.getElementById('cellModal');if(m)m.remove()}});
 // ---------- HOV shipment images (from the "HOV Images" tab, filled by BigQuery after each upload) ----------
+// latest remarks from the HOV Working sheet (the filter uses the remarks as of the upload)
+async function loadHovRemarks(bg,awbs){let res;try{res=await API('hovRemarks',{awbs:awbs.slice(0,600)})}catch(e){return}
+  const R=res.rm||{};bg.querySelectorAll('td.rmc[data-rm]').forEach(td=>{const v=R[td.dataset.rm];if(v!=null)td.textContent=v;if(!td.textContent.trim())td.innerHTML='<span class="note">No remark</span>'})}
 async function loadHovImages(bg,awbs){
   let res;try{res=await API('hovImages',{awbs:awbs.slice(0,600)})}catch(e){bg.querySelectorAll('td.imgc .note').forEach(n=>n.textContent='–');return}
   const IM=res.img||{};
@@ -2722,6 +2804,8 @@ async function boot(){
   if(!B.data){const nb=document.getElementById('noBase');if(nb){nb.hidden=false;nb.innerHTML=B.me.admin?'No base file has been uploaded yet. <a href="#upload">Upload today’s Forward pendency base</a> to fill the dashboard and the task suggestions.':'The central team hasn’t uploaded today’s base file yet. Check back later.'}}
   if(!B.revData){const nb=document.getElementById('rnoBase');if(nb){nb.hidden=false;nb.innerHTML=B.me.admin?'No reverse base has been uploaded yet. <a href="#upload">Upload the Reverse_Overall_Base_Final file</a> to fill this view and its task suggestions.':'The central team hasn’t uploaded the reverse base file yet. Check back later.'}}
   RAW=(B.config&&B.config.raw)||{};
+  // AWB detail for instant double-clicks, fetched quietly after the screens are up
+  setTimeout(()=>{const X=window.SFX;if(!X||!X.loadAwbData)return;(B.data?X.loadAwbData('fwd'):Promise.resolve()).then(()=>B.revData&&X.loadAwbData('rev'))},1500);
   setTimeout(()=>backfillProducts(B),2500);
   ['dlbase','rdlbase'].forEach(id=>{const b=document.getElementById(id);if(b&&!RAW[id==='dlbase'?'fwd':'rev'])b.title='The full base file becomes downloadable after the next upload';});
 }
@@ -2903,7 +2987,9 @@ function readFile(B){
     else if(m.type==='error'){up.err='Couldn’t read this file: '+m.message;up.busy=false;up.phase='';w.terminate();renderUpload(B)}};
   w.onerror=e=>{up.err='Couldn’t read this file in the browser: '+(e.message||'unknown error');up.busy=false;w.terminate();renderUpload(B)};
   const d=up.date||dateFromName(up.file.name);
-  w.postMessage({file:up.file,asOf:asOfFrom(d),baseDate:d});
+  // HOV remarks from the HOV Working sheet go into this base (for the remarks filter); the upload goes on without them if the sheet can't be read
+  up.phase='Reading HOV remarks…';renderUpload(B);
+  window.API('hovRemarks',{all:true}).then(r=>r&&r.map||{}).catch(e=>{console.warn('remarks',e);return {}}).then(remarks=>{w.postMessage({file:up.file,asOf:asOfFrom(d),baseDate:d,remarks})});
 }
 const b64Of=blob=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>no(r.error);r.readAsDataURL(blob)});
 async function publish(B){
