@@ -76,6 +76,31 @@ h1{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,2.4vw,30
 .sw21 input{position:absolute;opacity:0;width:1px;height:1px}.sw21 .trk{width:28px;height:16px;border-radius:8px;background:#C9D3D0;position:relative;transition:background .15s;flex:none}
 .sw21 .trk::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
 .sw21 input:checked+.trk{background:var(--teal)}.sw21 input:checked+.trk::after{left:14px}.sw21:has(input:checked){border-color:var(--teal);background:var(--teal-soft)}.sw21 input:focus-visible+.trk{outline:2px solid var(--teal);outline-offset:2px}
+/* ---------- motion: short, quiet transitions for everything that opens, expands or switches ---------- */
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes zoomIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes slideLeft{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes rowIn{from{opacity:0}to{opacity:1}}
+.view-in{animation:fadeUp .22s ease-out both}
+.pop.anim-in{animation:popIn .16s ease-out both;transform-origin:top left}
+.peek{animation:popIn .16s ease-out both}
+.peek .pk-form{animation:fadeUp .18s ease-out both}
+.modal-bg{animation:fadeIn .16s ease-out both}.modal-bg .modal{animation:zoomIn .2s cubic-bezier(.2,.8,.3,1) both}
+.imgbox{animation:fadeIn .18s ease-out both}.imgbox .ib-main img{animation:zoomIn .22s ease-out both}
+.fpane{animation:slideLeft .22s cubic-bezier(.2,.8,.3,1) both}.drawer{animation:slideLeft .24s cubic-bezier(.2,.8,.3,1) both}
+table.pt tr.sub>td{animation:rowIn .2s ease-out both}
+.tg::before{transition:transform .18s ease}
+.ins-wrap{transition:max-height .32s ease}
+.pvbody{transition:grid-template-columns .28s ease}
+.tblbox.swap{animation:fadeIn .22s ease-out both}
+.fx-in{animation:fadeUp .2s ease-out both}
+.btn,.mini,.reset,.ms>button,.fxmore,.sw21,.side-nav a,.ins-tog,.thumb,.cd-nav a{transition:background-color .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease,transform .15s ease}
+.btn:active,.mini:active,.fxmore:active{transform:scale(.98)}
+.pvbody .ins-tog{transition:right .28s ease,background-color .15s ease,border-color .15s ease}
+.toast{animation:fadeUp .2s ease-out both}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;transition-duration:.001ms!important}}
 .pvtitle{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pvmode{display:inline-flex;gap:6px}.sw21.sm{padding:3px 10px;font-size:12px;gap:6px}.sw21.sm .trk{width:24px;height:14px}.sw21.sm .trk::after{width:10px;height:10px}.sw21.sm input:checked+.trk::after{left:12px}
 .fpbtn{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.fpbtn.on{background:var(--teal-soft);border-color:var(--teal)}
 .fpane{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100vw;z-index:60;background:var(--panel);border-left:1px solid var(--line-strong);box-shadow:-12px 0 32px rgba(0,0,0,.14);display:flex;flex-direction:column;font-size:13px}
@@ -736,7 +761,7 @@ function label(dim){
 let FX_OPEN=false;const FBAR=ROOT.querySelector('.filters > .inner');
 const fxBtn=document.createElement('button');fxBtn.type='button';fxBtn.className='fxmore';fxBtn.setAttribute('aria-expanded','false');
 if(FBAR&&$id('reset'))FBAR.insertBefore(fxBtn,$id('reset'));
-fxBtn.onclick=e=>{e.stopPropagation();FX_OPEN=!FX_OPEN;fitFilters()};
+fxBtn.onclick=e=>{e.stopPropagation();const was=FBAR?[...FBAR.querySelectorAll('.fx-hide')]:[];FX_OPEN=!FX_OPEN;fitFilters();if(FX_OPEN)was.forEach((el,k)=>{el.classList.remove('fx-in');void el.offsetWidth;el.style.animationDelay=Math.min(k*15,200)+'ms';el.classList.add('fx-in')})};
 function fitFilters(){
   if(!FBAR)return;const cands=[...FBAR.querySelectorAll('.ms, .sw21')];cands.forEach(e=>e.classList.remove('fx-hide'));
   const label=(n,act)=>{fxBtn.innerHTML=FX_OPEN?'Fewer filters <span aria-hidden="true">▴</span>':`More filters (${n})${act?` · <b>${act} active</b>`:''} <span aria-hidden="true">▾</span>`;fxBtn.setAttribute('aria-expanded',String(FX_OPEN))};
@@ -753,7 +778,8 @@ function fitFilters(){
 }
 addEventListener('resize',()=>{clearTimeout(fitFilters.t);fitFilters.t=setTimeout(fitFilters,150)});
 function drawButtons(){drawButtons0();fitFilters()}
-function drawButtons0(){
+let POPANIM=null;
+function drawButtons0(){if(!openDim)POPANIM=null;
   ROOT.querySelectorAll('.ms').forEach(el=>{
     const dim=el.dataset.dim;
     el.innerHTML=`<button type="button" id="${PF}ms-${dim}" aria-haspopup="true" aria-expanded="${openDim===dim}" class="${S[dim].size?'on':''}"><span class="k">${DIMDEF[dim].k}:</span><span class="v">${esc(label(dim))}</span>${caret}</button>`;
@@ -769,7 +795,7 @@ function counts(dim){
 function drawPop(dim,q){
   const host=ROOT.querySelector(`.ms[data-dim="${dim}"]`);
   let pop=host.querySelector('.pop');
-  if(!pop){pop=document.createElement('div');pop.className='pop';pop.onclick=e=>e.stopPropagation();host.appendChild(pop)}
+  if(!pop){pop=document.createElement('div');pop.className='pop';pop.onclick=e=>e.stopPropagation();host.appendChild(pop);if(POPANIM!==dim){pop.classList.add('anim-in');POPANIM=dim}}
   const def=DIMDEF[dim],cn=counts(dim),s=S[dim];q=(q||'').toLowerCase();
   let opts=def.opts();if(q)opts=opts.filter(o=>o.t.toLowerCase().includes(q));
   if(dim==='loc'||def.cap)opts.sort((a,b)=>(cn.get(b.v)||0)-(cn.get(a.v)||0));
@@ -1007,7 +1033,9 @@ function fieldBlock(name,tasks){
 const INS_OPEN=new Set();
 // summary panels folded sideways (per pivot, remembered in this browser) so the table gets the full width
 const INS_SK='sfx-'+SIDE+'-ins-side';const INS_SIDE=new Set();try{(JSON.parse(localStorage.getItem(INS_SK)||'[]')||[]).forEach(n=>INS_SIDE.add(n))}catch(e){}
-function togIns(name){if(INS_SIDE.has(name))INS_SIDE.delete(name);else INS_SIDE.add(name);try{localStorage.setItem(INS_SK,JSON.stringify([...INS_SIDE]))}catch(e){}render()}
+function togIns(name){const off=!INS_SIDE.has(name);if(off)INS_SIDE.add(name);else INS_SIDE.delete(name);try{localStorage.setItem(INS_SK,JSON.stringify([...INS_SIDE]))}catch(e){}
+  const tgb=$id('pivots').querySelector(`[data-instog="${CSS.escape(name)}"]`);const body=tgb&&tgb.closest('.pvbody');
+  if(body&&!matchMedia('(max-width:1330px)').matches&&!matchMedia('(prefers-reduced-motion:reduce)').matches){body.classList.toggle('ins-off',off);setTimeout(render,300)}else render()}
 const INS=REV?{'At Dock':insAtDock,'RECEIVED_AT_DC':insRevRdc,'BRSNR':insBrsnr}:{'At Dock':insAtDock,'RECEIVED_AT_DC':insRdc,'Picked_From_Client':insPfc,'BRSNR':insBrsnr};
 let INS_DIRTY=false;
 function renderInsights(){
@@ -1027,7 +1055,11 @@ function insOne(i,el,tasks){{const name=dims.pivot[i];
     if(!open){const tb=el.parentElement.querySelector('.pvtables .tblbox');const side=getComputedStyle(el.parentElement).gridTemplateColumns.split(' ').length>1;
       w.style.maxHeight=(side&&tb?Math.max(260,tb.offsetHeight-64):380)+'px'}else w.style.maxHeight='none';
     if(!open&&w.scrollHeight<=w.clientHeight+4){bt.hidden=true;w.classList.add('fits')}
-    bt.onclick=()=>{if(INS_OPEN.has(name))INS_OPEN.delete(name);else INS_OPEN.add(name);renderInsights()};
+    bt.onclick=()=>{const opening=!INS_OPEN.has(name);if(opening)INS_OPEN.add(name);else INS_OPEN.delete(name);
+      const from=w.getBoundingClientRect().height;let to;
+      if(opening){to=w.scrollHeight;w.classList.add('open')}else{const tb=el.parentElement.querySelector('.pvtables .tblbox');const side=getComputedStyle(el.parentElement).gridTemplateColumns.split(' ').length>1;to=side&&tb?Math.max(260,tb.offsetHeight-64):380;w.classList.remove('open')}
+      w.style.maxHeight=from+'px';void w.offsetHeight;w.style.maxHeight=to+'px';bt.textContent=opening?'Show less':'Show full summary';bt.setAttribute('aria-expanded',String(opening));
+      setTimeout(()=>renderInsights(),340)};
   }
 }
 
@@ -1044,7 +1076,7 @@ function drillRows(pi,kind,l,path,T){
   }
   return {f,lv,last:path.length+1>=lv.length,rows:[...m].map(([k,r])=>({k,r}))};
 }
-$id('pivots').addEventListener('change',e=>{const s=e.target.closest('[data-pvmode]');if(!s)return;const n=s.dataset.pvn;MODE[n]=s.checked?s.dataset.pvmode:'cnt';if(FP.open&&FP.t)FP.t=null;render()});
+$id('pivots').addEventListener('change',e=>{const s=e.target.closest('[data-pvmode]');if(!s)return;const n=s.dataset.pvn;MODE[n]=s.checked?s.dataset.pvmode:'cnt';if(FP.open&&FP.t)FP.t=null;render();const i=dims.pivot.indexOf(n);const tb=$id('pv-'+i)&&$id('pv-'+i).querySelector('.tblbox');if(tb)tb.classList.add('swap')});
 $id('pivots').addEventListener('click',e=>{
   const tg=e.target.closest('[data-instog]');if(tg){togIns(tg.dataset.instog);return}
   const strip=e.target.closest('.pvbody.ins-off .insight');if(strip){const n=strip.closest('.pvbody').querySelector('[data-instog]');if(n)togIns(n.dataset.instog);return}
@@ -1192,7 +1224,7 @@ const META=window.__META||(window.__META={});META[SIDE]=OPT.noBase?'<span class=
 const FOOT=window.__FOOT||(window.__FOOT={});FOOT[SIDE]=REV?`Source: Reverse_Overall_Base_Final ${D.asOf}. Reverse pivot = Reason of Loss: At Dock = Connection pendency + Manifested + VIA DC pendency (Ageing 5–20 + 21+); Received at DC = Received_at_dc + MISROUTED (Ageing 3–20 + 21+); BRSNR = Reason of Loss BRSNR (Ageing 3–20 + 21+). Ageing = Ageing column. HOV = PV column = 1. For Reverse Leg miss, Post BBB miss and No Landroval Details the bin level, message and action user are the DSP columns. AWBs with Ecom Data = #N/A are excluded throughout.`:`Source: Forward Overall Pendency base ${D.asOf}. Ageing = Ageing_from_Bag_Rec (At Dock 5–20 + 21+, Received at DC up to 20, Picked from Client 3–20, BRSNR all days); Region = Region (pivot "Region2"); HOV value = product_value (pivot "product_value2") where HOV2 = HOV. AWBs with Ecom Data = #N/A are excluded throughout.`;
 if(PRIMARY){
 const VIEWS=['forward','reverse','tasks','pocs','custom','proc','closure','floor','upload'];
-function setTab(t){if(!VIEWS.includes(t))t='forward';VIEWS.forEach(v=>document.getElementById('view-'+v).hidden=v!==t);document.querySelectorAll('.side-nav a').forEach(a=>{if(a.dataset.view===t)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});const ft=document.getElementById('foot'),mt=document.getElementById('meta'),sd=t==='reverse'?'rev':'fwd';ft.hidden=!(t==='forward'||t==='reverse');ft.textContent=(window.__FOOT||{})[sd]||'';if(window.__META)mt.innerHTML=window.__META[sd]||(sd==='rev'?'<span class="chip">No reverse base uploaded yet</span>':'');if(matchMedia('(max-width:760px)').matches)setSide(true);const sx=window.SFX;if(sx){if(t==='forward'&&sx.shown)sx.shown();if(t==='reverse'&&sx.rev)sx.rev.shown();sx.closeFields&&sx.closeFields();sx.rev&&sx.rev.closeFields&&sx.rev.closeFields()}window.SFX&&window.SFX.onView&&window.SFX.onView(t)}
+function setTab(t){if(!VIEWS.includes(t))t='forward';VIEWS.forEach(v=>document.getElementById('view-'+v).hidden=v!==t);{const ve=document.getElementById('view-'+t);ve.classList.remove('view-in');void ve.offsetWidth;ve.classList.add('view-in')}document.querySelectorAll('.side-nav a').forEach(a=>{if(a.dataset.view===t)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});const ft=document.getElementById('foot'),mt=document.getElementById('meta'),sd=t==='reverse'?'rev':'fwd';ft.hidden=!(t==='forward'||t==='reverse');ft.textContent=(window.__FOOT||{})[sd]||'';if(window.__META)mt.innerHTML=window.__META[sd]||(sd==='rev'?'<span class="chip">No reverse base uploaded yet</span>':'');if(matchMedia('(max-width:760px)').matches)setSide(true);const sx=window.SFX;if(sx){if(t==='forward'&&sx.shown)sx.shown();if(t==='reverse'&&sx.rev)sx.rev.shown();sx.closeFields&&sx.closeFields();sx.rev&&sx.rev.closeFields&&sx.rev.closeFields()}window.SFX&&window.SFX.onView&&window.SFX.onView(t)}
 // sidebar collapse
 const side=document.getElementById('side');
 function setSide(c){side.dataset.collapsed=String(c);const b=document.getElementById('sideToggle');b.setAttribute('aria-expanded',String(!c));b.title=c?'Expand sidebar':'Collapse sidebar';b.querySelector('span').textContent=c?'Expand':'Collapse';document.getElementById('scrim').hidden=c||!matchMedia('(max-width:760px)').matches;try{localStorage.setItem('sfx-side',c?'1':'0')}catch(e){}}
