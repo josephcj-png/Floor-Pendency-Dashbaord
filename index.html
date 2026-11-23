@@ -2869,7 +2869,145 @@ setTimeout(()=>{
 
 </script>
 <script>
-// Small delights: type "hov", the Konami code, and a calmer header for reduced motion.
+// Hidden mini game: "Floor Sweep". Type "play" anywhere (outside a text box) to open it.
+// Scan parcels before they slip away, grab the HOV ones, leave the fake shipments alone. 45 seconds.
+window.FloorSweep=(function(){
+const GAME_S=45,ROWS=3,COLS=4;
+const css=`
+.fs-ov{position:fixed;inset:0;z-index:360;background:rgba(6,26,22,.55);display:grid;place-items:center;padding:16px;animation:fsIn .2s ease-out}
+@keyframes fsIn{from{opacity:0}}
+.fs{width:min(620px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#0E2F29;color:#E9F3EF;border-radius:18px;box-shadow:0 22px 60px rgba(0,0,0,.4);padding:16px 18px 18px;position:relative;font-family:var(--font-body,system-ui);user-select:none;-webkit-user-select:none}
+.fs h2{margin:0;font:800 22px var(--font-display,system-ui);letter-spacing:-.01em;color:#fff}.fs h2 span{color:#C7D530}
+.fs .x{position:absolute;top:10px;right:12px;border:0;background:none;color:#9DBDB3;font-size:22px;cursor:pointer;line-height:1;padding:4px}
+.fs .x:hover{color:#fff}
+.fs-sub{color:#9DBDB3;font-size:13px;margin:2px 0 12px}
+.fs-hud{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;padding-right:28px}
+.fs-chip{background:#163F37;border-radius:10px;padding:5px 10px;font-size:12px;color:#9DBDB3;font-variant-numeric:tabular-nums}.fs-chip b{color:#fff;font-size:15px;margin-left:4px}
+.fs-chip.combo b{color:#C7D530}.fs-chip.combo.hot{background:#3A4A12}
+.fs-time{flex:1 1 120px;height:8px;border-radius:5px;background:#163F37;overflow:hidden;min-width:100px}.fs-time i{display:block;height:100%;background:linear-gradient(90deg,#C7D530,#13896B);transform-origin:left;width:100%}
+.fs-time.low i{background:#E0603A}
+.fs-floor{display:grid;grid-template-columns:repeat(${COLS},1fr);gap:8px;background:#0A241F;border-radius:14px;padding:10px;position:relative}
+.fs-bay{aspect-ratio:1/0.82;border-radius:10px;border:0;padding:0;cursor:pointer;position:relative;background:#14362F;box-shadow:inset 0 0 0 2px #1C4A40;overflow:hidden;touch-action:manipulation}
+.fs-bay::before{content:"";position:absolute;inset:auto 8% 9% 8%;height:4px;border-radius:2px;background:repeating-linear-gradient(90deg,#C7D530 0 10px,transparent 10px 18px);opacity:.35}
+.fs-bay .n{position:absolute;top:5px;left:7px;font-size:10px;color:#4F7D71;font-weight:700;letter-spacing:.04em}
+.fs-bay svg{position:absolute;left:50%;top:52%;width:62%;height:auto;transform:translate(-50%,-50%) scale(.2);opacity:0;transition:transform .16s cubic-bezier(.3,1.6,.5,1),opacity .12s}
+.fs-bay.on svg{transform:translate(-50%,-50%) scale(1);opacity:1}
+.fs-bay.on.hov{box-shadow:inset 0 0 0 2px #D4A017,0 0 14px rgba(212,160,23,.35)}
+.fs-bay .life{position:absolute;left:10%;right:10%;bottom:4px;height:3px;border-radius:2px;background:#C7D530;transform-origin:left;opacity:0}
+.fs-bay.on .life{opacity:.9}.fs-bay.on.hov .life{background:#F2C94C}.fs-bay.on.fake .life{background:#E0603A}
+.fs-bay.hit{animation:fsHit .25s ease-out}.fs-bay.bad{animation:fsBad .35s ease-out}
+@keyframes fsHit{0%{background:#2A6B5A}100%{background:#14362F}}@keyframes fsBad{0%,100%{transform:none}25%{transform:translateX(-4px);background:#5A2A20}75%{transform:translateX(4px)}}
+.fs-pop{position:absolute;pointer-events:none;font:800 15px var(--font-display,system-ui);color:#C7D530;text-shadow:0 1px 3px rgba(0,0,0,.5);animation:fsPop .7s ease-out forwards;z-index:3;white-space:nowrap}
+.fs-pop.minus{color:#FF8A6B}.fs-pop.gold{color:#F6D365}
+@keyframes fsPop{0%{transform:translate(-50%,0) scale(.8);opacity:0}15%{opacity:1;transform:translate(-50%,-6px) scale(1.1)}100%{transform:translate(-50%,-34px) scale(1);opacity:0}}
+.fs-panel{background:#0A241F;border-radius:14px;padding:16px;text-align:center}
+.fs-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:4px 0 14px;text-align:left}
+.fs-legend div{display:flex;gap:8px;align-items:center;background:#14362F;border-radius:10px;padding:7px 9px;font-size:12.5px;color:#CFE3DC}.fs-legend svg{width:34px;flex:0 0 34px}.fs-legend b{color:#fff}
+.fs-btn{border:0;border-radius:11px;background:#C7D530;color:#0B3D33;font:800 15px var(--font-display,system-ui);padding:11px 26px;cursor:pointer;box-shadow:0 3px 0 #8E9A1C}
+.fs-btn:hover{filter:brightness(1.05)}.fs-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #8E9A1C}
+.fs-big{font:800 46px var(--font-display,system-ui);color:#fff;line-height:1;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.fs-rank{color:#C7D530;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+.fs-stats{display:flex;justify-content:center;gap:16px;color:#9DBDB3;font-size:12.5px;margin:8px 0 14px;flex-wrap:wrap}.fs-stats b{color:#fff}
+.fs-lb{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;text-align:left}
+.fs-lb h3{margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9DBDB3}
+.fs-lb ol{margin:0;padding:0;list-style:none;font-size:13px}.fs-lb li{display:flex;justify-content:space-between;gap:8px;padding:4px 8px;border-radius:7px;font-variant-numeric:tabular-nums}
+.fs-lb li:nth-child(1) .r{color:#F6D365}.fs-lb li:nth-child(2) .r{color:#D5DCE3}.fs-lb li:nth-child(3) .r{color:#E8B07A}
+.fs-lb li.me{background:#1F4C42}.fs-lb .r{display:inline-block;width:18px;font-weight:800;color:#6F978C}.fs-lb .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fs-lb .sc{font-weight:700;color:#fff}
+.fs-lb .empty{color:#6F978C;font-size:12.5px}
+.fs-note{color:#6F978C;font-size:11.5px;margin-top:10px}
+.fs-count{position:absolute;inset:0;display:grid;place-items:center;font:800 64px var(--font-display,system-ui);color:#C7D530;pointer-events:none;text-shadow:0 4px 18px rgba(0,0,0,.5);z-index:4}
+.fs-count span{animation:fsCnt .8s ease-out forwards}@keyframes fsCnt{0%{transform:scale(1.6);opacity:0}30%{transform:scale(1);opacity:1}100%{opacity:0}}
+@media (max-width:520px){.fs-legend,.fs-lb{grid-template-columns:1fr}.fs-floor{gap:6px;padding:8px}}
+@media (prefers-reduced-motion:reduce){.fs-bay svg{transition:none}.fs-pop,.fs-count span{animation-duration:.01s}.fs-bay.hit,.fs-bay.bad{animation:none}}`;
+
+const ART={
+  parcel:`<svg viewBox="0 0 64 54"><path d="M6 14 32 4l26 10v28L32 52 6 42z" fill="#C98B4E"/><path d="M6 14l26 10 26-10M32 24v28" fill="none" stroke="#8E5B2B" stroke-width="2"/><path d="M19 9l26 10v8" fill="none" stroke="#E9C08A" stroke-width="4"/><g fill="#3B2A1A"><rect x="38" y="31" width="2" height="10"/><rect x="42" y="30" width="1.4" height="10"/><rect x="45" y="29" width="2.4" height="10"/><rect x="49" y="28" width="1.4" height="10"/></g></svg>`,
+  hov:`<svg viewBox="0 0 64 54"><path d="M6 14 32 4l26 10v28L32 52 6 42z" fill="#E8B931"/><path d="M6 14l26 10 26-10M32 24v28" fill="none" stroke="#A97F0E" stroke-width="2"/><text x="45" y="42" text-anchor="middle" font-size="17" font-weight="800" fill="#6B4E00" font-family="system-ui">₹</text><text x="19" y="40" text-anchor="middle" font-size="9" font-weight="800" fill="#6B4E00" font-family="system-ui">HOV</text><path d="M55 3l1.6 3.6L60 8l-3.4 1.4L55 13l-1.6-3.6L50 8l3.4-1.4z" fill="#FFF6C9"/></svg>`,
+  fake:`<svg viewBox="0 0 64 54"><path d="M6 14 32 4l26 10v28L32 52 6 42z" fill="#B9A58E"/><path d="M6 14l26 10 26-10M32 24v28" fill="none" stroke="#7D6A55" stroke-width="2"/><rect x="35" y="27" width="19" height="15" rx="2" fill="#F4EFE6" transform="rotate(-8 44 34)"/><path d="M37 34c2-3 3 3 5 0s3 3 5 0 3 3 5-1" fill="none" stroke="#D23B2A" stroke-width="1.8" stroke-linecap="round" transform="rotate(-8 44 34)"/><text x="19" y="38" text-anchor="middle" font-size="15" font-weight="800" fill="#7A2418" font-family="system-ui">?</text></svg>`,
+  clock:`<svg viewBox="0 0 64 54"><circle cx="32" cy="30" r="19" fill="#13896B" stroke="#C7D530" stroke-width="3"/><rect x="28" y="5" width="8" height="6" rx="2" fill="#C7D530"/><path d="M32 30V18M32 30l8 5" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><text x="52" y="52" text-anchor="middle" font-size="12" font-weight="800" fill="#C7D530" font-family="system-ui">+3s</text></svg>`};
+const RANKS=[[0,'Floor trainee'],[300,'Scanner'],[650,'Dock hand'],[1000,'Shift lead'],[1400,'Floor captain'],[1900,'Hub hero'],[2500,'Network legend']];
+const rankOf=s=>RANKS.filter(r=>s>=r[0]).pop()[1];
+
+let ov=null,st=null,styleOn=false,deps={};
+function open(d){deps=d||deps;if(ov)return;if(!styleOn){const s=document.createElement('style');s.textContent=css;document.head.appendChild(s);styleOn=true}
+  ov=document.createElement('div');ov.className='fs-ov';ov.innerHTML=`<div class="fs" role="dialog" aria-modal="true" aria-label="Floor Sweep mini game"><button class="x" type="button" aria-label="Close">×</button><div class="fs-body"></div></div>`;
+  document.body.appendChild(ov);ov.addEventListener('pointerdown',e=>{if(e.target===ov)close()});ov.querySelector('.x').onclick=close;document.addEventListener('keydown',onKey);intro()}
+function close(){stop();if(ov){ov.remove();ov=null}document.removeEventListener('keydown',onKey)}
+function onKey(e){if(e.key==='Escape'){e.preventDefault();close()}else if((e.key==='Enter'||e.key===' ')&&ov&&ov.querySelector('.fs-btn')&&!st){e.preventDefault();ov.querySelector('.fs-btn').click()}}
+const body=()=>ov.querySelector('.fs-body');
+const best=()=>{try{return +localStorage.getItem('sfx-floor-best')||0}catch(e){return 0}};
+
+function intro(){body().innerHTML=`<h2>Floor <span>Sweep</span></h2><div class="fs-sub">The floor is filling up. You have ${GAME_S} seconds to clear it.</div>
+  <div class="fs-panel"><div class="fs-legend">
+    <div>${ART.parcel}<span><b>Scan parcels</b> before they slip away · +10</span></div>
+    <div>${ART.hov}<span><b>HOV parcels</b> · +30, but a missed one costs 15</span></div>
+    <div>${ART.fake}<span><b>Fake shipments</b>: handwritten barcode. Don't scan · −25</span></div>
+    <div>${ART.clock}<span><b>Stopwatch</b> · 3 extra seconds</span></div>
+  </div><div class="fs-note" style="margin:-4px 0 12px">Scan in a row to build a combo: ×2 at 5, ×3 at 12. A miss or a fake resets it.</div>
+  <button class="fs-btn" type="button">Start shift</button><div class="fs-note">Your best: <b style="color:#fff">${deps.fmt(best())}</b> · press Enter to start, Esc to leave</div>
+  <div class="fs-lb"></div></div>`;
+  body().querySelector('.fs-btn').onclick=start;loadBoard(body().querySelector('.fs-lb'))}
+
+function start(){body().innerHTML=`<div class="fs-hud"><div class="fs-chip">Score<b class="sc">0</b></div><div class="fs-chip combo">Combo<b class="cb">×1</b></div><div class="fs-chip">HOV<b class="hv">0</b></div><div class="fs-time"><i></i></div><div class="fs-chip"><b class="tm" style="margin:0">${GAME_S}</b>s</div></div>
+  <div class="fs-floor">${Array.from({length:ROWS*COLS},(_,i)=>`<button class="fs-bay" type="button" data-i="${i}" aria-label="Bay ${i+1}"><span class="n">B${i+1}</span><span class="art"></span><i class="life"></i></button>`).join('')}<div class="fs-count"></div></div>`;
+  const fl=body().querySelector('.fs-floor');const bays=[...fl.querySelectorAll('.fs-bay')];
+  st={t:0,end:GAME_S*1000,score:0,combo:0,hits:0,shots:0,hov:0,hovMiss:0,fakes:0,best:0,bays,fl,slots:bays.map(()=>null),next:0,raf:0,last:0,count:3,cdT:0,running:false};
+  bays.forEach((b,i)=>b.addEventListener('pointerdown',e=>{e.preventDefault();tap(i,e)}));
+  countdown()}
+function countdown(){const c=st.fl.querySelector('.fs-count');let n=3;const tick=()=>{if(!st)return;if(n===0){c.innerHTML='';st.running=true;st.last=performance.now();st.raf=requestAnimationFrame(loop);return}
+  c.innerHTML=`<span>${n}</span>`;n--;st.cdT=setTimeout(tick,650)};tick()}
+function stop(){if(st){cancelAnimationFrame(st.raf);clearTimeout(st.cdT);st=null}}
+
+function spawn(){const free=st.slots.map((s,i)=>s?-1:i).filter(i=>i>=0);if(!free.length)return;const i=free[Math.floor(Math.random()*free.length)];
+  const k=st.t/st.end,r=Math.random();const kind=r<0.04?'clock':r<0.24?'fake':r<0.43?'hov':'parcel';
+  const life=(kind==='fake'?1700:1550)-780*k;st.slots[i]={kind,born:st.t,life};
+  const b=st.bays[i];b.querySelector('.art').innerHTML=ART[kind];b.className='fs-bay on '+kind}
+function clear(i){st.slots[i]=null;const b=st.bays[i];b.classList.remove('on','parcel','hov','fake','clock');b.querySelector('.life').style.transform=''}
+function pop(i,txt,cls){const b=st.bays[i],f=st.fl.getBoundingClientRect(),r=b.getBoundingClientRect();const p=document.createElement('div');p.className='fs-pop '+(cls||'');p.textContent=txt;
+  p.style.left=(r.left-f.left+r.width/2)+'px';p.style.top=(r.top-f.top+r.height*0.3)+'px';st.fl.appendChild(p);setTimeout(()=>p.remove(),720)}
+const mult=()=>st.combo>=12?3:st.combo>=5?2:1;
+function flash(i,cls){const b=st.bays[i];b.classList.remove('hit','bad');void b.offsetWidth;b.classList.add(cls)}
+function tap(i){if(!st||!st.running)return;const s=st.slots[i];st.shots++;
+  if(!s){st.combo=0;flash(i,'bad');hud();return}
+  clear(i);
+  if(s.kind==='fake'){st.score=Math.max(0,st.score-25);st.combo=0;st.fakes++;flash(i,'bad');pop(i,'Fake! −25','minus')}
+  else if(s.kind==='clock'){st.end+=3000;st.hits++;flash(i,'hit');pop(i,'+3s')}
+  else{st.combo++;st.hits++;st.best=Math.max(st.best,st.combo);const m=mult(),v=(s.kind==='hov'?30:10)*m;st.score+=v;if(s.kind==='hov')st.hov++;flash(i,'hit');pop(i,'+'+v+(m>1?` ×${m}`:''),s.kind==='hov'?'gold':'')}
+  hud()}
+function hud(){const q=c=>body().querySelector(c);if(!q('.sc'))return;q('.sc').textContent=deps.fmt(st.score);const cb=q('.cb');cb.textContent='×'+mult()+(st.combo?` · ${st.combo}`:'');cb.parentNode.classList.toggle('hot',mult()>1);q('.hv').textContent=st.hov}
+function loop(now){if(!st)return;const dt=Math.min(100,now-st.last);st.last=now;st.t+=dt;
+  const k=Math.min(1,st.t/(GAME_S*1000));
+  // expire
+  st.slots.forEach((s,i)=>{if(!s)return;const a=(st.t-s.born)/s.life;st.bays[i].querySelector('.life').style.transform=`scaleX(${Math.max(0,1-a)})`;
+    if(a>=1){clear(i);if(s.kind==='hov'){st.score=Math.max(0,st.score-15);st.hovMiss++;st.combo=0;pop(i,'HOV miss −15','minus')}else if(s.kind==='parcel'){st.combo=0;pop(i,'Missed','minus')}hud()}});
+  // spawn
+  const live=st.slots.filter(Boolean).length,cap=2+Math.round(3*k);
+  if(st.t>=st.next&&live<cap){spawn();st.next=st.t+(700-330*k)*(0.75+Math.random()*0.5)}
+  const left=Math.max(0,st.end-st.t),tb=body().querySelector('.fs-time');tb.firstChild.style.transform=`scaleX(${left/(GAME_S*1000)})`;tb.classList.toggle('low',left<8000);body().querySelector('.tm').textContent=Math.ceil(left/1000);
+  if(left<=0){finish();return}
+  st.raf=requestAnimationFrame(loop)}
+
+function finish(){const r={score:st.score,hov:st.hov,hovMiss:st.hovMiss,fakes:st.fakes,acc:st.shots?Math.round(st.hits*100/st.shots):0,combo:st.best};stop();
+  const prev=best(),nb=r.score>prev;if(nb){try{localStorage.setItem('sfx-floor-best',String(r.score))}catch(e){}}
+  body().innerHTML=`<h2>Shift <span>over</span></h2><div class="fs-sub">${nb&&prev?'New personal best!':nb?'First shift on the books.':`Your best is still ${deps.fmt(prev)}.`}</div>
+  <div class="fs-panel"><div class="fs-rank">${rankOf(r.score)}</div><div class="fs-big">${deps.fmt(r.score)}</div>
+  <div class="fs-stats"><span>HOV caught <b>${r.hov}</b></span><span>HOV missed <b>${r.hovMiss}</b></span><span>Fakes scanned <b>${r.fakes}</b></span><span>Best combo <b>${r.combo}</b></span><span>Accuracy <b>${r.acc}%</b></span></div>
+  <button class="fs-btn" type="button">Play again</button><div class="fs-lb"><div class="empty">Saving your score…</div></div></div>`;
+  body().querySelector('.fs-btn').onclick=start;
+  if(nb&&prev&&deps.confetti){const b=body().querySelector('.fs-big').getBoundingClientRect();deps.confetti(b.left+b.width/2,b.top+b.height/2,50)}
+  loadBoard(body().querySelector('.fs-lb'),r.score)}
+
+async function loadBoard(el,score){if(!el)return;let res=null;
+  try{res=await deps.API(score!=null?'gameScore':'gameTop',score!=null?{score}:{})}catch(e){res=null}
+  if(!ov||!el.isConnected)return;
+  if(!res||!res.week){el.innerHTML=`<div class="empty" style="grid-column:1/-1">The team leaderboard appears once the latest Apps Script is deployed. Your best is saved in this browser.</div>`;return}
+  const li=(o,i)=>`<li class="${o.me?'me':''}"><span class="r">${i+1}</span><span class="nm">${deps.esc(o.name)}${o.me?' (you)':''}</span><span class="sc">${deps.fmt(o.score)}</span></li>`;
+  const col=(h,a)=>`<div><h3>${h}</h3>${a.length?`<ol>${a.map(li).join('')}</ol>`:'<div class="empty">No scores yet. Be the first.</div>'}</div>`;
+  el.innerHTML=col('This week',res.week)+col('All time',res.all)+(res.mine&&res.mine.rank>5?`<div class="fs-note" style="grid-column:1/-1">You're #${res.mine.rank} all time with ${deps.fmt(res.mine.best)}.</div>`:'')}
+return {open,close};
+})();
+
+// Small delights: type "hov", type "play" (Floor Sweep mini game), the Konami code, and a calmer header for reduced motion.
 window.startFun=function(B){
 const X=window.SFX,API=window.API;if(!X)return;const {esc,fmt,toast}=X;const rs=X.rs||(v=>'₹'+fmt(v));
 const calm=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -2889,6 +3027,7 @@ document.addEventListener('keydown',e=>{if(typing(e)||e.ctrlKey||e.metaKey||e.al
   if(buf.endsWith('hov')){buf='';hovAll=!hovAll;(window.__HOVALL||[]).forEach(f=>{try{f(hovAll)}catch(err){console.warn(err)}});
     toast(hovAll?'HOV view on every table':'Back to AWB counts');
     if(hovAll&&!calm)requestAnimationFrame(()=>document.querySelectorAll('#pivots .tblbox,#rpivots .tblbox').forEach(b=>{b.classList.remove('goldflash');void b.offsetWidth;b.classList.add('goldflash')}))}
+  if(buf.endsWith('play')){buf='';if(window.FloorSweep)window.FloorSweep.open({API,esc,fmt,confetti:X.confetti});return}
   // Konami code
   KON=e.key===KSEQ[KI]?KI+1:(e.key===KSEQ[0]?1:0);KI=KON;if(KI===KSEQ.length){KI=0;ride()}});
 const KSEQ=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];let KI=0,KON=0;
@@ -2901,7 +3040,7 @@ function ride(){if(calm){toast('📦 Delivered!');return}if(document.querySelect
     <g class="wh"><circle cx="34" cy="56" r="10" fill="#fff" stroke="#0B3D33" stroke-width="3"/><path d="M34 47v18M25 56h18" stroke="#0B3D33" stroke-width="1.4"/></g>
     <g class="wh"><circle cx="92" cy="56" r="10" fill="#fff" stroke="#0B3D33" stroke-width="3"/><path d="M92 47v18M83 56h18" stroke="#0B3D33" stroke-width="1.4"/></g>
     <path d="M6 58h12M2 52h10" stroke="#9AA5A2" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg>`;
-  document.body.appendChild(d);d.addEventListener('animationend',ev=>{if(ev.target!==d)return;d.remove();toast('📦 Delivered on time!')})}
+  document.body.appendChild(d);d.addEventListener('animationend',ev=>{if(ev.target!==d)return;d.remove();toast('📦 Delivered on time! Psst… type “play”.')})}
 
 };
 
