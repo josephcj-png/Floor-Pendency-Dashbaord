@@ -54,6 +54,7 @@ h1{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,2.4vw,30
 .filters .inner{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:10px}
 .flabel{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-right:4px}
 .ms{position:relative}
+.ms:has(>.pop),.ms.popopen{z-index:60}
 .ms>button{appearance:none;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px;font:500 13px var(--font-ui);color:var(--ink);cursor:pointer;max-width:260px}
 .ms>button .k{color:var(--muted);font-weight:500}
 .ms>button .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
@@ -92,7 +93,7 @@ h1{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,2.4vw,30
 @keyframes zoomIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
 @keyframes slideLeft{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
 @keyframes rowIn{from{opacity:0}to{opacity:1}}
-.view-in{animation:fadeUp .22s ease-out both}
+.view-in{animation:fadeUp .22s ease-out backwards}
 .pop.anim-in{animation:popIn .16s ease-out both;transform-origin:top left}
 .peek{animation:popIn .16s ease-out both}
 .peek .pk-form{animation:fadeUp .18s ease-out both}
@@ -104,7 +105,7 @@ table.pt tr.sub>td{animation:rowIn .2s ease-out both}
 .ins-wrap{transition:max-height .32s ease}
 .pvbody{transition:grid-template-columns .28s ease}
 .tblbox.swap{animation:fadeIn .22s ease-out both}
-.fx-in{animation:fadeUp .2s ease-out both}
+.fx-in{animation:fadeUp .2s ease-out backwards}
 .btn,.mini,.reset,.ms>button,.fxmore,.sw21,.side-nav a,.ins-tog,.thumb,.cd-nav a{transition:background-color .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease,transform .15s ease}
 .btn:active,.mini:active,.fxmore:active{transform:scale(.98)}
 .pvbody .ins-tog{transition:right .28s ease,background-color .15s ease,border-color .15s ease}
@@ -818,7 +819,10 @@ function counts(dim){
 function drawPop(dim,q){
   const host=ROOT.querySelector(`.ms[data-dim="${dim}"]`);
   let pop=host.querySelector('.pop');
-  if(!pop){pop=document.createElement('div');pop.className='pop';pop.onclick=e=>e.stopPropagation();host.appendChild(pop);if(POPANIM!==dim){pop.classList.add('anim-in');POPANIM=dim}}
+  // lift the open filter above its neighbours (also for browsers without :has)
+  ROOT.querySelectorAll('.ms.popopen').forEach(e=>{if(e!==host)e.classList.remove('popopen')});host.classList.add('popopen');
+  if(!pop){pop=document.createElement('div');pop.className='pop';pop.onclick=e=>e.stopPropagation();host.appendChild(pop);if(POPANIM!==dim){pop.classList.add('anim-in');POPANIM=dim}
+    const hr=host.getBoundingClientRect(),over=hr.left+pop.offsetWidth-(innerWidth-12);if(over>0){pop.style.left=(-over)+'px';pop.style.transformOrigin='top right'}}
   const def=DIMDEF[dim],cn=counts(dim),s=S[dim];q=(q||'').toLowerCase();
   let opts=def.opts();if(q)opts=opts.filter(o=>o.t.toLowerCase().includes(q));
   if(dim==='loc'||def.cap)opts.sort((a,b)=>(cn.get(b.v)||0)-(cn.get(a.v)||0));
