@@ -6,11 +6,13 @@
 <script>
   // Apps Script web app URL (Deploy > Manage deployments > Web app URL)
   window.API_URL = 'https://script.google.com/macros/s/AKfycbyvsaK6-u6mBOoXocEGhCebunDlJz2A9rCkCaTWXsDB_xOflPB4W20ULU8mpEPfAJ0PCQ/exec';
+  // dark mode chosen earlier in this browser: applied before anything paints
+  try{if(localStorage.getItem('sfx-theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}
 </script>
 <title>Shadowfax Pendency Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 /* Layout: light ops console. Collapsible left sidebar (views + tasks), white header with brand lime rule, sticky filter rail, one pivot block per bucket; task views use list rows + a right-hand detail drawer. */
 :root{
@@ -176,6 +178,7 @@ table.pt{border-collapse:separate;border-spacing:0;font-size:12.5px;font-variant
 .pt tbody tr:hover td{box-shadow:inset 0 0 0 999px rgba(0,98,79,.06)}
 .pt tbody tr:hover td:first-child{background:var(--teal-soft)}
 .pt td.hot{color:#fff}
+table.pt[data-kind="hov"] td.hot{color:inherit}
 .pt td[data-l]{cursor:pointer}.pt td[data-l]:hover{outline:2px solid var(--teal-deep);outline-offset:-2px}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .note{font-size:12px;color:var(--muted)}
@@ -475,6 +478,105 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
 .hits button:hover{background:var(--teal-soft)}
 .hits img{width:22px;height:22px;border-radius:50%}
 
+/* ================= dark mode: "Matrix" phosphor green on black (sidebar switch; saved per browser) ================= */
+html[data-theme="dark"]{
+  --bg:#020805; --panel:#06110A; --ink:#C9F5D3; --muted:#5E9A6C; --line:#0E2616; --line-strong:#17402A;
+  --teal:#00C83C; --teal-deep:#3DFF74; --teal-soft:#0A2614; --lime:#B7FF3C; --lime-soft:#17240A;
+  --bad:#FF5A4E; --bad-soft:#2C0F0C; --warn:#F2C14E;
+  --raise:#0A1A10; --head:#0A1D11; --zebra:#06140B; --glow:0 0 10px rgba(0,255,65,.35);
+  --font-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+html[data-theme="dark"] body{background:var(--bg)}
+html[data-theme="dark"] ::selection{background:#00FF41;color:#001A08}
+html.theme-anim body,html.theme-anim body *{transition:background-color .28s ease,border-color .28s ease,color .28s ease,fill .28s ease!important}
+/* type: terminal mono for headings, labels and numbers; glow on the big titles */
+html[data-theme="dark"] h2{font-family:var(--font-mono);letter-spacing:-.01em}
+html[data-theme="dark"] h1,html[data-theme="dark"] .pvtitle h2,html[data-theme="dark"] .rp-card h2,html[data-theme="dark"] .vtitle,html[data-theme="dark"] .modal h2{font-family:var(--font-mono);letter-spacing:-.01em;color:#D8FFE0;text-shadow:var(--glow)}
+html[data-theme="dark"] .eyebrow,html[data-theme="dark"] .side-sep,html[data-theme="dark"] .flabel,html[data-theme="dark"] .brandword{font-family:var(--font-mono);color:#00FF41}
+html[data-theme="dark"] .brandword{text-shadow:var(--glow)}
+html[data-theme="dark"] .pt td,html[data-theme="dark"] .rt td,html[data-theme="dark"] .chip b,html[data-theme="dark"] .hp td.n{font-family:var(--font-mono);font-size:11px}
+html[data-theme="dark"] header.top{border-bottom-color:#00FF41;box-shadow:0 1px 14px rgba(0,255,65,.25)}
+html[data-theme="dark"] .hdr-bg{display:none}
+.mx-rain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity .6s ease}
+html[data-theme="dark"] .mx-rain{opacity:.42}
+/* surfaces */
+html[data-theme="dark"] .pt thead th,html[data-theme="dark"] .pt tfoot td,html[data-theme="dark"] .hp thead th,html[data-theme="dark"] .ov th,
+html[data-theme="dark"] .board th,html[data-theme="dark"] .pmap th{background:var(--head);color:#9DF5B0}
+html[data-theme="dark"] .pt thead th:first-child,html[data-theme="dark"] .pt tfoot td:first-child{background:var(--head)}
+html[data-theme="dark"] .pt td{border-bottom-color:#0B1F12}
+html[data-theme="dark"] .pt tbody tr:hover td{box-shadow:inset 0 0 0 999px rgba(0,255,65,.06)}
+html[data-theme="dark"] .pt td[data-l]:hover{outline-color:#00FF41}
+html[data-theme="dark"] .pt td.hot{color:#00170A;font-weight:600}
+html[data-theme="dark"] .pt tr.sub td,html[data-theme="dark"] .pt tr.sub td:first-child{background:var(--zebra);border-bottom-color:var(--line)}
+html[data-theme="dark"] .insight{background:#040D07}
+html[data-theme="dark"] .ins-wrap:not(.open):not(.fits)::after{background:linear-gradient(rgba(4,13,7,0),#040D07)}
+html[data-theme="dark"] .insight h5,html[data-theme="dark"] .insight .eyebrow,html[data-theme="dark"] .pvbody.ins-off .insight::after{color:#00FF41;font-family:var(--font-mono)}
+html[data-theme="dark"] .picker2,html[data-theme="dark"] .form,html[data-theme="dark"] .tgroup h3{background:#040D07}
+html[data-theme="dark"] .picker2 .pg{background:var(--bg)}
+html[data-theme="dark"] .side{background:#030A06}
+html[data-theme="dark"] .side-nav a[aria-current="page"]{background:#08260F;color:#7CFF9E;box-shadow:inset 3px 0 0 #00FF41,0 0 12px rgba(0,255,65,.12)}
+html[data-theme="dark"] .side-nav a[aria-current="page"] svg{color:#00FF41}
+html[data-theme="dark"] .side-nav a svg{color:#2FD35A}
+html[data-theme="dark"] .seg button[aria-pressed="true"]{background:#08260F;color:#7CFF9E}
+html[data-theme="dark"] .btn{background:#00C83C;border-color:#00C83C;color:#001A08}
+html[data-theme="dark"] .btn:hover{background:#00E045;box-shadow:var(--glow)}
+html[data-theme="dark"] .btn.ghost{background:transparent;color:#3DFF74;border-color:#1E6B34}
+html[data-theme="dark"] .btn.ghost:hover{background:#0A2614;border-color:#00FF41}
+html[data-theme="dark"] .mini.on{background:#00C83C;border-color:#00C83C;color:#001A08}
+html[data-theme="dark"] .badge{background:#00FF41;color:#001A08;box-shadow:var(--glow)}
+html[data-theme="dark"] .sw21 .trk{background:#1A3322}
+html[data-theme="dark"] .sw21 input:checked+.trk{background:#00C83C;box-shadow:var(--glow)}
+html[data-theme="dark"] .sw21 .trk::after{background:#D8FFE0}
+html[data-theme="dark"] .live.on{background:#00FF41}
+html[data-theme="dark"] .pri.P0{background:#C8372B;color:#FFF}html[data-theme="dark"] .pri.P1{background:#C29214;color:#140E00}html[data-theme="dark"] .pri.P2{background:#12301C;color:#7FCB93}
+html[data-theme="dark"] .pill{background:#0A2614;color:#5CFF86}
+html[data-theme="dark"] .pill.cap{background:#1C2A08;color:#C7FF6B}html[data-theme="dark"] .pill.fm{background:#0E2A22;color:#6EF2C8}
+html[data-theme="dark"] .hovtag{background:#03262B;color:#5EEBFF;border-color:#0B4A52}
+html[data-theme="dark"] .st.Open{background:#2A2105;color:#FFCF4A}html[data-theme="dark"] .st.In{background:#062332;color:#62D6FF}
+html[data-theme="dark"] .banner.warn{background:#1E1A06;border-color:#5A4B10}
+html[data-theme="dark"] .todo,html[data-theme="dark"] .previewbar{border-color:#2E4A0E}
+html[data-theme="dark"] .fxmore{border-color:#1E6B34}html[data-theme="dark"] .fxmore b{color:#B7FF3C}
+html[data-theme="dark"] .toast{background:#00FF41;color:#001A08;box-shadow:0 0 18px rgba(0,255,65,.45)}
+html[data-theme="dark"] .pop,html[data-theme="dark"] .modal,html[data-theme="dark"] .gate-card,html[data-theme="dark"] .fpane{border-color:#17402A;box-shadow:0 0 0 1px rgba(0,255,65,.08),0 18px 44px rgba(0,0,0,.7)}
+html[data-theme="dark"] .scrim,html[data-theme="dark"] .modal-bg{background:rgba(0,6,2,.72)}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{background-color:#030B06;color:var(--ink);border-color:var(--line-strong);caret-color:#00FF41}
+html[data-theme="dark"] input:focus,html[data-theme="dark"] select:focus,html[data-theme="dark"] textarea:focus{border-color:#00FF41;box-shadow:0 0 0 2px rgba(0,255,65,.18);outline:none}
+html[data-theme="dark"] .chip{background:#030B06}
+html[data-theme="dark"] a{color:#3DFF74}
+/* podium rows and medals */
+html[data-theme="dark"] tr.pod.m1{--pb:#231C04}html[data-theme="dark"] tr.pod.m2{--pb:#121A1A}html[data-theme="dark"] tr.pod.m3{--pb:#22150A}
+html[data-theme="dark"] tr.pod.m1>td:first-child{background:linear-gradient(110deg,#231C04 40%,#352B08 50%,#231C04 60%) 0 0/300% 100%}
+/* reports */
+html[data-theme="dark"] .rp-take h3,html[data-theme="dark"] .cd-sec,html[data-theme="dark"] .pod-dc{color:#D8FFE0;font-family:var(--font-mono)}
+html[data-theme="dark"] .rp-k,html[data-theme="dark"] .rp-take,html[data-theme="dark"] .rt td.avg{background:var(--raise)}
+html[data-theme="dark"] .rp-tip{background:#06110A;color:var(--ink);border-color:#1E6B34}
+html[data-theme="dark"] .rp-chart .axis text{fill:#4F8A5E;font-family:var(--font-mono)}html[data-theme="dark"] .rp-chart .grid line{stroke:#0E2616}
+html[data-theme="dark"] .rp-chart text[fill="#1d2b29"],html[data-theme="dark"] .rp-chart text[fill="#22312e"]{fill:#C9F5D3}
+html[data-theme="dark"] .rp-chart text[stroke="#fff"],html[data-theme="dark"] .rp-chart circle[stroke="#fff"]{stroke:var(--panel)}
+html[data-theme="dark"] .up{color:#3DFF74}html[data-theme="dark"] .dn{color:#FF6E5E}
+html[data-theme="dark"] .rt th{background:#06210F;color:#9DF5B0}html[data-theme="dark"] table.rt.cd th.grp{background:#041A0B;color:#00FF41}
+html[data-theme="dark"] .rt tr.net td,html[data-theme="dark"] .rt tr.net td:first-child{background:#0B2A14}
+html[data-theme="dark"] .rt tr.reg td,html[data-theme="dark"] .rt tr.reg td:first-child{background:#081F0F;border-top-color:#1E6B34}
+html[data-theme="dark"] table.rt.cd tfoot td{background:#0A1D11;color:#9DF5B0}
+html[data-theme="dark"] table.rt.cd td.b{color:#EAFFEC}
+html[data-theme="dark"] .rt td.u2{background:#0E5A22}html[data-theme="dark"] .rt td.u1{background:#0A3315}html[data-theme="dark"] .rt td.d1{background:#3A1410}html[data-theme="dark"] .rt td.d2{background:#5E1D16}
+html[data-theme="dark"] .streak{background:#2E1608;color:#FF9C5B}html[data-theme="dark"] .cleared{background:#0A2E14;color:#3DFF74}
+html[data-theme="dark"] .champ-card{background:linear-gradient(90deg,#211A04,var(--panel))}
+html[data-theme="dark"] .pod-card.r1{--pb:#211A04}html[data-theme="dark"] .pod-card.r2{--pb:#101818}html[data-theme="dark"] .pod-card.r3{--pb:#20140A}
+/* the theme switch in the sidebar */
+.theme-tog{appearance:none;display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:7px 9px;font:600 12px var(--font-ui);cursor:pointer;white-space:nowrap;margin-top:auto}
+.theme-tog:hover{border-color:var(--teal)}.theme-tog:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.theme-tog .ic{width:16px;height:16px;flex:none;color:var(--teal-deep);position:relative}
+.theme-tog .ic svg{position:absolute;inset:0;transition:transform .35s ease,opacity .25s ease}
+.theme-tog .ic .sun{opacity:0;transform:rotate(-90deg) scale(.6)}
+html[data-theme="dark"] .theme-tog .ic .moon{opacity:0;transform:rotate(90deg) scale(.6)}html[data-theme="dark"] .theme-tog .ic .sun{opacity:1;transform:none}
+.theme-tog .lbl{flex:1;text-align:left}
+.theme-tog .trk{width:28px;height:16px;border-radius:8px;background:#C9D3D0;position:relative;flex:none;transition:background .2s}
+.theme-tog .trk::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .2s}
+.theme-tog[aria-checked="true"] .trk{background:var(--teal)}.theme-tog[aria-checked="true"] .trk::after{left:14px}
+.side[data-collapsed="true"] .theme-tog{justify-content:center;padding:7px 0}.side[data-collapsed="true"] .theme-tog .lbl,.side[data-collapsed="true"] .theme-tog .trk{display:none}
+.side .theme-tog+.side-me{margin-top:8px}
 </style>
 <style>html,body{margin:0;height:100%}img{max-width:100%}</style>
 </head>
@@ -496,11 +598,12 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <a href="#custom" data-view="custom" data-admin hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h10v11H3zM5.5 6h5M5.5 8.5h5M5.5 11h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg><span>Custom action items</span></a>
     <a href="#upload" data-view="upload" data-upload hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 11V2.5M4.5 6 8 2.5 11.5 6M2.5 10.5v3h11v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Upload base file</span></a>
   </nav>
+  <button class="theme-tog" id="themeTog" type="button" role="switch" aria-checked="false" title="Dark mode"><span class="ic" aria-hidden="true"><svg class="moon" viewBox="0 0 16 16"><path d="M13.2 10.1A5.6 5.6 0 0 1 5.9 2.8a5.6 5.6 0 1 0 7.3 7.3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><svg class="sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><span class="lbl">Dark mode</span><i class="trk" aria-hidden="true"></i></button>
   <div class="side-me" id="sideMe"></div>
 </aside>
 <div class="maincol">
 <div class="previewbar wrap" id="previewBar" hidden></div>
-<header class="top wrap"><svg class="hdr-bg" viewBox="0 0 1600 90" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><path id="hdrRoute" d="M-20 70 C 180 20, 330 80, 520 46 S 860 12, 1040 52 S 1380 84, 1620 30" fill="none"/><circle r="3.2"><animateMotion dur="38s" repeatCount="indefinite"><mpath href="#hdrRoute"/></animateMotion></circle><circle r="2.6" class="b"><animateMotion dur="38s" begin="-13s" repeatCount="indefinite"><mpath href="#hdrRoute"/></animateMotion></circle><circle r="2.6"><animateMotion dur="38s" begin="-26s" repeatCount="indefinite"><mpath href="#hdrRoute"/></animateMotion></circle></svg><div class="inner">
+<header class="top wrap"><canvas class="mx-rain" id="mxRain" aria-hidden="true"></canvas><svg class="hdr-bg" viewBox="0 0 1600 90" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><path id="hdrRoute" d="M-20 70 C 180 20, 330 80, 520 46 S 860 12, 1040 52 S 1380 84, 1620 30" fill="none"/><circle r="3.2"><animateMotion dur="38s" repeatCount="indefinite"><mpath href="#hdrRoute"/></animateMotion></circle><circle r="2.6" class="b"><animateMotion dur="38s" begin="-13s" repeatCount="indefinite"><mpath href="#hdrRoute"/></animateMotion></circle><circle r="2.6"><animateMotion dur="38s" begin="-26s" repeatCount="indefinite"><mpath href="#hdrRoute"/></animateMotion></circle></svg><div class="inner">
   <div>
     <div class="eyebrow">Shadowfax · Network Pendency Review</div>
     <h1>Pendency Dashboard</h1>
@@ -528,6 +631,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms xf" data-dim="mp"></div>
     <div class="ms xf" data-dim="esd"></div>
     <div class="ms xf" data-dim="bin"></div>
+    <div class="ms xf" data-dim="bn"></div>
     <div class="ms xf" data-dim="msg"></div>
     <div class="ms xf" data-dim="et"></div>
     <div class="ms xf" data-dim="liq"></div>
@@ -565,6 +669,7 @@ footer{font-size:12px;color:var(--muted);padding-block:0 32px}
     <div class="ms xf" data-dim="scat"></div>
     <div class="ms xf" data-dim="srca"></div>
     <div class="ms xf" data-dim="dbin"></div>
+    <div class="ms xf" data-dim="dbn"></div>
     <div class="ms xf" data-dim="dmsg"></div>
     <div class="ms xf" data-dim="dau"></div>
     <div class="ms xf" data-dim="dln"></div>
@@ -643,18 +748,23 @@ for(let i=0;i<N;i++)regLocs[C.r[i]].add(C.l[i]);
 // detail cube (from the parser): manifest destination / hub / RTO for At Dock, bin level / message / action user / MPSR for Received at DC,
 // client / seller / product for Picked from Client, manifest origin for BRSNR. Older uploads don't have it; the page falls back gracefully.
 const X=D.det?D.det.cols:null,XD=D.det?D.det.dims:{},XN=X?X.n.length:0;
+// regions follow the dashboard's DC → region mapping (Config), so a remap shows without re-uploading; the base's own Region is the fallback
+(function(){const RM=OPT.regmap;if(!RM||!D.dims||!D.dims.region)return;const old=D.dims.region.slice(),names=[],idx=new Map();
+  const id=n=>{if(!idx.has(n)){idx.set(n,names.length);names.push(n)}return idx.get(n)};
+  [D.cols,X].forEach(cols=>{if(!cols||!cols.r||!cols.l)return;for(let i=0;i<cols.r.length;i++)cols.r[i]=id(RM[D.dims.loc[cols.l[i]]]||old[cols.r[i]]||'Unmapped')});
+  D.dims.region.length=0;names.forEach(n=>D.dims.region.push(n))})();
 // bases uploaded by an earlier build lack some detail fields: fill them so nothing breaks, and switch off the features that need them
 const DET_FULL=!!(X&&X.vol&&X.esd&&X.rca&&X.ln&&X.bn&&X.ssm);
-const NAMEDX=['dh','ph','mor','hrm','pdesc','mcat','scat','rqa','cl','se','esd','bin','msg','et','liq','sct','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'],FLAGX=['vol','mp','pvf','rq'];
+const NAMEDX=['dh','ph','mor','hrm','pdesc','mcat','scat','rqa','cl','se','esd','bin','bn','msg','et','liq','sct','srca','dbin','dbn','dmsg','dau','dln','auth','ga','exs','cla'],FLAGX=['vol','mp','pvf','rq'];
 const RQ_OK=!!(X&&X.rq); // RTO queued flag (forward bases uploaded from now on)
 if(X){['vol','ssm','mp','rto','v','rq'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(0)});
-  ['md','hub','mo','cl','se','bin','msg','au','pd','esd','rca','ln','bn','et','liq','sct','dh','ph','mor','hrm','pdesc','mcat','scat','rqa','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(-1);if(!XD[k])XD[k]=[]})}
+  ['md','hub','mo','cl','se','bin','msg','au','pd','esd','rca','ln','bn','et','liq','sct','dh','ph','mor','hrm','pdesc','mcat','scat','rqa','srca','dbin','dbn','dmsg','dau','dln','auth','ga','exs','cla'].forEach(k=>{if(!X[k])X[k]=new Array(XN).fill(-1);if(!XD[k])XD[k]=[]})}
 // reverse: Received at DC drills through the shipment RCA; for reverse-side RCAs the bin level / message / action user come from the DSP columns
 const REV_RCA=/^(reverse leg miss|post bbb miss|no landroval details)$/i;
 const isRevRca=k=>k!=null&&k>=0&&REV_RCA.test(XD.srca[k]||'');
 const XL=(f,k)=>{if(k==null||k<0)return '';const v=XD[f][k];if(v===''||v==null)return f==='bin'?'No bin scan':f==='se'?'(no seller name)':f==='pd'?'(no description)':'(blank)';return f==='bin'?'Bin level '+v:f==='ln'?'Layout '+v:f==='bn'?'Bin '+v:f==='au'?'User '+v:v};
 const DRILL=REV?{'At Dock':['md'],'RECEIVED_AT_DC':['srca','bin','msg','au'],'BRSNR':['mo']}:{'At Dock':['md'],'RECEIVED_AT_DC':DET_FULL?['bin','msg','ln','bn','au']:['bin','msg','au'],'Picked_From_Client':['cl','se'],'BRSNR':['mo']};
-const DRILL_LBL={age:'ageing days',srca:'shipment RCAs',dbin:'DSP bin levels',dmsg:'DSP messages',dau:'DSP action users',dln:'DSP layouts',esd:'error scan remarks',et:'error scan types',liq:'liquid tags',vol:'volumetric tags',mp:'MPSR tags',pvf:'HOV tags',hold:'hold flags',auth:'authenticity values',ga:'GA values',exs:'EXP statuses',cla:'closure actions',md:'manifest destinations',bin:'bin levels',msg:'messages',ln:'layouts',bn:'bin names',au:'action users',cl:'clients',se:'sellers',mo:'manifest origins',srca:'shipment RCAs'};
+const DRILL_LBL={age:'ageing days',srca:'shipment RCAs',dbin:'DSP bin levels',dbn:'DSP bin names',bn:'bin names',dmsg:'DSP messages',dau:'DSP action users',dln:'DSP layouts',esd:'error scan remarks',et:'error scan types',liq:'liquid tags',vol:'volumetric tags',mp:'MPSR tags',pvf:'HOV tags',hold:'hold flags',auth:'authenticity values',ga:'GA values',exs:'EXP statuses',cla:'closure actions',md:'manifest destinations',bin:'bin levels',msg:'messages',ln:'layouts',bn:'bin names',au:'action users',cl:'clients',se:'sellers',mo:'manifest origins',srca:'shipment RCAs'};
 // label of a drop-down row: under a reverse-side RCA the bin level / message / user are the DSP ones
 const XLP=(f,k,path)=>{const s=XL(f,k);return REV&&path&&path.length&&isRevRca(path[0])&&(f==='bin'||f==='msg'||f==='au')?'DSP '+s.replace(/^User /,'action user '):s};
 
@@ -663,7 +773,7 @@ const XLP=(f,k,path)=>{const s=XL(f,k);return REV&&path&&path.length&&isRevRca(p
 const FL={};
 const dictF=(k,lbl)=>{FL[k]={lbl,get:j=>X[k][j],parse:s=>+s,name:v=>v<0||v==null?'(blank)':XL(k,v)}};
 [['md','Manifest destination'],['mo','Manifest origin (BRSNR)'],['dh','Delivery hub'],['ph','Pickup hub'],['mor','Manifest origin'],['hrm','HOV remarks'],['pdesc','Product description'],['mcat',REV?'Main category':'Product category'],['scat','Sub category'],['rqa','RTO queued ageing'],['cl','Client'],['se','Seller'],['bin',REV?'Bin level':'Bin level'],['msg','Message'],['ln','Layout'],['bn','Bin name'],['au','Action user'],
- ['srca','Shipment RCA'],['dbin','DSP bin level'],['dmsg','DSP message'],['dau','DSP action user'],['dln','DSP layout'],['esd','Error scan remarks'],['et','Error scan type'],['liq','Liquid'],
+ ['srca','Shipment RCA'],['dbin','DSP bin level'],['dbn','DSP bin name'],['dmsg','DSP message'],['dau','DSP action user'],['dln','DSP layout'],['esd','Error scan remarks'],['et','Error scan type'],['liq','Liquid'],
  ['auth','Product authenticity'],['ga','Moved to GA'],['exs','EXP status'],['cla','Closure action']].forEach(([k,l])=>dictF(k,l));
 FL.liq.name=v=>{const s=v>=0?XD.liq[v]:'';return s==='Yes'?'Liquid':s==='No'?'Not liquid':'(blank)'};
 FL.dbin.name=v=>{const s=v>=0?XD.dbin[v]:'';return s?'DSP bin level '+s:'No DSP bin scan'};
@@ -674,7 +784,7 @@ FL.pvf={lbl:REV?'PV (HOV)':'HOV',get:j=>X.v[j],parse:s=>+s,name:v=>v?'HOV':'Not 
 dictF('sct',REV?'DSP scan time':'Scan time');FL.sct.name=v=>v<0?'(blank)':SCT_LBL(XD.sct[v]);
 FL.rq={lbl:'RTO queued',get:j=>X.rq[j],parse:s=>+s,name:v=>v?'RTO queued':'Not RTO queued'};
 FL.age={lbl:REV?'Ageing':'Ageing from bag rec.',get:j=>ageKey(X.a[j]),parse:s=>s,name:v=>v==='NA'?'Blank':'Day '+v};
-const FL_ORDER=['age','rqa','dh','ph','mor','hrm','pdesc','mcat','scat','md','mo','cl','se','bin','msg','ln','bn','au','srca','dbin','dmsg','dau','dln','esd','et','liq','sct','vol','mp','rq','pvf','hold','auth','ga','exs','cla'];
+const FL_ORDER=['age','rqa','dh','ph','mor','hrm','pdesc','mcat','scat','md','mo','cl','se','bin','msg','ln','bn','au','srca','dbin','dbn','dmsg','dau','dln','esd','et','liq','sct','vol','mp','rq','pvf','hold','auth','ga','exs','cla'];
 const FL_OK={}; // fields that carry data for a pivot
 function fieldsFor(pi){if(FL_OK[pi])return FL_OK[pi];const ok=new Set(['age','vol','mp','pvf']);if(!REV&&RQ_OK)ok.add('rq');if(!REV&&dims.hold.length>1)ok.add('hold');
   if(X)for(let j=0;j<XN;j++){if(X.p[j]!==pi)continue;for(const k of FL_ORDER){if(ok.has(k)||!XD[k])continue;const v=X[k][j];if(v>=0&&XD[k][v]!=='')ok.add(k)}}
@@ -714,7 +824,7 @@ function pass(i,skip){
 
 // detail rows also answer the extra filters: client, volumetric, MPSR, error scan remarks (all pivots), bin level and message (Received at DC only)
 const FIELDX={pivot:'p',hold:'h',region:'r',loc:'l',vol:'vol',mp:'mp',pvf:'v',rq:'rq'};NAMEDX.forEach(k=>FIELDX[k]=k);
-const RDC_ONLY=REV?{dbin:1,dmsg:1,dau:1,dln:1}:{bin:1,msg:1};const RDC_I=dims.pivot.indexOf('RECEIVED_AT_DC');
+const RDC_ONLY=REV?{dbin:1,dbn:1,dmsg:1,dau:1,dln:1}:{bin:1,bn:1,msg:1};const RDC_I=dims.pivot.indexOf('RECEIVED_AT_DC');
 function passX(j,skip){
   if((SCOPE||SCOPE_L)&&!((SCOPE&&SCOPE.has(X.r[j]))||(SCOPE_L&&SCOPE_L.has(X.l[j]))))return false;
   for(const d in FIELDX){if(d===skip)continue;const s=S[d];if(!s.size)continue;if(RDC_ONLY[d]&&X.p[j]!==RDC_I)continue;if(!s.has(X[FIELDX[d]][j]))return false}
@@ -739,11 +849,13 @@ const DIMDEF={
   mp:{k:'MPSR',opts:()=>[{v:0,t:'No'},{v:1,t:'Yes'}]},
   esd:{k:'Error scan remarks',opts:()=>(XD.esd||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
   bin:{k:'Bin level (RDC)',opts:()=>(XD.bin||[]).map((v,i)=>({v:i,t:v?'Bin level '+v:'No bin scan'}))},
+  bn:{k:'Bin name (RDC)',search:true,cap:150,opts:()=>(XD.bn||[]).map((v,i)=>({v:i,t:v||'No bin scan'})).sort((a,b)=>a.t.localeCompare(b.t))},
   msg:{k:'Message (RDC)',opts:()=>(XD.msg||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))},
   et:{k:'Error scan type',opts:()=>(XD.et||[]).map((v,i)=>({v:i,t:v||'(no error scan)'}))},
   liq:{k:'Liquid',opts:()=>(XD.liq||[]).map((v,i)=>({v:i,t:v==='Yes'?'Liquid':v==='No'?'Not liquid':(v||'(blank)')}))},
   srca:{k:'Shipment RCA',opts:()=>(XD.srca||[]).map((v,i)=>({v:i,t:v||'(blank)'}))},
   dbin:{k:'DSP bin level',opts:()=>(XD.dbin||[]).map((v,i)=>({v:i,t:v?'Bin level '+v:'No DSP bin scan'}))},
+  dbn:{k:'DSP bin name',search:true,cap:150,opts:()=>(XD.dbn||[]).map((v,i)=>({v:i,t:v||'No DSP bin scan'})).sort((a,b)=>a.t.localeCompare(b.t))},
   dmsg:{k:'DSP message',search:true,opts:()=>(XD.dmsg||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))},
   dau:{k:'DSP action user',search:true,opts:()=>(XD.dau||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))},
   dln:{k:'DSP layout',search:true,opts:()=>(XD.dln||[]).map((v,i)=>({v:i,t:v||'(blank)'})).sort((a,b)=>a.t.localeCompare(b.t))},
@@ -859,7 +971,7 @@ $id('reset').onclick=()=>{for(const k in S)S[k].clear();save();drawButtons();ren
 function render(){
   const idx=[];for(let i=0;i<N;i++)if(pass(i))idx.push(i);
   let tot=0;
-  const byPv=dims.pivot.map(()=>({n:0,hv:0,hold:0,loc:new Map(),hov:new Map(),pvm:new Map(),ages:new Set(),hovAges:new Set()}));
+  const byPv=dims.pivot.map(()=>({n:0,hv:0,vn:0,hold:0,loc:new Map(),hov:new Map(),vol:new Map(),pvm:new Map(),ages:new Set(),hovAges:new Set()}));
   // tables come from the detail rows when present (they carry every filter); older uploads fall back to the summary cube
   const SR=X||C;let rows=idx;if(X){rows=[];for(let j=0;j<XN;j++)if(passX(j))rows.push(j)}
   for(const i of rows){
@@ -867,6 +979,7 @@ function render(){
     tot+=n;p.n+=n;if(SR.h[i]===HOLD_I)p.hold+=n;
     let r=p.loc.get(SR.l[i]);if(!r){r={};p.loc.set(SR.l[i],r)}r[ak]=(r[ak]||0)+n;p.ages.add(ak);
     let q=p.pvm.get(SR.l[i]);if(!q){q={};p.pvm.set(SR.l[i],q)}q[ak]=(q[ak]||0)+(SR.pv[i]||0);
+    if(X&&X.vol&&X.vol[i]===1){p.vn+=n;let w=p.vol.get(SR.l[i]);if(!w){w={};p.vol.set(SR.l[i],w)}w[ak]=(w[ak]||0)+n}
     if(SR.v[i]===1){p.hv+=SR.pv[i];let h=p.hov.get(SR.l[i]);if(!h){h={};p.hov.set(SR.l[i],h)}h[ak]=(h[ak]||0)+SR.pv[i];p.hovAges.add(ak)}
   }
   const showPv=dims.pivot.map((v,i)=>i).filter(i=>(!S.pivot.size||S.pivot.has(i))&&byPv[i].n>0);
@@ -875,10 +988,10 @@ function render(){
   LAST={byPv,showPv,XP};
   $id('pivots').innerHTML=showPv.map(i=>{const p=byPv[i],name=dims.pivot[i];
     const md=MODE[name]||'cnt';
-    const tgl=`<div class="pvmode" role="group" aria-label="What the table shows"><label class="sw21 sm"><input type="checkbox" data-pvmode="hov" data-pvn="${esc(name)}" ${md==='hov'?'checked':''}><span class="trk" aria-hidden="true"></span>HOV</label><label class="sw21 sm"><input type="checkbox" data-pvmode="pv" data-pvn="${esc(name)}" ${md==='pv'?'checked':''}><span class="trk" aria-hidden="true"></span>Product value</label></div>`;
+    const tgl=`<div class="pvmode" role="group" aria-label="What the table shows"><label class="sw21 sm"><input type="checkbox" data-pvmode="hov" data-pvn="${esc(name)}" ${md==='hov'?'checked':''}><span class="trk" aria-hidden="true"></span>HOV</label><label class="sw21 sm"><input type="checkbox" data-pvmode="pv" data-pvn="${esc(name)}" ${md==='pv'?'checked':''}><span class="trk" aria-hidden="true"></span>Product value</label>${X&&X.vol?`<label class="sw21 sm"><input type="checkbox" data-pvmode="vol" data-pvn="${esc(name)}" ${md==='vol'?'checked':''}><span class="trk" aria-hidden="true"></span>Volumetric</label>`:''}</div>`;
     const head=`<div class="pvhead"><div><div class="pvtitle"><h2>${esc(pl(name))}</h2>${tgl}</div><div class="note">${SHOW21?(WINLBL[name]||''):(WINLBL[name]||'').replace(', 21+ as one column',' · 21+ hidden')}${AGE_SRC}</div></div><div class="stats"><span class="chip"><b data-cu="${p.n}" data-was="${CU_PREV[name+'n']||0}">${fmt(p.n)}</b> AWBs</span>${REV?'':`<span class="chip"><b>${fmt(p.hold)}</b> on hold</span>`}<span class="chip"><b>${p.loc.size}</b> sites</span><span class="chip"><b data-cu="${Math.round(p.hv)}" data-cf="rs" data-was="${CU_PREV[name+'v']||0}">${rs(p.hv)}</b> HOV value</span></div></div>`;
     const off=INS_SIDE.has(name);
-    return `<section class="pvsec" id="${PF}pv-${i}">${head}<div class="pvbody${off?' ins-off':''}"><div class="pvtables">${md==='hov'?table(i,'hov',p.hov,p.ages,'HOV misses',REV?'sum of product value (₹), PV = 1 · L = lakh, K = thousand':'sum of product value (₹), HOV2 = HOV · L = lakh, K = thousand',kfmt):md==='pv'?table(i,'pv',p.pvm,p.ages,'Product value','sum of product value (₹), all AWBs · L = lakh, K = thousand',kfmt):table(i,'cnt',p.loc,p.ages,'Count of AWB','current location × ageing (days)',fmt)}</div><aside class="insight" id="${PF}ins-${i}"></aside><button class="ins-tog" type="button" data-instog="${esc(name)}" aria-expanded="${!off}" title="${off?'Show the summary':'Hide the summary and widen the table'}"><span class="arr" aria-hidden="true">${off?'◀':'▶'}</span><span class="lbl">${off?'Show summary':'Hide summary'}</span></button></div></section>`}).join('')||'<div class="card empty">No pivot has pendency for these filters.</div>';
+    return `<section class="pvsec" id="${PF}pv-${i}">${head}<div class="pvbody${off?' ins-off':''}"><div class="pvtables">${md==='hov'?table(i,'hov',p.hov,p.ages,'HOV misses',REV?'sum of product value (₹), PV = 1 · L = lakh, K = thousand':'sum of product value (₹), HOV2 = HOV · L = lakh, K = thousand',kfmt):md==='pv'?table(i,'pv',p.pvm,p.ages,'Product value','sum of product value (₹), all AWBs · L = lakh, K = thousand',kfmt):md==='vol'&&X&&X.vol?table(i,'vol',p.vol,p.ages,'Volumetric misses',`count of volumetric AWBs (Volumetric_flag = Volumetric) · ${fmt(p.vn)} of ${fmt(p.n)} AWBs`,fmt):table(i,'cnt',p.loc,p.ages,'Count of AWB','current location × ageing (days)',fmt)}</div><aside class="insight" id="${PF}ins-${i}"></aside><button class="ins-tog" type="button" data-instog="${esc(name)}" aria-expanded="${!off}" title="${off?'Show the summary':'Hide the summary and widen the table'}"><span class="arr" aria-hidden="true">${off?'◀':'▶'}</span><span class="lbl">${off?'Show summary':'Hide summary'}</span></button></div></section>`}).join('')||'<div class="card empty">No pivot has pendency for these filters.</div>';
   renderInsights();if(FP.open)drawPane();
   ROOT.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyTable(b));
   renderHold(idx);
@@ -1100,15 +1213,16 @@ function insOne(i,el,tasks){{const name=dims.pivot[i];
 }
 
 // ---------- drop-downs under each current location ----------
+const skipK=(kind,j)=>kind==='hov'?X.v[j]!==1:kind==='vol'?X.vol[j]!==1:false,isCnt=k=>k==='cnt'||k==='vol';
 function colKeyFn(T){return T.col==='age'?(j=>ageKey(X.a[j])):T.col?(j=>fkey(T.col,j)):(()=>'_')}
 const cv=(r,c)=>{if(c.k!=='__o')return r[c.k]||0;let s=0;for(const k in r)if(!c.other.has(k))s+=r[k];return s};
 const rtot=r=>{let s=0;for(const k in r)s+=r[k];return s};
 function drillRows(pi,kind,l,path,T){
   const lv=lvOf(pi,kind),f=lv[path.length];const m=new Map();const ck=colKeyFn(T);
   for(const j of LAST.XP[pi].J){
-    if(X.l[j]!==l)continue;if(kind==='hov'&&X.v[j]!==1)continue;
+    if(X.l[j]!==l)continue;if(skipK(kind,j))continue;
     let ok=true;for(let q=0;q<path.length;q++)if(fkey(lv[q],j)!==path[q]){ok=false;break}if(!ok)continue;
-    const k=fkey(f,j);let r=m.get(k);if(!r){r={};m.set(k,r)}const ak=ck(j);r[ak]=(r[ak]||0)+(kind==='cnt'?X.n[j]:X.pv[j]);
+    const k=fkey(f,j);let r=m.get(k);if(!r){r={};m.set(k,r)}const ak=ck(j);r[ak]=(r[ak]||0)+(isCnt(kind)?X.n[j]:X.pv[j]);
   }
   return {f,lv,last:path.length+1>=lv.length,rows:[...m].map(([k,r])=>({k,r}))};
 }
@@ -1120,7 +1234,7 @@ $id('pivots').addEventListener('click',e=>{
   const tr=b.closest('tr'),tb=b.closest('table.pt');const T=TBL[tb.dataset.key];if(!T||!X)return;const d=+tr.dataset.d;
   if(b.getAttribute('aria-expanded')==='true'){let n=tr.nextElementSibling;while(n&&+n.dataset.d>d){const x=n.nextElementSibling;n.remove();n=x}b.setAttribute('aria-expanded','false');return}
   const pi=+tb.dataset.pv,kind=tb.dataset.kind,l=+tr.dataset.rl,path=tr.dataset.path?tr.dataset.path.split(','):[];
-  const R=drillRows(pi,kind,l,path,T);const f=kind==='cnt'?fmt:kfmt;const lv=R.lv;
+  const R=drillRows(pi,kind,l,path,T);const f=isCnt(kind)?fmt:kfmt;const lv=R.lv;
   const rows=R.rows.map(x=>({...x,t:rtot(x.r)})).filter(x=>x.t>0).sort((a,b)=>R.f==='age'?AGE_KEYS.indexOf(a.k)-AGE_KEYS.indexOf(b.k):b.t-a.t);
   const top=R.f==='age'?rows:rows.slice(0,10),rest=R.f==='age'?[]:rows.slice(10);const pad=`style="padding-left:${8+(d+1)*14}px"`;
   const cells=(r,ck)=>T.cols.map(c=>{const v=cv(r,c);return `<td${ck&&v&&c.k!=='__o'?` data-l="${l}" data-k="${T.col==='age'?c.k:'all'}"${T.col&&T.col!=='age'?` data-c="${esc(c.k)}"`:''}`:''}>${v?f(v):''}</td>`}).join('')+`<td class="gt"${ck?` data-l="${l}" data-k="all"`:''}>${f(rtot(r))}</td>`;
@@ -1135,20 +1249,21 @@ function table(pi,kind,map,ageSet,title,sub,f){
   if(col==='age')cols=ages.map(k=>({k,lbl:k==='NA'?'Blank':k}));
   else{ // a field across the top: its biggest values, the tail folded into "Other"; numbers are rebuilt from the detail rows
     map=new Map();const tot=new Map();
-    for(const j of LAST.XP[pi].J){if(kind==='hov'&&X.v[j]!==1)continue;const k=col?fkey(col,j):'_',v=kind==='cnt'?X.n[j]:X.pv[j];let r=map.get(X.l[j]);if(!r){r={};map.set(X.l[j],r)}r[k]=(r[k]||0)+v;tot.set(k,(tot.get(k)||0)+v)}
+    for(const j of LAST.XP[pi].J){if(skipK(kind,j))continue;const k=col?fkey(col,j):'_',v=isCnt(kind)?X.n[j]:X.pv[j];let r=map.get(X.l[j]);if(!r){r={};map.set(X.l[j],r)}r[k]=(r[k]||0)+v;tot.set(k,(tot.get(k)||0)+v)}
     if(!col)cols=[];
     else{const all=[...tot].sort((a,b)=>col==='age'?0:b[1]-a[1]);const top=all.slice(0,14);cols=top.map(([k])=>({k,lbl:FL[col].name(FL[col].parse(k))}));
       if(all.length>14)cols.push({k:'__o',lbl:`Other ${all.length-14}`,other:new Set(top.map(x=>x[0]))})}
   }
   const rows=[...map].map(([l,r])=>({l,r,t:rtot(r)})).filter(x=>x.t>0||kind==='hov').sort((a,b)=>b.t-a.t);
   const custom=isCustom(pi,kind);
-  if(custom)sub=`current location${lv.length?' › '+lv.map(k=>FL[k].lbl.toLowerCase()).join(' › '):''}${col?' × '+FL[col].lbl.toLowerCase():''}`+(kind==='cnt'?'':' · sum of product value (₹)');
+  if(custom)sub=`current location${lv.length?' › '+lv.map(k=>FL[k].lbl.toLowerCase()).join(' › '):''}${col?' × '+FL[col].lbl.toLowerCase():''}`+(kind==='cnt'?'':kind==='vol'?' · volumetric AWBs':' · sum of product value (₹)');
   const ttl=`${title} <span>· ${sub}</span>${custom?' <span class="lay">· your layout</span>':''}`;
-  if(!rows.length)return `<div class="tblbox"><div class="tblhead"><h3>${ttl}</h3></div><div class="scroll"><div class="empty">${kind==='hov'?'No HOV shipments for these filters':'No shipments'}</div></div></div>`;
+  if(!rows.length)return `<div class="tblbox"><div class="tblhead"><h3>${ttl}</h3></div><div class="scroll"><div class="empty">${kind==='hov'?'No HOV shipments for these filters':kind==='vol'?'No volumetric shipments for these filters':'No shipments'}</div></div></div>`;
   let mx=0;rows.forEach(x=>cols.forEach(c=>{const v=cv(x.r,c);if(v>mx)mx=v}));
   const colT=cols.map(c=>rows.reduce((s,x)=>s+cv(x.r,c),0)),gt=rows.reduce((s,x)=>s+x.t,0);
-  const base=kind==='hov'?'212,208,38':kind==='pv'?'42,120,214':'0,135,113';
-  const cell=(v,l,c)=>{if(!v)return '<td></td>';const t=Math.sqrt(v/mx);const a=(0.08+t*0.85).toFixed(2);const hot=kind!=='hov'&&t>0.62;const ck=c.k==='__o'?'':col==='age'?` data-l="${l}" data-k="${c.k}"`:` data-l="${l}" data-k="all" data-c="${esc(c.k)}"`;return `<td style="background:rgba(${base},${a})"${hot?' class="hot"':''}${ck}>${f(v)}</td>`};
+  const DK=document.documentElement.dataset.theme==='dark';
+  const base=DK?(kind==='hov'?'0,229,255':kind==='pv'?'110,130,255':kind==='vol'?'190,120,255':'0,255,65'):(kind==='hov'?'212,208,38':kind==='pv'?'42,120,214':kind==='vol'?'124,92,214':'0,135,113');
+  const cell=(v,l,c)=>{if(!v)return '<td></td>';const t=Math.sqrt(v/mx);const a=(DK?0.05+t*0.8:0.08+t*0.85).toFixed(2);const hot=DK?t>0.6:kind!=='hov'&&t>0.62;const ck=c.k==='__o'?'':col==='age'?` data-l="${l}" data-k="${c.k}"`:` data-l="${l}" data-k="all" data-c="${esc(c.k)}"`;return `<td style="background:rgba(${base},${a})"${hot?' class="hot"':''}${ck}>${f(v)}</td>`};
   const key=pi+kind;TBL[key]={ages,cols,col,rows,colT,gt,title:pl(dims.pivot[pi])+' · '+title};
   const tg=x=>X&&lv.length?`<button class="tg" type="button" data-tg aria-expanded="false" aria-label="Show ${DRILL_LBL[lv[0]]||esc(FL[lv[0]].lbl)} for ${esc(dims.loc[x.l])}"></button>`:'';
   return `<div class="tblbox"><div class="tblhead"><h3>${ttl}</h3><button class="mini" type="button" data-copy="${key}">Download CSV</button></div><div class="scroll"><table class="pt${cols.length>16?' dense':''}" data-pv="${pi}" data-kind="${kind}" data-key="${key}" title="Click a number for its tasks; double-click for full details"><thead><tr><th>Current location</th>${cols.map(c=>`<th title="${esc(c.lbl)}">${esc(c.lbl.length>22?c.lbl.slice(0,21)+'…':c.lbl)}</th>`).join('')}<th class="gt">Grand Total</th></tr></thead><tbody>${rows.map(x=>{const pm=kind==='hov'&&POD[dims.loc[x.l]];return `<tr data-rl="${x.l}" data-d="0"${pm?` class="pod m${pm.rank}"`:''}><td title="${esc(dims.loc[x.l])}">${tg(x)}${esc(dims.loc[x.l])}${pm?medal(dims.loc[x.l]):''}</td>${cols.map(c=>cell(cv(x.r,c),x.l,c)).join('')}<td class="gt"${x.t?` data-l="${x.l}" data-k="all"`:''}>${f(x.t)}</td></tr>`}).join('')}</tbody><tfoot><tr><td>Grand Total</td>${colT.map(v=>`<td>${v?f(v):''}</td>`).join('')}<td class="gt">${f(gt)}</td></tr></tfoot></table></div></div>`;
@@ -1156,7 +1271,7 @@ function table(pi,kind,map,ageSet,title,sub,f){
 
 // ---------- the field list pane ----------
 const FP={open:false,t:null,q:''};
-function fpTables(){const out=[];(LAST?LAST.showPv:[]).forEach(i=>{const m=MODE[dims.pivot[i]]||'cnt';out.push([i,m,pl(dims.pivot[i])+(m==='hov'?' · HOV misses':m==='pv'?' · Product value':' · Count of AWB')])});return out}
+function fpTables(){const out=[];(LAST?LAST.showPv:[]).forEach(i=>{const m=MODE[dims.pivot[i]]||'cnt';out.push([i,m,pl(dims.pivot[i])+(m==='hov'?' · HOV misses':m==='pv'?' · Product value':m==='vol'?' · Volumetric misses':' · Count of AWB')])});return out}
 function setLay(pi,kind,fn){const L=JSON.parse(JSON.stringify(layOf(pi,kind)));fn(L);L.rows=L.rows.filter((f,k,a)=>f!==L.col&&a.indexOf(f)===k);LAYOUT[lkey(pi,kind)]=L;saveLayout();render()}
 function drawPane(){
   let el=$id('fpane');if(!FP.open){if(el)el.remove();$id('fpbtn')&&$id('fpbtn').classList.remove('on');return}
@@ -1180,7 +1295,7 @@ function drawPane(){
       <div class="fp-area" data-area="filters"><h4>▼ Filters</h4>${act||'<p class="note" style="margin:0">Set filters in the bar at the top. They apply to every table.</p>'}</div>
       <div class="fp-area" data-area="cols"><h4>⫼ Columns</h4>${L.col?item(L.col,'cols',0,1):'<p class="note" style="margin:0">Drop a field here, e.g. Ageing</p>'}</div>
       <div class="fp-area" data-area="rows"><h4>☰ Rows</h4><div class="fp-item lock"><span class="t">Current location</span></div>${L.rows.map((k,i)=>item(k,'rows',i,L.rows.length)).join('')}</div>
-      <div class="fp-area"><h4>Σ Values</h4><div class="fp-item lock"><span class="t">${kind==='hov'?'Sum of product value (HOV)':kind==='pv'?'Sum of product value':'Count of Awb_number'}</span></div></div>
+      <div class="fp-area"><h4>Σ Values</h4><div class="fp-item lock"><span class="t">${kind==='hov'?'Sum of product value (HOV)':kind==='pv'?'Sum of product value':kind==='vol'?'Count of Awb_number (volumetric)':'Count of Awb_number'}</span></div></div>
     </div>
     <p class="note" style="margin:2px 0 0">Rows open as drop-down arrows under each current location, in this order. The layout is saved in this browser for this table.</p>
   </div>
@@ -1266,6 +1381,19 @@ function setTab(t){if(!VIEWS.includes(t))t='forward';VIEWS.forEach(v=>document.g
 const side=document.getElementById('side');
 function setSide(c){side.dataset.collapsed=String(c);const b=document.getElementById('sideToggle');b.setAttribute('aria-expanded',String(!c));b.title=c?'Expand sidebar':'Collapse sidebar';b.querySelector('span').textContent=c?'Expand':'Collapse';document.getElementById('scrim').hidden=c||!matchMedia('(max-width:760px)').matches;try{localStorage.setItem('sfx-side',c?'1':'0')}catch(e){}}
 document.getElementById('sideToggle').onclick=()=>setSide(side.dataset.collapsed!=='true');
+// Matrix code rain behind the header, only in dark mode; paused when hidden or when motion is reduced
+{const cv=document.getElementById('mxRain');const ctx=cv&&cv.getContext('2d');const RM=matchMedia('(prefers-reduced-motion:reduce)');
+ const CH='ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';let drops=[],W=0,H=0,FS=13,raf=0,last=0;
+ const size=()=>{const r=cv.parentElement.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);const n=Math.ceil(W/FS);drops=Array.from({length:n},()=>Math.random()*-H/FS);ctx.clearRect(0,0,W,H)};
+ const on=()=>document.documentElement.dataset.theme==='dark'&&!RM.matches&&!document.hidden;
+ const step=ts=>{raf=0;if(!on()){ctx.clearRect(0,0,W,H);return}if(ts-last>55){last=ts;ctx.fillStyle='rgba(2,8,5,.16)';ctx.fillRect(0,0,W,H);ctx.font=FS+'px "IBM Plex Mono",monospace';
+   for(let i=0;i<drops.length;i++){const y=drops[i]*FS;if(y>0){const c=CH[Math.random()*CH.length|0];ctx.fillStyle=Math.random()<.06?'#D8FFE0':'#00C83C';ctx.fillText(c,i*FS,y)}drops[i]+=Math.random()<.85?1:0;if(y>H+FS*4&&Math.random()>.96)drops[i]=Math.random()*-12}}
+   raf=requestAnimationFrame(step)};
+ const kick=()=>{if(ctx&&on()&&!raf){if(!W)size();raf=requestAnimationFrame(step)}};
+ if(ctx){addEventListener('resize',()=>{if(W){size()}});document.addEventListener('visibilitychange',kick);window.addEventListener('sfx-theme',()=>{size();kick()});size();kick()}}
+// dark mode: a switch in the sidebar, remembered in this browser
+{const tb=document.getElementById('themeTog');const sync=()=>{const d=document.documentElement.dataset.theme==='dark';tb.setAttribute('aria-checked',String(d));tb.title=d?'Switch to light mode':'Switch to dark mode'};sync();
+ tb.onclick=()=>{const d=document.documentElement.dataset.theme!=='dark';const h=document.documentElement;h.classList.add('theme-anim');if(d)h.dataset.theme='dark';else delete h.dataset.theme;try{localStorage.setItem('sfx-theme',d?'dark':'light')}catch(e){}sync();window.dispatchEvent(new Event('sfx-theme'));setTimeout(()=>h.classList.remove('theme-anim'),350)}}
 document.getElementById('scrim').onclick=()=>setSide(true);
 let sideInit=matchMedia('(max-width:760px)').matches;try{const v=localStorage.getItem('sfx-side');if(v!==null&&!sideInit)sideInit=v==='1'}catch(e){}
 setSide(sideInit);
@@ -1282,7 +1410,7 @@ function cellInfo(td){const tb=td.closest('table.pt');const T=TBL[tb.dataset.key
   if(X&&td.dataset.c!=null&&T.col&&T.col!=='age')put(T.col,td.dataset.c,FL[T.col].name(FL[T.col].parse(td.dataset.c)));
   const f={};if(X){NAMEDX.forEach(d=>{if(S[d].size)f[d]=[...S[d]].map(i=>XD[d][i])});FLAGX.forEach(d=>{if(S[d].size)f[d]=[...S[d]]})}
   const ageLabel=(ages.length>1?'Days '+ages[0]+' to '+ages[ages.length-1]:'Day '+ages[0])+(subL.length?' · '+subL.join(' › '):'');
-  return {side:SIDE,shown:td.textContent.trim(),pivot:dims.pivot[pi],pivotLabel:(REV?'Reverse · ':'')+pl(dims.pivot[pi]),loc:dims.loc[l],ages,ageLabel,hold:[...S.hold].map(i=>dims.hold[i]),hovOnly:tb.dataset.kind==='hov',valueMode:tb.dataset.kind!=='cnt',count:td.textContent,sub,f}}
+  return {side:SIDE,shown:td.textContent.trim(),pivot:dims.pivot[pi],pivotLabel:(REV?'Reverse · ':'')+pl(dims.pivot[pi]),loc:dims.loc[l],ages,ageLabel,hold:[...S.hold].map(i=>dims.hold[i]),hovOnly:tb.dataset.kind==='hov',volOnly:tb.dataset.kind==='vol',valueMode:tb.dataset.kind==='hov'||tb.dataset.kind==='pv',count:td.textContent,sub,f}}
 let clickT=null;
 $id('pivots').addEventListener('click',e=>{
   const td=e.target.closest('td[data-l]');if(!td||e.detail>1)return;clearTimeout(clickT);
@@ -1313,6 +1441,7 @@ function confetti(x,y,n){if(matchMedia('(prefers-reduced-motion:reduce)').matche
   const cols=['#13896B','#D4A017','#2a78d6','#eb6834','#e87ba4','#1baf7a'];for(let k=0;k<(n||36);k++){const s=document.createElement('i');const a=Math.random()*Math.PI*2,r=60+Math.random()*120;
     s.style.cssText=`--dx:${Math.cos(a)*r}px;--dy:${Math.sin(a)*r-60}px;--rot:${Math.random()*720-360}deg;background:${cols[k%cols.length]};animation-delay:${Math.random()*80}ms`;box.appendChild(s)}
   document.body.appendChild(box);setTimeout(()=>box.remove(),1400)}
+window.addEventListener('sfx-theme',()=>{if(!OPT.noBase)render()});
 (window.__HOVALL||(window.__HOVALL=[])).push(on=>{dims.pivot.forEach(n=>{if(on)MODE[n]='hov';else if(MODE[n]==='hov')MODE[n]='cnt'});if(!OPT.noBase)render()});
 if(PRIMARY)window.SFX=Object.assign(window.SFX||{},{esc,fmt,rs,toast,confetti,view:()=>location.hash.slice(1)||'forward',tableCsv:(tb,n)=>tableCsv(tb,n),downloadCsv:(n,r)=>downloadCsv(n,r)},API_);
 else{window.SFX=window.SFX||{};window.SFX.rev=API_;if(window.SFX.__sc)API_.setScope(window.SFX.__sc);
@@ -1392,7 +1521,7 @@ const REV_MAP={'_sclc':'a.seller_cluster_code','Ageing_from_Bag_Rec':'Ageing','P
   'Manifest_Destination':'Manifest_Destination','Manifest_code':'Manifest_code','Error Scan Location':'Error Scan Location','Error Scan Time':'Error Scan Time','Error Scan Details':'Error Scan Details','seal_number':'seal_number',
   'Manifest_status':'Manifest_status','MM_Status':'mm_status','MM_code':'mm_code','Current_location':'Current_location','HOV2':'=','Hold_Flag':'Hold_Flag','Volumetric_flag':'Volumetric_flag','Client':'Client',
   'Product Description':'Product Description','MPSR_Tag':'MPSR_Tag','message':'=','action_user':'=','last_action_user':'last_action_user','Product Category':'Product Category','Error Type':'Error Type',
-  'bin_level':'=','bin_name':'=','layout_name':'=','srca':'Shipment RCA','dbin':'DSP bin_level','dmsg':'DSP message','dau':'DSP action_user','dln':'DSP layout_name','liq':'Liquid','auth':'Product authencity',
+  'bin_level':'=','bin_name':'=','layout_name':'=','srca':'Shipment RCA','dbin':'DSP bin_level','dmsg':'DSP message','dau':'DSP action_user','dln':'DSP layout_name','dbn':'DSP bin_name','liq':'Liquid','auth':'Product authencity',
   'ga':'MOVED TO GA','exs':'EXP STATUS','cla':'CLOSURE ACTION','PV':'PV','Reason of Loss':'Reason of Loss',
   '_bl':'bin_level','_bn':'bin_name','_ln':'layout_name','_msg':'message','_au':'action_user','_dbn':'DSP bin_name','_mcat':'Main Category','_scat':'Sub Category','_sct':'DSP scanned_time','_ph':'Pickup_hub'};
 const REV_LAST={'Region':'Region','product_value':'product_value'};
@@ -1459,6 +1588,7 @@ async function parseBase(getChunks,size,opts){
 
 function build(rows,COL,planRows,opts){
   const g=(r,k)=>r[COL[k]];const SIDE=opts.side||'fwd',REV=SIDE==='rev';
+  const RMAP=opts.regmap||{};const regOf=r=>RMAP[s(g(r,'Current_location'))]||s(g(r,'Region'))||'Unmapped';
   const base0=rows.filter(r=>!isNA(g(r,'Ecom Data')));
   const excluded=rows.length-base0.length;
   // reverse: only the buckets the dashboard shows (other reasons of loss stay in the raw download)
@@ -1472,7 +1602,7 @@ function build(rows,COL,planRows,opts){
   (REV?['At Dock','RECEIVED_AT_DC','BRSNR']:['At Dock','RECEIVED_AT_DC','Picked_From_Client','BRSNR']).forEach(p=>ix(P,p));
   const agg=new Map();const reg={};
   for(const r of base){
-    const loc=s(g(r,'Current_location')),region=s(g(r,'Region'))||'Unmapped';reg[loc]=region;
+    const loc=s(g(r,'Current_location')),region=regOf(r);reg[loc]=region;
     let a=g(r,'Ageing_from_Bag_Rec');a=typeof a==='number'?Math.trunc(a):-1;
     const pvv=typeof g(r,'product_value')==='number'?g(r,'product_value'):0;
     const hub=s(g(r,'Delivery_hub')),piv=s(g(r,'Pivot'));
@@ -1631,7 +1761,7 @@ function build(rows,COL,planRows,opts){
   const locsByRegion={};for(const k in lbr)locsByRegion[k]=[...lbr[k]].sort();
   const WIN=REV?{'At Dock':[5,1e9],'RECEIVED_AT_DC':[3,1e9],'BRSNR':[3,1e9]}:{'At Dock':[5,1e9],'RECEIVED_AT_DC':[0,20],'Picked_From_Client':[3,20],'BRSNR':[2,20]};
   const pIdx=data.dims.pivot,lIdx=data.dims.loc,hIdx=data.dims.hold;const MD=new Map();const mdi=v=>{if(!MD.has(v))MD.set(v,MD.size);return MD.get(v)};
-  const XTRA=['et','liq','srca','dbin','dmsg','dau','dln','auth','ga','exs','cla','sct','dh','ph','mor','hrm','pdesc','mcat','scat','rqa'];
+  const XTRA=['et','liq','srca','dbin','dbn','dmsg','dau','dln','auth','ga','exs','cla','sct','dh','ph','mor','hrm','pdesc','mcat','scat','rqa'];
   // RTO queued ageing (forward): days from rto_queued_time to the base date; blank when the AWB was never RTO queued
   const CATC=new Map();const catOf=v=>{v=v.replace(/\s+/g,' ').trim().slice(0,40);const k=v.toLowerCase();if(!CATC.has(k))CATC.set(k,v);return CATC.get(k)}; // same category in any case = one value
   const rqaOf=r=>{const v=g(r,'_rqt');let d=typeof v==='number'?Math.floor(v):NaN;if(isNaN(d)){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s(v));if(m)d=Math.round((Date.UTC(+m[1],+m[2]-1,+m[3])-Date.UTC(1899,11,30))/864e5)}
@@ -1671,7 +1801,7 @@ function build(rows,COL,planRows,opts){
   for(const r of base){const piv=s(g(r,'Pivot'));const w=WIN[piv];if(!w)continue;const a0=g(r,'Ageing_from_Bag_Rec');if(typeof a0!=='number')continue;const ai=Math.trunc(a0);if(ai<w[0]||ai>w[1])continue;
     const loc=s(g(r,'Current_location')),hv=s(g(r,'HOV2'))==='HOV'?1:0;
     const isVol=s(g(r,'Volumetric_flag'))==='Volumetric'?1:0;
-    const o={p:P.get(piv),l:L.get(loc),a:ai,h:Hh.get(s(g(r,'Hold_Flag'))),r:R.get(s(g(r,'Region'))||'Unmapped'),v:hv,rto:0,rq:!REV&&s(g(r,'rto_queue_flag')).toUpperCase()==='YES'?1:0,mp:/^y/i.test(s(g(r,'MPSR_Tag')))?1:0,md:-1,hub:-1,mo:-1,cl:di('cl',s(g(r,'Client'))),se:REV?-1:di('se',SELL(s(g(r,'seller_name')))),bin:-1,msg:-1,au:-1,pd:-1,
+    const o={p:P.get(piv),l:L.get(loc),a:ai,h:Hh.get(s(g(r,'Hold_Flag'))),r:R.get(regOf(r)),v:hv,rto:0,rq:!REV&&s(g(r,'rto_queue_flag')).toUpperCase()==='YES'?1:0,mp:/^y/i.test(s(g(r,'MPSR_Tag')))?1:0,md:-1,hub:-1,mo:-1,cl:di('cl',s(g(r,'Client'))),se:REV?-1:di('se',SELL(s(g(r,'seller_name')))),bin:-1,msg:-1,au:-1,pd:-1,
       vol:isVol,ssm:0,esd:di('esd',s(g(r,'Error Scan Details'))),rca:-1,ln:-1,bn:-1};XTRA.forEach(k=>o[k]=xon(k)?di(k,xval(r,k)):-1);
     const pd=()=>di('pd',s(g(r,'Product Description')).slice(0,70));
     if(piv==='At Dock'){o.md=di('md',s(g(r,'Manifest_Destination')));o.hub=di('hub',s(g(r,'Delivery_hub')));
@@ -1689,11 +1819,11 @@ function build(rows,COL,planRows,opts){
   // ---- closures: AWBs aged 3–20 kept for tomorrow's comparison, and today's AWB + pivot + location keys ----
   // (an AWB from yesterday's base is open only if today's base has it under the same pivot and the same current location)
   const CLP=REV?['At Dock','RECEIVED_AT_DC','BRSNR']:['At Dock','RECEIVED_AT_DC','Picked_From_Client','BRSNR'];
-  const snap={asOf,side:SIDE,pivots:CLP,locs:[],reg:{},awb:[],p:[],l:[],a:[],h:[]};{const sl=new Map(),seen=new Set();
+  const snap={asOf,side:SIDE,pivots:CLP,locs:[],reg:{},awb:[],p:[],l:[],a:[],h:[],hv:[],vl:[]};{const sl=new Map(),seen=new Set();
     for(const r of base){const pv=s(g(r,'Pivot')),pi=CLP.indexOf(pv);if(pi<0)continue;const a0=g(r,'Ageing_from_Bag_Rec');if(typeof a0!=='number')continue;const a=Math.trunc(a0);if(a<3||a>20)continue;
       const loc=s(g(r,'Current_location')),awb=s(g(r,'Awb_number'));const k=awb+'\u0001'+pv+'\u0001'+loc;if(seen.has(k))continue;seen.add(k);
       let li=sl.get(loc);if(li==null){li=sl.size;sl.set(loc,li);snap.locs.push(loc);snap.reg[loc]=reg[loc]||'Unmapped'}
-      snap.awb.push(awb);snap.p.push(pi);snap.l.push(li);snap.a.push(a);snap.h.push(s(g(r,'Hold_Flag'))==='Hold'?1:0)}}
+      snap.awb.push(awb);snap.p.push(pi);snap.l.push(li);snap.a.push(a);snap.h.push(s(g(r,'Hold_Flag'))==='Hold'?1:0);snap.hv.push(s(g(r,'HOV2'))==='HOV'?1:0);snap.vl.push(s(g(r,'Volumetric_flag'))==='Volumetric'?1:0)}}
   const keys=rows.map(r=>s(g(r,'Awb_number'))+'\u0001'+s(g(r,'Pivot'))+'\u0001'+s(g(r,'Current_location'))).join('\n');
   return {data,suggestions:{baseDate:DATE,asOf,locsByRegion,tasks:T},awbs,snap,keys};
 }
@@ -1701,11 +1831,11 @@ root.PendencyParser={parseBase,build};
 })(typeof self!=='undefined'?self:globalThis);
 
 self.onmessage=async e=>{
-  const {file,asOf,baseDate,raw,remarks}=e.data;
+  const {file,asOf,baseDate,raw,remarks,regmap}=e.data;
   const getChunks=async function*(){const r=file.stream().getReader();for(;;){const {done,value}=await r.read();if(done)return;yield value}};
   let last=0;
   try{
-    const out=await PendencyParser.parseBase(getChunks,file.size,{asOf,baseDate,raw,remarks,onProgress:(phase,f)=>{const now=Date.now();if(now-last<200&&phase!=='Building views')return;last=now;
+    const out=await PendencyParser.parseBase(getChunks,file.size,{asOf,baseDate,raw,remarks,regmap,onProgress:(phase,f)=>{const now=Date.now();if(now-last<200&&phase!=='Building views')return;last=now;
       const pct=phase==='Reading shared text'?f*0.45:phase==='Reading base rows'?0.45+f*0.5:0.97;self.postMessage({type:'progress',phase:phase+'…',f:Math.min(pct,0.99)})}});
     self.postMessage({type:'done',out},out.raw&&out.raw.buffer?[out.raw.buffer]:[]);
   }catch(err){self.postMessage({type:'error',message:(err&&err.message)||String(err)})}
@@ -2080,7 +2210,7 @@ function cellLocal(r,L){
     else if(k==='pvf')conds.push(i=>(C.hov[i]?1:0)===+v);
     else if(k==='hold'){const h=D.hold.indexOf(v);conds.push(i=>C.h[i]===h)}
     else if(D[k]&&C[k])named(k,[v])});
-  const idx=[];for(const i of (L.ix.get(pi*100000+li)||[])){const a=C.a[i];if(!(want[a]||(plus&&a>=21)))continue;if(holdSet&&holdSet.indexOf(C.h[i])<0)continue;if(r.hovOnly&&!C.hov[i])continue;
+  const idx=[];for(const i of (L.ix.get(pi*100000+li)||[])){const a=C.a[i];if(!(want[a]||(plus&&a>=21)))continue;if(holdSet&&holdSet.indexOf(C.h[i])<0)continue;if(r.hovOnly&&!C.hov[i])continue;if(r.volOnly&&!(C.vol&&C.vol[i]))continue;
     let ok=true;for(let q=0;q<conds.length;q++)if(!conds[q](i)){ok=false;break}if(ok)idx.push(i)}
   const awbTask=L.tmap;const nm=(k,i)=>(D[k]&&C[k]&&C[k][i]>=0)?D[k][C[k][i]]:'';const pfc=r.pivot==='Picked_From_Client';
   const hHold=D.hold.indexOf('Hold'),byDest={},tCount={},mcs={};let value=0,hov=0,hovV=0,held=0,assigned=0;
@@ -2096,9 +2226,9 @@ function cellLocal(r,L){
   const tl=[...RT.tasks.values()].filter(t=>tCount[t.id]).map(t=>({id:t.id,title:t.title,status:t.status,prio:t.prio,kind:t.kind,matched:tCount[t.id],owners:owners(t)}));
   return {n:idx.length,value,hov,hovValue:hovV,held,assigned,dests,rows,tasks:tl,truncated:idx.length>500,pfc,manifests:manifests.slice(0,8),manifestCount:manifests.length,baseAt:L.baseAt,baseAsOf:A.asOf||'',side,local:true};
 }
-function cellData(c){const k=JSON.stringify([c.side||'fwd',c.pivot,c.loc,c.ages,c.hold,c.hovOnly,c.sub||{},c.f||{}]);
+function cellData(c){const k=JSON.stringify([c.side||'fwd',c.pivot,c.loc,c.ages,c.hold,c.hovOnly,!!c.volOnly,c.sub||{},c.f||{}]);
   const L=LOCD[c.side||'fwd'];if(L&&!CELLC.has(k)){try{CELLC.set(k,Promise.resolve(cellLocal(c,L)))}catch(e){console.warn('local cell',e)}}
-  if(!CELLC.has(k)){const pr=API('cell',{side:c.side||'fwd',pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly,sub:c.sub||{},f:c.f||{}});pr.catch(()=>CELLC.delete(k));CELLC.set(k,pr)}return CELLC.get(k)}
+  if(!CELLC.has(k)){const pr=API('cell',{side:c.side||'fwd',pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly,volOnly:!!c.volOnly,sub:c.sub||{},f:c.f||{}});pr.catch(()=>CELLC.delete(k));CELLC.set(k,pr)}return CELLC.get(k)}
 function lastEvent(t){
   const evs=[...(t.history||[]).map(h=>({...h,k:h.type})),...(t.updates||[]).map(u=>({...u,k:'update'}))].sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   const e=evs[0];if(!e)return '';const nm=l=>(l||[]).map(pname).join(', ');
@@ -2139,8 +2269,8 @@ function cellTaskForm(p,c,what,place){
   f.onsubmit=async e=>{e.preventDefault();const title=ta.value.trim();if(!title){f.querySelector('#pkErr').textContent='Write what the DC should do.';return}
     const btn=f.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Assigning…';p.dataset.busy='1';
     const pv=(c.side==='rev'?'Rev ':'')+(TASK_PV[c.pivot]||c.pivot);
-    const details=`${c.pivotLabel}${c.hovOnly?' · HOV misses':''} · ${c.loc} · ${c.ageLabel}. Assigned from the pivot table (${what}).`;
-    try{const res=await API('cellTask',{cell:{side:c.side||'fwd',pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly,sub:c.sub||{},f:c.f||{}},title,details,pivot:pv,prio:f.querySelector('#pkPri').value});
+    const details=`${c.pivotLabel}${c.hovOnly?' · HOV misses':c.volOnly?' · Volumetric':''} · ${c.loc} · ${c.ageLabel}. Assigned from the pivot table (${what}).`;
+    try{const res=await API('cellTask',{cell:{side:c.side||'fwd',pivot:c.pivot,loc:c.loc,ages:c.ages,hold:c.hold,hovOnly:c.hovOnly,volOnly:!!c.volOnly,sub:c.sub||{},f:c.f||{}},title,details,pivot:pv,prio:f.querySelector('#pkPri').value});
       delete p.dataset.busy;X.closePeek();setTasks(res.tasks);
       toast(`Task assigned to ${who} · ${fmt(res.n||0)} AWBs`+(res.leftOut?` · ${fmt(res.leftOut)} AWBs already in open tasks were left out`:''))}
     catch(err){delete p.dataset.busy;btn.disabled=false;btn.textContent='Assign';f.querySelector('#pkErr').textContent=dbMsg(err)}};
@@ -2150,9 +2280,9 @@ X.onCellPeek=function(c,rect){
   X.closePeek();if(!canCellTask(c))return;
   const p=document.createElement('div');p.id='peek';p.className='peek';p.setAttribute('role','dialog');
   const place=()=>{const w=p.offsetWidth||340,h=p.offsetHeight||160;let x=rect.right+8,y=rect.top-8;if(x+w>innerWidth-12)x=Math.max(12,rect.left-w-8);if(y+h>innerHeight-12)y=Math.max(12,innerHeight-h-12);p.style.left=x+'px';p.style.top=y+'px'};
-  const what=c.hovOnly?`HOV AWBs worth ₹${c.shown||''}`:c.valueMode?`AWBs worth ₹${c.shown||''}`:`${c.shown||''} AWBs`;
+  const what=c.hovOnly?`HOV AWBs worth ₹${c.shown||''}`:c.volOnly?`${c.shown||''} volumetric AWBs`:c.valueMode?`AWBs worth ₹${c.shown||''}`:`${c.shown||''} AWBs`;
   p.innerHTML=`<h6></h6><div class="pk-sum"></div><div class="pk-as"><button class="btn" type="button" data-pk-as>Assign task</button><span class="pk-ev">to ${esc(cellOwners(c).map(pname).join(', ')||'the region L2')}</span></div><div class="pk-foot">Double-click for all AWBs.</div>`;
-  p.querySelector('h6').textContent=`${c.loc} · ${c.ageLabel}${c.hovOnly?' · HOV':''}`;p.querySelector('.pk-sum').textContent=`${c.pivotLabel} · ${what}`;
+  p.querySelector('h6').textContent=`${c.loc} · ${c.ageLabel}${c.hovOnly?' · HOV':c.volOnly?' · Volumetric':''}`;p.querySelector('.pk-sum').textContent=`${c.pivotLabel} · ${what}`;
   document.body.appendChild(p);place();
   p.querySelector('[data-pk-as]').addEventListener('click',ev=>{ev.stopPropagation();cellTaskForm(p,c,what,place)});
 };
@@ -2161,7 +2291,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')X.closePeek()});
 addEventListener('scroll',e=>{const p=document.getElementById('peek');if(p&&p.contains(e.target))return;if(p&&p.querySelector('.pk-form'))return;X.closePeek()},true);
 X.onCell=async function(c){
   let bg=document.getElementById('cellModal');if(!bg){bg=document.createElement('div');bg.id='cellModal';bg.className='modal-bg';document.body.appendChild(bg);bg.addEventListener('click',e=>{if(e.target===bg)bg.remove()});}
-  const head=`<div class="dh"><div><div class="eyebrow">${esc(c.pivotLabel)}${c.hovOnly?' · HOV misses':''}${c.hold.length?' · '+esc(c.hold.join(', ')):''}</div><h2>${esc(c.loc)} · ${esc(c.ageLabel)}</h2></div><button class="xbtn" type="button" aria-label="Close" id="cmX">×</button></div>`;
+  const head=`<div class="dh"><div><div class="eyebrow">${esc(c.pivotLabel)}${c.hovOnly?' · HOV misses':c.volOnly?' · Volumetric':''}${c.hold.length?' · '+esc(c.hold.join(', ')):''}</div><h2>${esc(c.loc)} · ${esc(c.ageLabel)}</h2></div><button class="xbtn" type="button" aria-label="Close" id="cmX">×</button></div>`;
   bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${head}<p class="note">Loading shipments…</p></div>`;bg.querySelector('#cmX').onclick=()=>bg.remove();
   let r;try{r=await cellData(c)}catch(e){bg.querySelector('.note').textContent=dbMsg(e);return}
   if(!document.body.contains(bg))return;
@@ -2324,7 +2454,7 @@ start();
 window.startReports=function(B){
 const X=window.SFX,API=window.API;const {esc,fmt,toast}=X;
 // fixed region colours (validated categorical slots; colour follows the region, never its rank)
-const REG_ORDER=['NCR Region','North/West 2','North','East','South','West'];
+const REG_ORDER=['NCR','North','West','MAH/MP/CG','East','South','NCR Region','North/West 2','North/West - 2','North 1'];
 const SERIES=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6','#e34948'];
 const REG_COLOR={};REG_ORDER.forEach((r,i)=>REG_COLOR[r]=SERIES[i]);
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -2399,6 +2529,7 @@ table.rt.cd td.b{font-weight:700;color:#1d1d1d}
 table.rt.cd tfoot td{background:#D9D9D9;font-weight:700;position:sticky;bottom:0}
 .cd-bar{position:sticky;top:0;z-index:5}.cd-nav{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}.cd-nav a{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;text-decoration:none;color:var(--teal-deep);background:var(--bg)}.cd-nav a:hover{background:var(--teal-soft)}
 .cd-sec{font:700 16px var(--font-display);color:#0B3D33;margin:26px 0 10px}
+.cd-modes{display:inline-flex;gap:10px;align-items:center;margin-left:4px}
 .streak{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:#B4471F;background:#FDEBDD;border-radius:9px;padding:0 6px 0 4px;line-height:17px;cursor:help;vertical-align:1px}
 .cleared{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;color:#0E6B55;background:#DDF3EA;border-radius:9px;padding:0 7px;line-height:17px;cursor:help;vertical-align:1px}
 .rt tr.cd-clear>td:first-child{box-shadow:inset 3px 0 0 #13896B}
@@ -2646,9 +2777,11 @@ function clModel(){
 }
 function agg(rows,M,vname){const c=M.win.map(()=>0),t=M.win.map(()=>0);rows.forEach(r=>{if(!M.inView(vname,r.v))return;c[r.d-M.a]+=r.c;t[r.d-M.a]+=r.t});return {c,t}}
 const cellTxt=(c,t,metric)=>!t?'':metric==='pct'?Math.round(c*100/t)+'%':metric==='total'?fmt(t):fmt(c);
-const heat=(c,t)=>{if(!t)return '';const p=c/t;return `background:rgba(0,135,113,${(0.06+p*0.7).toFixed(2)});${p>0.62?'color:#fff;':''}`};
+const heat=(c,t)=>{if(!t)return '';const p=c/t;const dk=document.documentElement.dataset.theme==='dark';return `background:rgba(${dk?'0,255,65':'0,135,113'},${(0.06+p*0.7).toFixed(2)});${p>0.62?(dk?'color:#00170A;':'color:#fff;'):''}`};
 // ---------- day-on-day closure tables (yesterday's base vs today's, worked out at upload) ----------
-let CDATA=cRead('closures'),CLOAD=null;const CD={region:'',min20:true,open:new Set()};
+let CDATA=cRead('closures'),CLOAD=null;const CD={region:'',min20:true,open:new Set(),mode:''};
+// a site's region from the dashboard's current DC → region mapping (the snapshot's own region is the fallback)
+const cfgReg=loc=>{const g=((B.config&&B.config.regions)||[]).find(x=>(x.dcs||[]).includes(loc));return g?g.name:''};
 async function loadCl(net){if(CDATA&&!net)return CDATA;if(CLOAD)return CLOAD;CLOAD=API('closures',{}).then(r=>{CDATA=r;CLOAD=null;cWrite('closures',r);pushChamps();return r}).catch(e=>{CLOAD=null;throw e});return CLOAD}
 // the site with the most HOV closures (per side) gets a gold outline in the pivot tables
 const rsv=v=>'₹'+(v>=1e5?(v/1e5).toFixed(1)+' L':v>=1e3?(v/1e3).toFixed(1)+' K':Math.round(v));
@@ -2661,16 +2794,20 @@ const BK=['3','4','5','6','7','8','9','10','11','12','13','14','15','16–20'];
 const kk=v=>(v/1000).toFixed(v>=100000?0:1)+'k';
 const ct=(v,full)=>v?`<td${v>=1000?` data-k="${kk(v)}" title="${fmt(v)}"`:''}>${fmt(v)}</td>`:'<td></td>';
 const mix=(a,b,t)=>{const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16));const x=h(a),y=h(b);return `rgb(${x.map((v,i)=>Math.round(v+(y[i]-v)*t)).join(',')})`};
-const scale3=t=>t<0.5?mix('#F8696B','#FFEB84',t*2):mix('#FFEB84','#63BE7B',(t-0.5)*2); // Excel's red–yellow–green
+const DKM=()=>document.documentElement.dataset.theme==='dark';
+// Excel's red–yellow–green in light mode; deep red → amber → phosphor green on black in dark mode
+const scale3=t=>DKM()?(t<0.5?mix('#7A1D16','#6E5A08',t*2):mix('#6E5A08','#0B8A2C',(t-0.5)*2)):(t<0.5?mix('#F8696B','#FFEB84',t*2):mix('#FFEB84','#63BE7B',(t-0.5)*2));
+const clC=t=>DKM()?mix('#0A2412','#00A834',t):mix('#FFEB84','#63BE7B',t),clO=t=>DKM()?mix('#120B09','#A8291E',t):mix('#FFFFFF','#F8696B',t),clZ=()=>DKM()?'#0E1A12':'#D9D9D9';
 function clDayHtml(){
   if(!CDATA)return `<section class="rp-card"><h2>Day-on-day closures</h2><div class="sub">Loading…</div></section>`;
   const sides=['fwd','rev'].map(s=>CDATA[s]).filter(Boolean);
   if(!sides.length)return `<section class="rp-card"><h2>Day-on-day closures</h2><div class="sub">Each base upload is compared with the previous day's base (same AWB + same pivot + same current location = open, anything else = closed). The tables fill with the next upload.</div>${clFillTool()}</section>`;
-  const views=[];sides.forEach(S=>S.views.forEach(v=>views.push({S,name:v.name,rows:v.rows})));
+  const M=CD.mode,noFlags=M&&sides.some(S=>!S.flags);
+  const views=[];sides.forEach(S=>S.views.forEach(v=>views.push({S,name:v.name,rows:(M==='hov'?v.rowsH:M==='vol'?v.rowsV:v.rows)||{}})));
   views.sort((a,b)=>CL_ORDER.indexOf(a.name)-CL_ORDER.indexOf(b.name));
   const champ=['fwd','rev'].map(s=>{const c=champOf(CDATA[s]);return c?`<div class="champ-line"><span aria-hidden="true">🏆</span> <b>${s==='rev'?'Reverse':'Forward'}:</b> most HOV closures at <b>${esc(c.loc)}</b> · ${fmt(c.c)} of ${fmt(c.n)} HOV AWBs closed (${rsv(c.v)}) · ${esc(c.from)} → ${esc(c.to)}</div>`:''}).join('');
-  const regs=sortRegions([...new Set(sides.flatMap(S=>Object.values(S.reg||{})))]);
-  const tbl=(v,k)=>{const S=v.S;let rows=Object.keys(v.rows).map(li=>{const a=v.rows[li];const c=a.slice(0,14),o=a.slice(14);const C=c.reduce((x,y)=>x+y,0),O=o.reduce((x,y)=>x+y,0);return {loc:S.locs[li],reg:(S.reg||{})[S.locs[li]]||'Unmapped',c,o,C,O,G:C+O}});
+  const regs=sortRegions([...new Set(sides.flatMap(S=>S.locs.map(l=>cfgReg(l)||(S.reg||{})[l]||'Unmapped')))]);
+  const tbl=(v,k)=>{const S=v.S;let rows=Object.keys(v.rows).map(li=>{const a=v.rows[li];const c=a.slice(0,14),o=a.slice(14);const C=c.reduce((x,y)=>x+y,0),O=o.reduce((x,y)=>x+y,0);return {loc:S.locs[li],reg:cfgReg(S.locs[li])||(S.reg||{})[S.locs[li]]||'Unmapped',c,o,C,O,G:C+O}});
     if(CD.region)rows=rows.filter(r=>r.reg===CD.region);
     const all=rows.length;if(CD.min20)rows=rows.filter(r=>r.G>=20);const hid=all-rows.length;
     rows.sort((a,b)=>b.G-a.G);
@@ -2681,15 +2818,15 @@ function clDayHtml(){
     const ST=B.config&&B.config.closureStreaks,stk=/ overall$/.test(v.name)&&ST?(ST[S.side==='rev'?'rev':'fwd']||{}):{};
     const badge=r=>{let h='';const n=stk[r.loc];if(n>=3)h+=`<span class="streak" title="${n}-day streak: overall closure at or above ${Math.round((ST.pct||0.3)*100)}% for ${n} base days in a row">🔥${n}</span>`;
       if(r.G>=5&&r.C===r.G)h+=`<span class="cleared" title="Every AWB from the earlier base (aged 3–20) is closed">✓ all cleared</span>`;return h};
-    const tr=r=>`<tr${r.G>=5&&r.C===r.G?' class="cd-clear"':''}><td title="${esc(r.loc)}">${esc(r.loc)}${badge(r)}</td>${cc.map(i=>ct(r.c[i])).join('')}<td class="b" style="background:${r.C?mix('#FFEB84','#63BE7B',r.C/mxC):'#D9D9D9'}">${r.C?fmt(r.C):''}</td><td class="b" style="background:${scale3((r.G?r.C/r.G:0)/mxP)}">${pc(r.C,r.G)}</td>${oc.map(i=>ct(r.o[i])).join('')}<td class="b" style="background:${mix('#FFFFFF','#F8696B',r.O/mxO)}">${fmt(r.O)}</td><td class="b" style="background:${mix('#FFFFFF','#F8696B',r.G/mxG)}">${fmt(r.G)}</td></tr>`;
+    const tr=r=>`<tr${r.G>=5&&r.C===r.G?' class="cd-clear"':''}><td title="${esc(r.loc)}">${esc(r.loc)}${badge(r)}</td>${cc.map(i=>ct(r.c[i])).join('')}<td class="b" style="background:${r.C?clC(r.C/mxC):clZ()}">${r.C?fmt(r.C):''}</td><td class="b" style="background:${scale3((r.G?r.C/r.G:0)/mxP)}">${pc(r.C,r.G)}</td>${oc.map(i=>ct(r.o[i])).join('')}<td class="b" style="background:${clO(r.O/mxO)}">${fmt(r.O)}</td><td class="b" style="background:${clO(r.G/mxG)}">${fmt(r.G)}</td></tr>`;
     const id='cd'+k;
-    return `<section class="rp-card cd-card" id="cdv-${k}"><div class="cd-head"><div><h2>${esc(v.name)} closures</h2><div class="sub">${esc(S.from)} base vs ${esc(S.to)} · AWBs aged 3–20 days · <b>${fmt(tot.C)}</b> closed of ${fmt(tot.G)} (<b>${pc(tot.C,tot.G)||'0%'}</b>)${hid?` · ${hid} site${hid>1?'s':''} under 20 hidden`:''}</div></div><button class="mini" type="button" data-cdcsv="${id}">Download CSV</button></div>
+    return `<section class="rp-card cd-card" id="cdv-${k}"><div class="cd-head"><div><h2>${esc(v.name)} closures${M==='hov'?' · HOV':M==='vol'?' · Volumetric':''}</h2><div class="sub">${esc(S.from)} base vs ${esc(S.to)} · AWBs aged 3–20 days · <b>${fmt(tot.C)}</b> closed of ${fmt(tot.G)} (<b>${pc(tot.C,tot.G)||'0%'}</b>)${hid?` · ${hid} site${hid>1?'s':''} under 20 hidden`:''}</div></div><button class="mini" type="button" data-cdcsv="${id}">Download CSV</button></div>
       ${rows.length?`<div class="rt-wrap"><table class="rt cd" id="${id}"><thead><tr><th rowspan="2" class="site">Site Name</th>${cc.length?`<th colspan="${cc.length}" class="grp">Closed</th>`:''}<th rowspan="2">Closed Total</th><th rowspan="2">Closure %</th>${oc.length?`<th colspan="${oc.length}" class="grp">Open</th>`:''}<th rowspan="2">Open Total</th><th rowspan="2">Grand Total</th></tr>
       <tr>${cc.map(i=>`<th>${BK[i]}</th>`).join('')}${oc.map(i=>`<th>${BK[i]}</th>`).join('')}</tr></thead><tbody>${rows.map(tr).join('')}</tbody>
-      <tfoot><tr><td>Grand Total</td>${cc.map(i=>ct(tot.c[i])).join('')}<td>${fmt(tot.C)}</td><td>${pc(tot.C,tot.G)}</td>${oc.map(i=>ct(tot.o[i])).join('')}<td>${fmt(tot.O)}</td><td>${fmt(tot.G)}</td></tr></tfoot></table></div>`:'<div class="empty">No sites for this view and region.</div>'}</section>`};
+      <tfoot><tr><td>Grand Total</td>${cc.map(i=>ct(tot.c[i])).join('')}<td>${fmt(tot.C)}</td><td>${pc(tot.C,tot.G)}</td>${oc.map(i=>ct(tot.o[i])).join('')}<td>${fmt(tot.O)}</td><td>${fmt(tot.G)}</td></tr></tfoot></table></div>`:`<div class="empty">${M&&!S.flags?`${M==='hov'?'HOV':'Volumetric'} closures start from the next upload: the ${esc(S.from)} base was saved before these flags were kept.`:M?`No ${M==='hov'?'HOV':'volumetric'} AWBs for this view and region.`:'No sites for this view and region.'}</div>`}</section>`};
   const nav=views.map((v,k)=>`<a href="#cdv-${k}" data-cdjump="${k}">${esc(v.name.replace(/^Forward /,'Fwd ').replace(/^Reverse /,'Rev '))}</a>`).join('');
   return (champ?`<section class="rp-card champ-card">${champ}</section>`:'')+(B.me&&B.me.admin&&sides.length<2?`<section class="rp-card">${clFillTool()}</section>`:'')+`<div class="rp-filters cd-bar"><span class="flabel">Day-on-day closures</span><label class="rp-chk">Region <select data-cdreg><option value="">All regions</option>${regs.map(r=>`<option ${CD.region===r?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
-    <label class="rp-chk"><input type="checkbox" data-cdmin ${CD.min20?'checked':''}> Hide sites under 20 AWBs</label><span class="cd-nav">${nav}</span></div>${views.map(tbl).join('')}
+    <label class="rp-chk"><input type="checkbox" data-cdmin ${CD.min20?'checked':''}> Hide sites under 20 AWBs</label><span class="cd-modes"><label class="sw21 sm"><input type="checkbox" data-cdmode="hov" ${M==='hov'?'checked':''}><span class="trk" aria-hidden="true"></span>HOV</label><label class="sw21 sm"><input type="checkbox" data-cdmode="vol" ${M==='vol'?'checked':''}><span class="trk" aria-hidden="true"></span>Volumetric</label></span><span class="cd-nav">${nav}</span></div>${views.map(tbl).join('')}
     <p class="note" style="margin:-6px 0 18px">Closed = the AWB from the earlier base is not in the later base under the same pivot (reverse: Reason of Loss bucket) and the same current location. Ageing = the earlier base's ageing. Grand Total row adds the sites shown.</p>`;
 }
 // admins: fill the tables now from the previous day's base file (forward or reverse, picked from the computer)
@@ -2716,6 +2853,7 @@ function bindClDay(root){
     catch(e){set('Couldn’t work out closures: '+(e.message||e))}});
   root.querySelector('[data-cdreg]')?.addEventListener('change',e=>{CD.region=e.target.value;renderClosure()});
   root.querySelector('[data-cdmin]')?.addEventListener('change',e=>{CD.min20=e.target.checked;renderClosure()});
+  root.querySelectorAll('[data-cdmode]').forEach(x=>x.addEventListener('change',e=>{CD.mode=e.target.checked?e.target.dataset.cdmode:'';if(CD.mode&&CD.min20)CD.min20=false;renderClosure()}));
   root.querySelectorAll('[data-cdcsv]').forEach(b=>b.onclick=()=>{const tb=document.getElementById(b.dataset.cdcsv);if(tb)X.tableCsv(tb,b.closest('.cd-card').querySelector('h2').textContent)});
   root.querySelectorAll('[data-cdjump]').forEach(a=>a.onclick=e=>{e.preventDefault();document.getElementById('cdv-'+a.dataset.cdjump)?.scrollIntoView({behavior:'smooth',block:'start'})});
 }
@@ -2844,7 +2982,7 @@ function renderFloor(){
   const lo=tot.indexOf(Math.min(...tot)),hi=tot.indexOf(Math.max(...tot));
   const sorted=rows.slice().sort((x,y)=>(y.v[y.v.length-1]-x.v[x.v.length-1])||y.v.reduce((s,n)=>s+n,0)-x.v.reduce((s,n)=>s+n,0));
   const mx=Math.max(1,...sorted.flatMap(r=>r.v));
-  const cell=(v,raw)=>raw==null?'<td></td>':`<td style="background:rgba(0,135,113,${(0.04+0.7*Math.sqrt(v/mx)).toFixed(2)});${v/mx>0.45?'color:#fff;':''}">${fmt(v)}</td>`;
+  const dk=document.documentElement.dataset.theme==='dark';const cell=(v,raw)=>raw==null?'<td></td>':`<td style="background:rgba(${dk?'0,255,65':'0,135,113'},${(0.04+0.7*Math.sqrt(v/mx)).toFixed(2)});${v/mx>0.45?(dk?'color:#00170A;':'color:#fff;'):''}">${fmt(v)}</td>`;
   const avg=v=>v.reduce((s,n)=>s+n,0)/v.length;
   const table=`<div class="rt-wrap"><table class="rt" id="flTbl"><thead><tr><th>${FL.region.size?'DC':'Site'}</th>${win.map(d=>`<th>${dShort(d)}</th>`).join('')}<th>Avg</th><th title="Last day vs first day of the range">Change</th></tr></thead><tbody>
     <tr class="net"><td>${esc(totName)}</td>${tot.map(v=>`<td>${fmt(v)}</td>`).join('')}<td>${fmt(avg(tot))}</td><td>${arrow(chg)}</td></tr>
@@ -2877,6 +3015,7 @@ async function show(v){
   if(!DATA){try{await load(false)}catch(e){const root=document.getElementById(v==='proc'?'procRoot':'closureRoot');if(root)root.innerHTML=`<div class="banner warn">Couldn't read the report sheet: ${esc(e.message||e)}</div>`;return}r()}
 }
 let rz=null;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(X.view()==='proc'&&DATA)renderProc();if(X.view()==='closure'){const r=document.getElementById('closureRoot');if(r)fitCl(r)}if(X.view()==='floor'&&FDATA)renderFloor()},200)});
+window.addEventListener('sfx-theme',()=>{const v=X.view();if(v==='proc'&&DATA)renderProc();else if(v==='closure')renderClosure();else if(v==='floor'&&FDATA)renderFloor()});
 const prev=X.onView;X.onView=v=>{prev&&prev(v);if(v==='proc'||v==='closure'||v==='floor')show(v)};
 const v0=X.view();if(v0==='proc'||v0==='closure'||v0==='floor')show(v0);
 // preload: fetch both report payloads now so opening a tab is instant; repaint an open tab only if the data changed
@@ -3116,10 +3255,11 @@ async function boot(){
   // each part starts on its own, so a problem in one view can't hide the menu or the task screens
   document.querySelectorAll('.side-nav [data-upload]').forEach(a=>a.hidden=!B.me.admin);
   window.__PODIUM=(B.config&&B.config.hovPodium)||null;
-  try{window.startDash(B.data||EMPTY,{noBase:!B.data,base:B.config&&B.config.base,admin:!!(B.me&&B.me.admin)})}
+  const REGMAP={};((B.config&&B.config.regions)||[]).forEach(g=>(g.dcs||[]).forEach(dc=>{REGMAP[dc]=g.name}));
+  try{window.startDash(B.data||EMPTY,{regmap:REGMAP,noBase:!B.data,base:B.config&&B.config.base,admin:!!(B.me&&B.me.admin)})}
   catch(e){console.error('dashboard',e);const p=document.getElementById('pivots');if(p)p.innerHTML='<div class="card"><p class="err">The pivot view hit an error with this base file. Upload the base again from Upload base file; the task screens still work.</p></div>'}
   // reverse pendency: same dashboard code, its own base file; built now so the tab opens instantly
-  try{window.startDash(B.revData||EMPTY_REV,{side:'rev',noBase:!B.revData,base:B.config&&B.config.revBase,admin:!!(B.me&&B.me.admin)})}
+  try{window.startDash(B.revData||EMPTY_REV,{regmap:REGMAP,side:'rev',noBase:!B.revData,base:B.config&&B.config.revBase,admin:!!(B.me&&B.me.admin)})}
   catch(e){console.error('reverse dashboard',e);const p=document.getElementById('rpivots');if(p)p.innerHTML='<div class="card"><p class="err">The reverse view hit an error with this base file. Upload the reverse base again; the other screens still work.</p></div>'}
   try{window.startTasks(B)}catch(e){console.error('tasks',e)}
   try{window.startReports&&window.startReports(B)}catch(e){console.error('reports',e)}
@@ -3181,10 +3321,11 @@ const CL_VIEWS={fwd:[['Forward overall',()=>true],['Forward At Dock',p=>p==='At 
   rev:[['Reverse overall',()=>true],['Reverse At Dock',p=>p==='At Dock'],['Reverse Received at DC',p=>p==='RECEIVED_AT_DC'],['Reverse BRSNR',p=>p==='BRSNR']]};
 function closureOf(prev,keys,asOf,side){
   const T=new Set(keys.split('\n'));const bk=a=>a<=15?a-3:13; // 3…15, then 16–20
-  const views=CL_VIEWS[side].map(([name,f])=>({name,f,rows:{}}));
+  const views=CL_VIEWS[side].map(([name,f])=>({name,f,rows:{},rowsH:{},rowsV:{}}));const FL=!!(prev.hv&&prev.vl); // HOV / volumetric subsets need a snapshot that carries the flags
+  const add=(m,li,b)=>{const r=m[li]||(m[li]=new Array(28).fill(0));r[b]++};
   for(let j=0;j<prev.awb.length;j++){const pv=prev.pivots[prev.p[j]],loc=prev.locs[prev.l[j]];const open=T.has(prev.awb[j]+'\u0001'+pv+'\u0001'+loc);const b=bk(prev.a[j])+(open?14:0);
-    for(const v of views){if(!v.f(pv,prev.h[j]))continue;const r=v.rows[prev.l[j]]||(v.rows[prev.l[j]]=new Array(28).fill(0));r[b]++}}
-  return {side,from:prev.asOf,to:asOf,at:new Date().toISOString(),locs:prev.locs,reg:prev.reg,views:views.map(v=>({name:v.name,rows:v.rows}))};
+    for(const v of views){if(!v.f(pv,prev.h[j]))continue;add(v.rows,prev.l[j],b);if(FL){if(prev.hv[j])add(v.rowsH,prev.l[j],b);if(prev.vl[j])add(v.rowsV,prev.l[j],b)}}}
+  return {side,from:prev.asOf,to:asOf,at:new Date().toISOString(),locs:prev.locs,reg:prev.reg,flags:FL,views:views.map(v=>FL?{name:v.name,rows:v.rows,rowsH:v.rowsH,rowsV:v.rowsV}:{name:v.name,rows:v.rows})};
 }
 // the previous base's AWBs, read once from its stored full file when no snapshot was saved with it (bases uploaded before this feature)
 // HOV closures: the HOV AWBs on the dashboard before this upload that are gone from the new base (same AWB + pivot + location rule)
@@ -3193,22 +3334,24 @@ function hovClosureOf(A,keys,asOf){const T=new Set(keys.split('\n'));const C=A.c
     if(!T.has(C.awb[i]+'\u0001'+D.pivot[C.p[i]]+'\u0001'+loc)){o.c++;o.v+=C.pv[i]||0}}
   return {from:A.asOf||'',to:asOf,byLoc:by}}
 async function snapFromRaw(side,x,onPct){
-  const out={asOf:x.asOf||'',side,pivots:side==='rev'?['At Dock','RECEIVED_AT_DC','BRSNR']:['At Dock','RECEIVED_AT_DC','Picked_From_Client','BRSNR'],locs:[],reg:{},awb:[],p:[],l:[],a:[],h:[]};
+  const out={asOf:x.asOf||'',side,pivots:side==='rev'?['At Dock','RECEIVED_AT_DC','BRSNR']:['At Dock','RECEIVED_AT_DC','Picked_From_Client','BRSNR'],locs:[],reg:{},awb:[],p:[],l:[],a:[],h:[],hv:[],vl:[]};
   const sl=new Map(),seen=new Set();let H=null,ix;
-  const P=csvRows(r=>{if(!H){H=r;const at=n=>H.indexOf(n),last=n=>H.lastIndexOf(n);ix={awb:at('Awb_number'),loc:at('Current_location'),na:at('Ecom Data'),age:side==='rev'?at('Ageing'):at('Ageing_from_Bag_Rec'),pv:side==='rev'?at('Reason of Loss'):at('Pivot'),h:at('Hold_Flag'),reg:last('Region')};
+  const P=csvRows(r=>{if(!H){H=r;const at=n=>H.indexOf(n),last=n=>H.lastIndexOf(n);ix={awb:at('Awb_number'),loc:at('Current_location'),na:at('Ecom Data'),age:side==='rev'?at('Ageing'):at('Ageing_from_Bag_Rec'),pv:side==='rev'?at('Reason of Loss'):at('Pivot'),h:at('Hold_Flag'),reg:last('Region'),hov:side==='rev'?at('PV'):at('HOV2'),vol:at('Volumetric_flag')};
       if(ix.awb<0||ix.loc<0||ix.age<0||ix.pv<0)throw new Error('columns not found');return}
     const na=(r[ix.na]||'').trim();if(ix.na>=0&&(na===''||na==='#N/A'))return;
     const pv=side==='rev'?REV_BUCKET_[(r[ix.pv]||'').trim().toLowerCase()]:(r[ix.pv]||'').trim();const pi=out.pivots.indexOf(pv);if(pi<0)return;
     const a0=parseFloat(r[ix.age]);if(!isFinite(a0))return;const a=Math.trunc(a0);if(a<3||a>20)return;
     const loc=(r[ix.loc]||'').trim(),awb=(r[ix.awb]||'').trim();const k=awb+'\u0001'+pv+'\u0001'+loc;if(seen.has(k))return;seen.add(k);
     let li=sl.get(loc);if(li==null){li=sl.size;sl.set(loc,li);out.locs.push(loc);out.reg[loc]=(ix.reg>=0&&(r[ix.reg]||'').trim())||'Unmapped'}
-    out.awb.push(awb);out.p.push(pi);out.l.push(li);out.a.push(a);out.h.push(ix.h>=0&&(r[ix.h]||'').trim()==='Hold'?1:0)});
+    out.awb.push(awb);out.p.push(pi);out.l.push(li);out.a.push(a);out.h.push(ix.h>=0&&(r[ix.h]||'').trim()==='Hold'?1:0);
+    const hv=ix.hov>=0?(r[ix.hov]||'').trim():'';out.hv.push(side==='rev'?(hv==='1'?1:0):(hv==='HOV'?1:0));out.vl.push(ix.vol>=0&&(r[ix.vol]||'').trim()==='Volumetric'?1:0)});
   await rawText(side,x,s=>P.push(s),onPct);P.end();return out;
 }
 async function prevSnap(side,asOf,onPct){
-  const r=await window.API('snapGet',{side,asOf});if(r&&r.snap)return r.snap;
-  const x=RAW[side];if(x&&x.n&&x.asOf&&x.asOf!==asOf&&window.DecompressionStream)return snapFromRaw(side,x,onPct);
-  return null;
+  const r=await window.API('snapGet',{side,asOf});if(r&&r.snap&&r.snap.hv)return r.snap;
+  // a stored snapshot without the HOV / volumetric flags (older uploads): rebuild it from the stored full file when that file is the previous base
+  const x=RAW[side];if(x&&x.n&&x.asOf&&x.asOf!==asOf&&window.DecompressionStream){try{return await snapFromRaw(side,x,onPct)}catch(e){if(!(r&&r.snap))throw e}}
+  return r&&r.snap||null;
 }
 
 // today's AWB + pivot + location keys from the live base's stored full file
@@ -3321,7 +3464,7 @@ function readFile(B){
   const d=up.date||dateFromName(up.file.name);
   // HOV remarks from the HOV Working sheet go into this base (for the remarks filter); the upload goes on without them if the sheet can't be read
   up.phase='Reading HOV remarks…';renderUpload(B);
-  window.API('hovRemarks',{all:true}).then(r=>r&&r.map||{}).catch(e=>{console.warn('remarks',e);return {}}).then(remarks=>{w.postMessage({file:up.file,asOf:asOfFrom(d),baseDate:d,remarks})});
+  window.API('hovRemarks',{all:true}).then(r=>r&&r.map||{}).catch(e=>{console.warn('remarks',e);return {}}).then(remarks=>{const regmap={};((B.config&&B.config.regions)||[]).forEach(g=>(g.dcs||[]).forEach(dc=>{regmap[dc]=g.name}));w.postMessage({file:up.file,asOf:asOfFrom(d),baseDate:d,remarks,regmap})});
 }
 const b64Of=blob=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>no(r.error);r.readAsDataURL(blob)});
 async function publish(B){
