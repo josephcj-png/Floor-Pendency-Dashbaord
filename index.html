@@ -592,6 +592,8 @@ html[data-theme="dark"] .theme-tog .ic .moon{opacity:0;transform:rotate(90deg) s
     <a href="#proc" data-view="proc"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5h11M4 11V8M7 11V5M10 11V7M13 11V3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>DC processing</span></a>
     <a href="#closure" data-view="closure"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.2l1.7 1.7L10.7 6.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Closure tracker</span></a>
     <a href="#floor" data-view="floor"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5l3.5-4 3 2.5L14 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 4.5H14V8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Floor trends</span></a>
+    <div class="side-sep"><span>Calls</span></div>
+    <a href="#mom" data-view="mom"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h7l2 2v9h-9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>MOMs</span></a>
     <div class="side-sep"><span>Tasks</span></div>
     <a href="#tasks" data-view="tasks"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5l1.3 1.3L7 3M3 10.5l1.3 1.3L7 9M9 5h4.5M9 11h4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="navTasksLbl">Task assigner</span><b class="badge" id="taskBadge" hidden></b></a>
     <a href="#pocs" data-view="pocs" data-admin hidden><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.5" r="2.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 13c.6-2.2 2.1-3.3 4-3.3s3.4 1.1 4 3.3M11 5.5h3M12.5 4v3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>POC mapping</span></a>
@@ -704,6 +706,7 @@ html[data-theme="dark"] .theme-tog .ic .moon{opacity:0;transform:rotate(90deg) s
 <div id="view-proc" hidden><main class="wrap"><div class="inner" id="procRoot"></div></main></div>
 <div id="view-closure" hidden><main class="wrap"><div class="inner" id="closureRoot"></div></main></div>
 <div id="view-floor" hidden><main class="wrap"><div class="inner" id="floorRoot"></div></main></div>
+<div id="view-mom" hidden><main class="wrap"><div class="inner" id="momRoot"></div></main></div>
 <footer class="wrap"><div class="inner" id="foot"></div></footer>
 </div></div>
 <div class="scrim" id="scrim" hidden></div>
@@ -1377,7 +1380,7 @@ if($id('vsub')){const today=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolk
 const META=window.__META||(window.__META={});META[SIDE]=OPT.noBase?'<span class="chip">No '+SIDE_LBL.toLowerCase()+' base uploaded yet</span>':`<span class="chip">${SIDE_LBL} base <b>${esc(D.asOf)}</b></span><span class="chip"><b>${fmt(D.total-D.excludedNA-(D.otherReasons||0))}</b> AWBs considered</span><span class="chip"><b>${fmt(D.excludedNA)}</b> excluded (Ecom Data #N/A)</span>`;
 const FOOT=window.__FOOT||(window.__FOOT={});FOOT[SIDE]=REV?`Source: Reverse_Overall_Base_Final ${D.asOf}. Reverse pivot = Reason of Loss: At Dock = Connection pendency + Manifested + VIA DC pendency (Ageing 5–20 + 21+); Received at DC = Received_at_dc + MISROUTED (Ageing 3–20 + 21+); BRSNR = Reason of Loss BRSNR (Ageing 3–20 + 21+). Ageing = Ageing column. HOV = PV column = 1. For Reverse Leg miss, Post BBB miss and No Landroval Details the bin level, message and action user are the DSP columns. AWBs with Ecom Data = #N/A are excluded throughout.`:`Source: Forward Overall Pendency base ${D.asOf}. Ageing = Ageing_from_Bag_Rec (At Dock 5–20 + 21+, Received at DC up to 20, Picked from Client 3–20, BRSNR all days); Region = Region (pivot "Region2"); HOV value = product_value (pivot "product_value2") where HOV2 = HOV. AWBs with Ecom Data = #N/A are excluded throughout.`;
 if(PRIMARY){
-const VIEWS=['forward','reverse','tasks','pocs','custom','proc','closure','floor','upload'];
+const VIEWS=['forward','reverse','tasks','pocs','custom','proc','closure','floor','mom','upload'];
 function setTab(t){if(!VIEWS.includes(t))t='forward';VIEWS.forEach(v=>document.getElementById('view-'+v).hidden=v!==t);{const ve=document.getElementById('view-'+t);ve.classList.remove('view-in');void ve.offsetWidth;ve.classList.add('view-in')}document.querySelectorAll('.side-nav a').forEach(a=>{if(a.dataset.view===t)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});const ft=document.getElementById('foot'),mt=document.getElementById('meta'),sd=t==='reverse'?'rev':'fwd';ft.hidden=!(t==='forward'||t==='reverse');ft.textContent=(window.__FOOT||{})[sd]||'';if(window.__META)mt.innerHTML=window.__META[sd]||(sd==='rev'?'<span class="chip">No reverse base uploaded yet</span>':'');if(matchMedia('(max-width:760px)').matches)setSide(true);const sx=window.SFX;if(sx){if(t==='forward'&&sx.shown)sx.shown();if(t==='reverse'&&sx.rev)sx.rev.shown();sx.closeFields&&sx.closeFields();sx.rev&&sx.rev.closeFields&&sx.rev.closeFields()}window.SFX&&window.SFX.onView&&window.SFX.onView(t)}
 // sidebar collapse
 const side=document.getElementById('side');
@@ -1856,7 +1859,7 @@ const PIVOTS=['At Dock','Received at DC','Picked from Client','BRSNR','Rev At Do
 const pvDisp=p=>String(p||'At Dock').replace(/^Rev /,'Reverse · ');
 const PR={P0:0,P1:1,P2:2};
 const STALE_H=24;
-const RT={db:true,me:BOOT.me,admin:!!(BOOT.me&&BOOT.me.admin),cfg:Object.assign({regions:[],l1:{},people:{},autoPlaced:[]},BOOT.config||{}),binds:BOOT.signedIn||{},preview:null,tasks:new Map((BOOT.tasks||[]).map(t=>[t.id,t])),loaded:true,readOnly:false};
+const RT={db:true,me:BOOT.me,admin:!!(BOOT.me&&BOOT.me.admin),viewer:!!(BOOT.me&&BOOT.me.viewer),cfg:Object.assign({regions:[],l1:{},people:{},autoPlaced:[]},BOOT.config||{}),binds:BOOT.signedIn||{},preview:null,tasks:new Map((BOOT.tasks||[]).map(t=>[t.id,t])),loaded:true,readOnly:false};
 const tv={owner:null,reassign:false,rq:'',rsel:new Set(),rnote:'',tab:'suggested',region:'All',kind:'All',prio:'All',status:'pending',open:null,busy:false,awbCache:new Map(),formErr:'',confirm:null,cErr:''};
 
 // ---------- helpers ----------
@@ -1876,11 +1879,11 @@ const myL2=()=>{const e=myEmail();return e?REGS().filter(g=>(g.l2||[]).includes(
 const myL1=()=>{const e=myEmail();return e?Object.keys(RT.cfg.l1||{}).filter(l=>(RT.cfg.l1[l]||[]).includes(e)):[]};
 const myDcs=()=>{const s=new Set(myL1());REGS().filter(g=>myL2().includes(g.name)).forEach(g=>(g.dcs||[]).forEach(d=>s.add(d)));return [...s]};
 const isPoc=()=>myL2().length+myL1().length>0;
-const sees=t=>isAdminView()||(t.assignees&&t.assignees.length?t.assignees.includes(myEmail()):(t.loc?myDcs().includes(t.loc):myL2().includes(pocReg(t))));
+const sees=t=>isAdminView()||RT.viewer||(t.assignees&&t.assignees.length?t.assignees.includes(myEmail()):(t.loc?myDcs().includes(t.loc):myL2().includes(pocReg(t))));
 const owners=t=>{if(t.assignees&&t.assignees.length)return t.assignees;const l1=t.loc?(RT.cfg.l1[t.loc]||[]):[];if(l1.length)return l1;return ((REGS().find(g=>g.name===pocReg(t))||{}).l2)||[]};
 const roleOf=e=>{const l2=REGS().filter(g=>(g.l2||[]).includes(e)).map(g=>g.name);const l1=Object.keys(RT.cfg.l1||{}).filter(l=>(RT.cfg.l1[l]||[]).includes(e));return {l2,l1}};
 const roleTxt=e=>{const r=roleOf(e);return [r.l2.length?'L2 · '+r.l2.join(', '):'',r.l1.length?'L1 · '+(r.l1.length>3?r.l1.length+' DCs':r.l1.join(', ')):''].filter(Boolean).join(' | ')||'Central team'};
-const canWork=t=>!!(me()&&!RT.preview&&(RT.admin||sees(t)));
+const canWork=t=>!!(me()&&!RT.preview&&!RT.viewer&&(RT.admin||sees(t)));
 const canAdmin=()=>!!isAdminView();
 const pname=e=>e==='auto'?'Auto':(RT.cfg.people[e]&&RT.cfg.people[e].name)||e;
 const ageD=t=>Math.max(0,Math.floor((Date.now()-Date.parse(t.assignedAt))/864e5));
@@ -2016,7 +2019,7 @@ function allClear(){const l1=myL1(),l2=myL2();const where=l1.length&&l1.length<=
 function renderMyTasks(root){
   let body='';
   if(!RT.db)body=`<div class="banner warn">Task storage isn't available in this view. Open the dashboard from claude.ai while signed in to see your tasks.</div>`;
-  else if(!isPoc())body=`<div class="card empty">You're not mapped as a POC yet. Ask the central team to add you in POC mapping; your tasks will appear here.</div>`;
+  else if(!isPoc()&&!RT.viewer)body=`<div class="card empty">You're not mapped as a POC yet. Ask the central team to add you in POC mapping; your tasks will appear here.</div>`;
   else{
     const L=[...RT.tasks.values()].filter(sees);
     const F=L.filter(t=>(tv.status==='all'||(tv.status==='pending'?t.status!=='Closed':t.status==='Closed'))&&(tv.prio==='All'||t.prio===tv.prio));
@@ -2026,7 +2029,7 @@ function renderMyTasks(root){
     ${!RT.loaded?'<div class="card empty">Loading tasks…</div>':tv.status==='pending'&&!L.some(t=>t.status!=='Closed')?allClear():groupHtml(F,false)}`;
   }
   const scope=[myL2().length?'L2 · '+myL2().join(', '):'',myL1().length?'L1 · '+myL1().join(', '):''].filter(Boolean).join(' | ');
-  root.innerHTML=`<div class="tv-head"><div><div class="eyebrow">My tasks${scope?' · '+esc(scope):''}</div><h2>Tasks assigned to you</h2><div class="note">Open a task, track it and post an update with remarks and footage. Close it once resolved.</div></div></div>${body}`;
+  root.innerHTML=RT.viewer?`<div class="tv-head"><div><div class="eyebrow">All tasks · view only</div><h2>Network tasks</h2><div class="note">Every task assigned to the DC POCs. Your login is view only, so you can open and read them but not post updates.</div></div></div>${body}`:`<div class="tv-head"><div><div class="eyebrow">My tasks${scope?' · '+esc(scope):''}</div><h2>Tasks assigned to you</h2><div class="note">Open a task, track it and post an update with remarks and footage. Close it once resolved.</div></div></div>${body}`;
   wire(root);
 }
 function wire(root){
@@ -2283,10 +2286,11 @@ X.onCellPeek=function(c,rect){
   const p=document.createElement('div');p.id='peek';p.className='peek';p.setAttribute('role','dialog');
   const place=()=>{const w=p.offsetWidth||340,h=p.offsetHeight||160;let x=rect.right+8,y=rect.top-8;if(x+w>innerWidth-12)x=Math.max(12,rect.left-w-8);if(y+h>innerHeight-12)y=Math.max(12,innerHeight-h-12);p.style.left=x+'px';p.style.top=y+'px'};
   const what=c.hovOnly?`${c.volOnly?'volumetric ':''}HOV AWBs worth ₹${c.shown||''}`:c.volOnly?`${c.shown||''} volumetric AWBs`:c.valueMode?`AWBs worth ₹${c.shown||''}`:`${c.shown||''} AWBs`;
-  p.innerHTML=`<h6></h6><div class="pk-sum"></div><div class="pk-as"><button class="btn" type="button" data-pk-as>Assign task</button><span class="pk-ev">to ${esc(cellOwners(c).map(pname).join(', ')||'the region L2')}</span></div><div class="pk-foot">Double-click for all AWBs.</div>`;
+  p.innerHTML=`<h6></h6><div class="pk-sum"></div><div class="pk-as"><button class="btn" type="button" data-pk-as>Assign task</button><span class="pk-ev">to ${esc(cellOwners(c).map(pname).join(', ')||'the region L2')}</span>${X.momCanEdit&&X.momCanEdit()?'<button class="mini" type="button" data-pk-mom style="margin-left:auto">Add to MOM</button>':''}</div><div class="pk-foot">Double-click for all AWBs.</div>`;
   p.querySelector('h6').textContent=`${c.loc} · ${c.ageLabel}${c.hovOnly?' · HOV':''}${c.volOnly?' · Volumetric':''}`;p.querySelector('.pk-sum').textContent=`${c.pivotLabel} · ${what}`;
   document.body.appendChild(p);place();
   p.querySelector('[data-pk-as]').addEventListener('click',ev=>{ev.stopPropagation();cellTaskForm(p,c,what,place)});
+  p.querySelector('[data-pk-mom]')?.addEventListener('click',ev=>{ev.stopPropagation();X.closePeek();X.momAdd({point:`${c.pivotLabel}${c.hovOnly?' · HOV':''}${c.volOnly?' · Volumetric':''} · ${c.loc} · ${c.ageLabel} · ${what}: `,owner:cellOwners(c).map(pname).join(', '),where:c.loc})});
 };
 document.addEventListener('click',e=>{const p=document.getElementById('peek');if(p&&!p.contains(e.target)&&!e.target.closest('td[data-l]'))p.remove()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')X.closePeek()});
@@ -2531,6 +2535,7 @@ table.rt.cd td.b{font-weight:700;color:#1d1d1d}
 table.rt.cd tfoot td{background:#D9D9D9;font-weight:700;position:sticky;bottom:0}
 .cd-bar{position:sticky;top:0;z-index:5}.cd-nav{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}.cd-nav a{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;text-decoration:none;color:var(--teal-deep);background:var(--bg)}.cd-nav a:hover{background:var(--teal-soft)}
 .cd-sec{font:700 16px var(--font-display);color:#0B3D33;margin:26px 0 10px}
+.cd-redo{padding:12px 16px}.cd-redo summary{cursor:pointer;font-weight:600;color:var(--teal-deep)}.cd-redo .cd-fill{margin-top:10px}
 .cd-modes{display:inline-flex;gap:10px;align-items:center;margin-left:4px}
 .streak{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:#B4471F;background:#FDEBDD;border-radius:9px;padding:0 6px 0 4px;line-height:17px;cursor:help;vertical-align:1px}
 .cleared{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;color:#0E6B55;background:#DDF3EA;border-radius:9px;padding:0 7px;line-height:17px;cursor:help;vertical-align:1px}
@@ -2593,24 +2598,30 @@ function lineChart(el,dates,series,unit,dec){
   const all=series.flatMap(s=>s.v);let mx=Math.max(...all,0),mn=Math.min(...all,0);if(mn>0)mn=0;
   const step=niceStep((mx-mn)/5);const top=Math.ceil(mx/step)*step||step;const ticks=[];for(let v=0;v<=top+1e-9;v+=step)ticks.push(v);
   const x=i=>m.l+(dates.length<2?0:i*(W-m.l-m.r)/(dates.length-1)),y=v=>m.t+(H-m.t-m.b)*(1-v/top);
-  const every=Math.ceil(dates.length/12);
+  // long ranges (over a month): no label on every point; dots only at the ends, high and low called out, a 7-day average over a single line, fewer date ticks
+  const N=dates.length,dense=N>31,one=series.length===1,nf=v=>dec?v.toFixed(dec):Math.round(v).toLocaleString('en-IN');
+  const every=Math.max(1,Math.ceil(N/Math.max(4,Math.floor((W-m.l-m.r)/(dense?78:60)))));
+  const ma=dense&&one&&N>45?series[0].v.map((_,i,a)=>{const s=a.slice(Math.max(0,i-6),i+1);return s.reduce((x,y)=>x+y,0)/s.length}):null;
+  const marks=dense?series.slice(0,one?1:0).flatMap(s=>{const hi=s.v.indexOf(Math.max(...s.v)),lo=s.v.indexOf(Math.min(...s.v));return [[hi,'High',s],[lo,'Low',s]].filter(([i])=>i!==s.v.length-1)}):[];
   // end labels, nudged apart so they don't collide
   const ends=series.map(s=>({s,y:y(s.v[s.v.length-1])})).sort((a,b)=>a.y-b.y);for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<13)ends[i].y=ends[i-1].y+13;
   // keep the stack inside the plot: if it runs off the bottom, slide it back up
   if(ends.length&&ends[ends.length-1].y>H-m.b){ends[ends.length-1].y=H-m.b;for(let i=ends.length-2;i>=0;i--)if(ends[i+1].y-ends[i].y<13)ends[i].y=ends[i+1].y-13}
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(series.map(s=>s.name).join(', '))} by day">
    <g class="grid">${ticks.map(v=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/>`).join('')}</g>
-   <g class="axis">${ticks.map(v=>`<text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${fmtTick(v,step)}</text>`).join('')}${dates.map((d,i)=>i%every===0||i===dates.length-1?`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${dShort(d)}</text>`:'').join('')}</g>
-   ${series.map(s=>`<polyline points="${s.v.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
-   ${series.map(s=>s.v.map((v,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${i===s.v.length-1?4:3}" fill="${s.c}" stroke="#fff" stroke-width="${i===s.v.length-1?2:1}"/>`).join('')).join('')}
-   ${dayLabels(dates,series,x,y,dec,W,m)}
-   ${ends.map(e=>`<text x="${W-m.r+8}" y="${e.y+4}" font-size="11.5" fill="#1d2b29">${esc(e.s.short||e.s.name)} ${e.s.v[e.s.v.length-1].toFixed(dec)}</text>`).join('')}
+   <g class="axis">${ticks.map(v=>`<text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${fmtTick(v,step)}</text>`).join('')}${dates.map((d,i)=>(i%every===0&&(dates.length-1-i>=every*0.6||i===dates.length-1))||i===dates.length-1?`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${dShort(d)}</text>`:'').join('')}</g>
+   ${dense&&one?`<polygon points="${x(0).toFixed(1)},${y(0).toFixed(1)} ${series[0].v.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')} ${x(N-1).toFixed(1)},${y(0).toFixed(1)}" fill="${series[0].c}" fill-opacity=".08"/>`:''}
+   ${series.map(s=>`<polyline points="${s.v.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${s.c}" stroke-width="${dense?(ma?1.3:1.7):2}" ${ma?'stroke-opacity=".55"':''} stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
+   ${ma?`<polyline points="${ma.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${series[0].c}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><text x="${m.l+8}" y="${m.t+12}" font-size="11.5" fill="#22312e"><tspan font-weight="700">━ 7-day average</tspan>  ·  thin line = daily value</text>`:''}
+   ${series.map(s=>s.v.map((v,i)=>dense&&i!==s.v.length-1?'':`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${i===s.v.length-1?4:3}" fill="${s.c}" stroke="#fff" stroke-width="${i===s.v.length-1?2:1}"/>`).join('')).join('')}
+   ${dense?marks.map(([i,l,s])=>{const up=l==='High';const ty=up?Math.max(m.t+10,y(s.v[i])-10):Math.min(H-m.b-6,y(s.v[i])+18);const anc=x(i)<m.l+60?'start':x(i)>W-m.r-60?'end':'middle';return `<circle cx="${x(i).toFixed(1)}" cy="${y(s.v[i]).toFixed(1)}" r="4" fill="${s.c}" stroke="#fff" stroke-width="2"/><text x="${x(i).toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${anc}" font-size="11" font-weight="700" fill="#22312e" paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round">${l} ${nf(s.v[i])} · ${dShort(dates[i])}</text>`}).join(''):dayLabels(dates,series,x,y,dec,W,m)}
+   ${ends.map(e=>`<text x="${W-m.r+8}" y="${e.y+4}" font-size="11.5" fill="#1d2b29">${esc(e.s.short||e.s.name)} ${nf(e.s.v[e.s.v.length-1])}</text>`).join('')}
    <line class="xh" x1="0" x2="0" y1="${m.t}" y2="${H-m.b}" stroke="#9aa8a5" stroke-width="1" visibility="hidden"/>
    <rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="transparent" data-hit/></svg><div class="rp-tip" hidden></div>`;
   const svg=el.querySelector('svg'),tip=el.querySelector('.rp-tip'),xh=el.querySelector('.xh');
   const move=e=>{const r=svg.getBoundingClientRect();const px=(e.clientX-r.left)*W/r.width;let i=Math.round((px-m.l)/((W-m.l-m.r)/Math.max(dates.length-1,1)));i=Math.max(0,Math.min(dates.length-1,i));
     xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.setAttribute('visibility','visible');
-    tip.hidden=false;tip.innerHTML=`<b>${dShort(dates[i])}</b>${series.slice().sort((a,b)=>b.v[i]-a.v[i]).map(s=>`<div><span><i style="background:${s.c}"></i>${esc(s.name)}</span><b style="margin:0">${s.v[i].toFixed(2)} ${unit}</b></div>`).join('')}`;
+    tip.hidden=false;tip.innerHTML=`<b>${dShort(dates[i])}</b>${series.slice().sort((a,b)=>b.v[i]-a.v[i]).map(s=>`<div><span><i style="background:${s.c}"></i>${esc(s.name)}</span><b style="margin:0">${nf(s.v[i])}${unit?' '+unit:''}</b></div>`).join('')}${ma?`<div><span>7-day average</span><b style="margin:0">${nf(ma[i])}${unit?' '+unit:''}</b></div>`:''}`;
     const tx=x(i)*r.width/W;tip.style.left=Math.min(r.width-tip.offsetWidth-4,Math.max(4,tx+12))+'px';tip.style.top='8px'};
   svg.querySelector('[data-hit]').addEventListener('mousemove',move);svg.querySelector('[data-hit]').addEventListener('mouseleave',()=>{tip.hidden=true;xh.setAttribute('visibility','hidden')});
 }
@@ -2728,7 +2739,7 @@ function renderProc(){
   const typeL=s.type==='fwd'?'Forward':'Reverse';
   const filters=`<div class="rp-filters"><span class="flabel">Filters</span>${seg('type',[['fwd','Forward'],['rev','Reverse']],s.type)}
     ${ms('region','Region',regs.map(r=>({v:r,t:r})),s.region)}${ms('dc','DC',dcOpts,s.dc,true)}
-    ${seg('days',[[7,'7 days'],[15,'15 days'],[30,'30 days']],s.days)}
+    ${seg('days',[[7,'7 days'],[15,'15 days'],[30,'30 days'],[9999,'30+ days']],s.days)}
     <label class="rp-chk">Up to <select data-end>${(M?M.dates:[]).slice().reverse().map(d=>`<option value="${d}" ${(s.end||M.dates[M.dates.length-1])===d?'selected':''}>${dShort(d)}</option>`).join('')}</select></label>
     <button class="reset" type="button" data-reset>Reset</button></div>`;
   if(!M||!M.byReg.length){root.innerHTML=head('DC processing volumes','Reports',`${typeL} shipments processed per DC per day`)+filters+'<div class="card empty">No DCs match these filters.</div>';bindProc(root);return}
@@ -2829,6 +2840,7 @@ function clDayHtml(){
   const nav=views.map((v,k)=>`<a href="#cdv-${k}" data-cdjump="${k}">${esc(v.name.replace(/^Forward /,'Fwd ').replace(/^Reverse /,'Rev '))}</a>`).join('');
   return (champ?`<section class="rp-card champ-card">${champ}</section>`:'')+(B.me&&B.me.admin&&sides.length<2?`<section class="rp-card">${clFillTool()}</section>`:'')+`<div class="rp-filters cd-bar"><span class="flabel">Day-on-day closures</span><label class="rp-chk">Region <select data-cdreg><option value="">All regions</option>${regs.map(r=>`<option ${CD.region===r?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
     <label class="rp-chk"><input type="checkbox" data-cdmin ${CD.min20?'checked':''}> Hide sites under 20 AWBs</label><span class="cd-modes"><label class="sw21 sm"><input type="checkbox" data-cdmode="hov" ${CD.hov?'checked':''}><span class="trk" aria-hidden="true"></span>HOV</label><label class="sw21 sm"><input type="checkbox" data-cdmode="vol" ${CD.vol?'checked':''}><span class="trk" aria-hidden="true"></span>Volumetric</label></span><span class="cd-nav">${nav}</span></div>${views.map(tbl).join('')}
+    ${B.me&&B.me.admin&&sides.length>=2?`<details class="rp-card cd-redo"${CLF?' open':''}><summary>Rebuild today's closures from the previous day's base file</summary>${clFillTool()}</details>`:''}
     <p class="note" style="margin:-6px 0 18px">Closed = the AWB from the earlier base is not in the later base under the same pivot (reverse: Reason of Loss bucket) and the same current location. Ageing = the earlier base's ageing. Grand Total row adds the sites shown.</p>`;
 }
 // admins: fill the tables now from the previous day's base file (forward or reverse, picked from the computer)
@@ -3207,6 +3219,157 @@ function ride(){if(calm){toast('📦 Delivered!');return}if(document.querySelect
 
 </script>
 <script>
+// MOMs: minutes of the floor pendency call. Everyone signed in reads; the central team adds and edits.
+// Quick add from anywhere (the "+ MOM" button or the M key), and "Add to MOM" from a pivot cell.
+window.startMom=function(B){
+const X=window.SFX,API=window.API;if(!X)return;const esc=s=>s==null?'':X.esc(s),toast=X.toast;
+const css=document.createElement('style');css.textContent=`
+.mom-bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:14px 0 12px}
+.mom-bar .seg button{padding:5px 11px}
+.mom-bar input[type=search]{min-width:200px;flex:1 1 220px;max-width:340px}
+.mom-add{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+.mom-add textarea,.mom-pop textarea,.mom-edit textarea{width:100%;box-sizing:border-box;min-height:58px;resize:vertical;font:inherit;border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;background:var(--panel);color:var(--ink)}
+.mom-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:8px}
+.mom-row label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--muted);font-weight:600}
+.mom-row input{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line-strong);border-radius:7px;background:var(--panel);color:var(--ink)}
+.mom-row .own{width:220px}.mom-row .whr{width:180px}.mom-row .dt{width:140px}
+.mom-mic{border:1px solid var(--line-strong);background:var(--panel);border-radius:8px;width:34px;height:32px;cursor:pointer;color:var(--teal-deep);display:inline-grid;place-items:center}
+.mom-mic.on{background:var(--bad);border-color:var(--bad);color:#fff;animation:pulse 1.4s infinite}
+.mom-grp{margin:18px 0 8px;font:700 13px var(--font-display);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;gap:8px;align-items:baseline}
+.mom-grp b{color:var(--ink)}
+.mom-list{display:flex;flex-direction:column;gap:8px}
+.mom-it{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;animation:fadeUp .25s ease-out both}
+.mom-it.done{opacity:.62}.mom-it.done .pt{text-decoration:line-through;text-decoration-color:var(--muted)}
+.mom-it.late{border-left:3px solid var(--bad)}
+.mom-it .ck{width:18px;height:18px;margin-top:2px;accent-color:var(--teal)}
+.mom-it .pt{font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.mom-it .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:12px;color:var(--muted);align-items:center}
+.mom-chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;background:var(--teal-soft);color:var(--teal-deep)}
+.mom-chip.wh{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.mom-chip.due{background:var(--lime-soft);color:var(--ink)}.mom-chip.due.late{background:var(--bad-soft);color:var(--bad)}
+.mom-chip.src{background:#EEE8FB;color:#5B3FB8}
+.mom-it .upd{margin-top:6px;font-size:12.5px;background:var(--bg);border-radius:7px;padding:5px 8px}
+.mom-it .acts{display:flex;gap:6px}
+.mom-it .acts button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px}.mom-it .acts button:hover{color:var(--teal-deep)}
+.mom-it .acts button.del:hover{color:var(--bad)}
+.mom-edit{grid-column:2/4}
+.mom-empty{padding:18px;text-align:center;color:var(--muted);background:var(--panel);border:1px dashed var(--line-strong);border-radius:10px}
+.mom-fab{position:fixed;right:20px;bottom:20px;z-index:60;border:0;border-radius:999px;background:var(--teal);color:#fff;font:700 13px var(--font-ui);padding:11px 16px;box-shadow:0 8px 22px rgba(0,0,0,.22);cursor:pointer;display:flex;gap:6px;align-items:center}
+.mom-fab:hover{filter:brightness(1.08)}
+.mom-pop{position:fixed;right:20px;bottom:74px;z-index:61;width:min(440px,calc(100vw - 32px));background:var(--panel);border:1px solid var(--line-strong);border-radius:14px;box-shadow:0 18px 44px rgba(0,0,0,.28);padding:14px;animation:popIn .16s ease-out both}
+.mom-pop h4{margin:0 0 8px;font:700 14px var(--font-display)}
+.mom-pop .mom-row .own,.mom-pop .mom-row .whr,.mom-pop .mom-row .dt{width:100%;box-sizing:border-box}.mom-pop .mom-row label:has(.dt){flex:0 1 150px}.mom-row input{box-sizing:border-box}.mom-pop .mom-row label{flex:1 1 180px}
+.mom-saved{color:var(--teal-deep);font-size:12.5px;font-weight:600}
+html[data-theme="dark"] .mom-chip.src{background:#1E1636;color:#B9A6FF}
+html[data-theme="dark"] .mom-fab{color:#001A08;background:#00C83C;box-shadow:0 0 16px rgba(0,255,65,.35)}
+@media (max-width:600px){.mom-it{grid-template-columns:24px 1fr}.mom-it .acts{grid-column:2}}`;document.head.appendChild(css);
+
+const ST={list:null,canEdit:false,loading:false,err:'',day:'open',owner:'',q:'',status:'open',edit:null,saving:false};
+const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata'}).format(new Date());
+const dLbl=d=>{if(!d)return '';const t=today();if(d===t)return 'Today';const y=new Date(Date.parse(t)-864e5).toISOString().slice(0,10);if(d===y)return 'Yesterday';const x=new Date(d+'T00:00:00');return x.toLocaleDateString('en-IN',{day:'numeric',month:'short'})};
+const people=()=>{const P=(B.config&&B.config.people)||{};return Object.keys(P).map(e=>P[e]&&P[e].name).filter(Boolean)};
+const owners=()=>{const s=new Set(people());(ST.list||[]).forEach(m=>String(m.owner||'').split(/\s*[,&\/]\s*/).forEach(n=>{if(n.trim())s.add(n.trim())}));return [...s].sort((a,b)=>a.localeCompare(b))};
+const places=()=>{const s=new Set();((B.config&&B.config.regions)||[]).forEach(g=>{s.add(g.name);(g.dcs||[]).forEach(d=>s.add(d))});(ST.list||[]).forEach(m=>{if(m.where)s.add(m.where)});return [...s].sort((a,b)=>a.localeCompare(b))};
+const editorNames=()=>['Joseph','Pratik','Naveed','Lakshita','Pushkar'];
+function lists(){let d=document.getElementById('momOwnersDl');if(!d){d=document.createElement('datalist');d.id='momOwnersDl';document.body.appendChild(d)}d.innerHTML=owners().map(n=>`<option value="${esc(n)}">`).join('');
+  let w=document.getElementById('momWhereDl');if(!w){w=document.createElement('datalist');w.id='momWhereDl';document.body.appendChild(w)}w.innerHTML=places().map(n=>`<option value="${esc(n)}">`).join('')}
+// owner box: suggest names as you type; after a comma, suggest the next name
+function ownerAuto(inp){let box=null;const close=()=>{if(box){box.remove();box=null}};
+  inp.setAttribute('autocomplete','off');inp.removeAttribute('list');
+  const show=()=>{const parts=inp.value.split(','),cur=parts[parts.length-1].trim().toLowerCase();close();if(!cur)return;
+    const hits=owners().filter(n=>n.toLowerCase().split(/\s+/).some(w=>w.startsWith(cur))||n.toLowerCase().startsWith(cur)).slice(0,7);if(!hits.length)return;
+    box=document.createElement('div');box.className='pop';box.style.cssText='position:fixed;z-index:400;padding:4px;max-height:240px;overflow:auto';
+    const r=inp.getBoundingClientRect();box.style.left=r.left+'px';box.style.top=(r.bottom+4)+'px';box.style.width=Math.max(220,r.width)+'px';
+    box.innerHTML=hits.map((n,i)=>`<div class="opt" data-n="${esc(n)}" style="padding:6px 8px;border-radius:6px;cursor:pointer;${i===0?'background:var(--teal-soft)':''}">${esc(n)}</div>`).join('');
+    document.body.appendChild(box);box.querySelectorAll('.opt').forEach(o=>o.onmousedown=e=>{e.preventDefault();pick(o.dataset.n)})};
+  const pick=n=>{const parts=inp.value.split(',');parts[parts.length-1]=(parts.length>1?' ':'')+n;inp.value=parts.join(',');close();inp.focus()};
+  inp.addEventListener('input',show);inp.addEventListener('blur',()=>setTimeout(close,120));
+  inp.addEventListener('keydown',e=>{if(!box)return;const o=[...box.querySelectorAll('.opt')];let i=o.findIndex(x=>x.style.background);
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(i>=0)o[i].style.background='';i=(i+(e.key==='ArrowDown'?1:-1)+o.length)%o.length;o[i].style.background='var(--teal-soft)'}
+    else if((e.key==='Enter'||e.key==='Tab')&&i>=0){e.preventDefault();e.stopPropagation();pick(o[i].dataset.n)}else if(e.key==='Escape'){close()}})}
+// speak a point (Chrome's speech recognition, Indian English); it only hears this computer's microphone
+function micBtn(ta){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;const b=document.createElement('button');b.type='button';b.className='mom-mic';b.title='Dictate the point';
+  b.innerHTML='<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  let rec=null;b.onclick=()=>{if(rec){rec.stop();return}rec=new SR();rec.lang='en-IN';rec.interimResults=true;rec.continuous=true;const base=ta.value?ta.value.replace(/\s*$/,' '):'';
+    rec.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;ta.value=base+s};rec.onend=()=>{rec=null;b.classList.remove('on')};rec.onerror=()=>{rec=null;b.classList.remove('on')};rec.start();b.classList.add('on')};return b}
+function formHtml(m,compact){m=m||{};return `<textarea class="mpt" maxlength="1000" placeholder="MOM point, e.g. Kolkata DC to trace the 412 At Dock AWBs aged 6–10 days and share RCA by tomorrow">${esc(m.point||'')}</textarea>
+  <div class="mom-row"><label style="flex:${compact?'1 1 100%':'0 0 auto'}">Owner<input class="own" placeholder="Type a name…" value="${esc(m.owner||'')}"></label>
+   <label>DC / region<input class="whr" list="momWhereDl" placeholder="optional" value="${esc(m.where||'')}"></label>
+   <label>Due<input class="dt" type="date" value="${esc(m.due||'')}"></label>
+   ${compact?'':`<label>Call date<input class="dd dt" type="date" value="${esc(m.date||today())}"></label>`}
+   <span class="mic-slot"></span>
+   <button class="btn" type="submit">${m.id?'Save':'Add'}</button>${m.id||compact?'<button class="mini" type="button" data-cancel>Cancel</button>':''}<span class="mom-saved" aria-live="polite"></span></div>
+  ${m.id?`<div class="mom-row"><label style="flex:1 1 100%">Latest update<input class="upd" placeholder="e.g. 300 AWBs traced, rest by Monday" value="${esc(m.update||'')}" style="width:100%"></label></div>`:''}
+  <div class="err"></div>`}
+function bindForm(f,m,done){const ta=f.querySelector('.mpt');ownerAuto(f.querySelector('.own'));lists();const mb=micBtn(ta);if(mb)f.querySelector('.mic-slot').appendChild(mb);
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();f.requestSubmit()}});
+  f.querySelector('[data-cancel]')?.addEventListener('click',()=>done&&done(null));
+  f.onsubmit=async e=>{e.preventDefault();const point=ta.value.trim();const er=f.querySelector('.err');if(!point){er.textContent='Write the MOM point.';ta.focus();return}
+    const mom=Object.assign({},m||{},{point,owner:f.querySelector('.own').value.trim().replace(/,\s*$/,''),where:f.querySelector('.whr').value.trim(),due:f.querySelector('.dt').value,date:(f.querySelector('.dd')||{}).value||(m&&m.date)||today()});
+    if(f.querySelector('.upd'))mom.update=f.querySelector('.upd').value.trim();
+    const btn=f.querySelector('button[type=submit]');btn.disabled=true;er.textContent='';
+    try{const r=await API('momSave',{mom});ST.list=r.moms;ST.canEdit=r.canEdit;btn.disabled=false;
+      if(!m||!m.id){ta.value='';f.querySelector('.own').value='';f.querySelector('.whr').value='';f.querySelector('.dt').value='';const s=f.querySelector('.mom-saved');s.textContent='Saved ✓';setTimeout(()=>{s.textContent=''},1800);ta.focus()}
+      done&&done(r);if(X.view()==='mom')render(true)}catch(x){btn.disabled=false;er.textContent=x.message||'Couldn’t save. Try again.'}}}
+let LP=null;function load(force){if(LP)return LP;if(ST.list&&!force)return Promise.resolve();LP=(async()=>{try{const r=await API('moms',{});ST.list=r.moms;ST.canEdit=r.canEdit;ST.err=''}catch(x){ST.err=x.message||'Couldn’t read the MOMs.';if(!ST.list)ST.list=null}LP=null;fab()})();return LP}
+function filtered(){const t=today(),q=ST.q.toLowerCase();return (ST.list||[]).filter(m=>(ST.status==='all'||(ST.status==='open'?m.status!=='Done':m.status==='Done'))&&(!ST.owner||String(m.owner).toLowerCase().includes(ST.owner.toLowerCase()))
+  &&(ST.day==='open'||ST.day==='all'||m.date===(ST.day==='today'?t:ST.day))&&(!q||[m.point,m.owner,m.where,m.update].join(' ').toLowerCase().includes(q)))}
+function item(m){const t=today(),late=m.status!=='Done'&&m.due&&m.due<t;
+  return `<div class="mom-it${m.status==='Done'?' done':''}${late?' late':''}" data-id="${esc(m.id)}">
+   <input type="checkbox" class="ck" ${m.status==='Done'?'checked':''} ${ST.canEdit?'':'disabled'} title="${m.status==='Done'?'Done':'Mark done'}" aria-label="Done">
+   <div><div class="pt">${esc(m.point)}</div><div class="meta">${m.owner?`<span class="mom-chip">👤 ${esc(m.owner)}</span>`:''}${m.where?`<span class="mom-chip wh">${esc(m.where)}</span>`:''}${m.due?`<span class="mom-chip due${late?' late':''}">Due ${esc(dLbl(m.due))}${late?' · overdue':''}</span>`:''}${/transcript/i.test(m.source)?'<span class="mom-chip src">From the call transcript</span>':''}<span>${esc(dLbl(m.date))} call${m.by?' · added by '+esc(X.pname?X.pname(m.by):m.by):''}</span></div>
+    ${m.update?`<div class="upd"><b>Update:</b> ${esc(m.update)}${m.upBy?` <span class="note">· ${esc(X.pname?X.pname(m.upBy):m.upBy)}</span>`:''}</div>`:''}</div>
+   ${ST.canEdit?`<div class="acts"><button type="button" data-ed>Edit</button><button type="button" class="del" data-del>Delete</button></div>`:'<div></div>'}</div>`}
+function textFor(arr){const byDay={};arr.forEach(m=>{(byDay[m.date]=byDay[m.date]||[]).push(m)});
+  return Object.keys(byDay).sort().reverse().map(d=>`*Floor Pendency Call MOM · ${new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}*\n`+byDay[d].map((m,i)=>`${i+1}. ${m.point}${m.owner?` — *${m.owner}*`:''}${m.where?` (${m.where})`:''}${m.due?` · due ${dLbl(m.due)}`:''}${m.status==='Done'?' ✅':''}${m.update?`\n   Update: ${m.update}`:''}`).join('\n')).join('\n\n')}
+function render(keepScroll){const root=document.getElementById('momRoot');if(!root)return;const y=scrollY;
+  const head=`<div class="tv-head"><div><div class="eyebrow">Calls · Floor Pendency Call</div><h2>Minutes of meeting</h2><div class="note">Points, owners and follow-ups from the call. Everyone can see this page; ${esc(editorNames().join(', '))} can add and edit.</div></div></div>`;
+  if(ST.err&&!ST.list){root.innerHTML=head+`<div class="banner warn">${esc(ST.err)}</div>`;return}
+  if(!ST.list){root.innerHTML=head+'<div class="card empty">Reading the MOMs…</div>';load().then(()=>{if(ST.list||ST.err)render()});return}
+  const t=today(),days=[...new Set(ST.list.map(m=>m.date))].sort().reverse().slice(0,40);
+  const F=filtered();const open=ST.list.filter(m=>m.status!=='Done');
+  const seg=(k,opts,cur)=>`<span class="seg" role="group">${opts.map(([v,l])=>`<button type="button" data-${k}="${v}" aria-pressed="${cur===v}">${l}</button>`).join('')}</span>`;
+  const bar=`<div class="mom-bar"><span class="flabel">Show</span>${seg('st',[['open',`Open (${open.length})`],['done','Done'],['all','All']],ST.status)}
+    <select data-day aria-label="Call date"><option value="open" ${ST.day==='open'?'selected':''}>All dates</option><option value="today" ${ST.day==='today'?'selected':''}>Today's call</option>${days.filter(d=>d!==t).map(d=>`<option value="${d}" ${ST.day===d?'selected':''}>${esc(dLbl(d))} call</option>`).join('')}</select>
+    <input type="search" data-q placeholder="Search points, owners, DCs" value="${esc(ST.q)}"><input data-own placeholder="Owner" value="${esc(ST.owner)}" style="width:150px">
+    <button class="mini" type="button" data-wa>Copy for WhatsApp</button><button class="mini" type="button" data-csv>Download CSV</button><button class="mini" type="button" data-reload>Refresh</button></div>`;
+  const add=ST.canEdit?`<form class="mom-add" id="momAdd"><div class="flabel" style="margin-bottom:6px">Add a point · Enter to save, Shift+Enter for a new line</div>${formHtml(null,false)}</form>`:'';
+  const pend=F.filter(m=>m.status!=='Done'&&m.date<t),now=F.filter(m=>m.date===t),rest=F.filter(m=>!(m.status!=='Done'&&m.date<t)&&m.date!==t);
+  const grp=(l,arr,sub)=>arr.length?`<div class="mom-grp"><b>${l}</b><span>${arr.length} point${arr.length>1?'s':''}${sub?' · '+sub:''}</span></div><div class="mom-list">${arr.map(item).join('')}</div>`:'';
+  const body=!F.length?`<div class="mom-empty">${ST.list.length?'No MOM points for these filters.':ST.canEdit?'No MOM points yet. Add the first one above, or press M anywhere on the dashboard during the call.':'No MOM points yet.'}</div>`
+    :grp("Today's call",now)+grp('Pending from earlier calls',pend.sort((a,b)=>(a.due||'9')<(b.due||'9')?-1:1),'still open')+grp(ST.status==='done'?'Done':'Earlier',rest.sort((a,b)=>b.date.localeCompare(a.date)));
+  root.innerHTML=head+add+bar+body;if(keepScroll)scrollTo(0,y);
+  const af=root.querySelector('#momAdd');if(af)bindForm(af,null,null);
+  root.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{ST.status=b.dataset.st;render()});
+  root.querySelector('[data-day]').onchange=e=>{ST.day=e.target.value;render()};
+  const qi=root.querySelector('[data-q]');qi.oninput=()=>{ST.q=qi.value;clearTimeout(qi._t);qi._t=setTimeout(()=>{render(true);const n=document.querySelector('#momRoot [data-q]');n.focus();n.setSelectionRange(n.value.length,n.value.length)},250)};
+  const oi=root.querySelector('[data-own]');oi.oninput=()=>{ST.owner=oi.value;clearTimeout(oi._t);oi._t=setTimeout(()=>{render(true);const n=document.querySelector('#momRoot [data-own]');n.focus();n.setSelectionRange(n.value.length,n.value.length)},250)};
+  root.querySelector('[data-wa]').onclick=async()=>{const txt=textFor(F.length?F:open);try{await navigator.clipboard.writeText(txt);toast('Copied. Paste it in WhatsApp.')}catch(e){prompt('Copy this:',txt)}};
+  root.querySelector('[data-csv]').onclick=()=>{const rows=[['Date','MOM point','Owner','DC / Region','Due date','Status','Latest update','Added by','Source']].concat(F.map(m=>[m.date,m.point,m.owner,m.where,m.due,m.status,m.update,m.by,m.source]));
+    const csv=rows.map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));a.download='MOMs '+t+'.csv';a.click()};
+  root.querySelector('[data-reload]').onclick=async()=>{await load(true);render(true)};
+  root.querySelectorAll('.mom-it').forEach(el=>{const m=ST.list.find(x=>x.id===el.dataset.id);if(!m)return;
+    el.querySelector('.ck').onchange=async e=>{const ck=e.target;ck.disabled=true;try{const r=await API('momSave',{mom:Object.assign({},m,{status:ck.checked?'Done':'Open'})});ST.list=r.moms;if(ck.checked&&X.confetti){const b=ck.getBoundingClientRect();X.confetti(b.left+9,b.top+9,18)}render(true)}catch(x){ck.checked=!ck.checked;ck.disabled=false;toast(x.message||'Couldn’t save')}};
+    el.querySelector('[data-ed]')?.addEventListener('click',()=>{const f=document.createElement('form');f.className='mom-edit';f.innerHTML=formHtml(m,false);el.querySelector('.acts').remove();el.appendChild(f);bindForm(f,m,()=>render(true));f.querySelector('.mpt').focus()});
+    el.querySelector('[data-del]')?.addEventListener('click',async ev=>{const b=ev.target;if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Delete?';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='Delete'}},3000);return}
+      try{const r=await API('momDelete',{id:m.id});ST.list=r.moms;render(true);toast('MOM point deleted')}catch(x){toast(x.message||'Couldn’t delete')}})})}
+// quick add from any view, for the editors
+function fab(){let b=document.getElementById('momFab');if(!ST.canEdit){if(b)b.remove();return}
+  if(!b){b=document.createElement('button');b.id='momFab';b.type='button';b.className='mom-fab';b.title='Add a MOM point (M)';b.innerHTML='<span style="font-size:16px;line-height:1">＋</span> MOM';b.onclick=()=>quick();document.body.appendChild(b)}
+  b.hidden=X.view()==='mom'}
+function quick(pre){if(!ST.canEdit)return;let p=document.getElementById('momPop');if(p)p.remove();p=document.createElement('form');p.id='momPop';p.className='mom-pop';
+  p.innerHTML=`<h4>Add to MOM · ${esc(dLbl(today()))}'s call</h4>`+formHtml(pre||{},true);document.body.appendChild(p);
+  bindForm(p,null,r=>{if(r===null)p.remove()});const ta=p.querySelector('.mpt');ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+  p.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();p.remove()}})}
+X.momAdd=pre=>{if(!ST.canEdit)return false;quick(pre);return true};
+X.momCanEdit=()=>ST.canEdit;
+document.addEventListener('keydown',e=>{if((e.key==='m'||e.key==='M')&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&ST.canEdit){const t=e.target;if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))return;if(document.getElementById('momPop')||document.querySelector('.fs-ov'))return;e.preventDefault();if(X.view()==='mom'){document.querySelector('#momAdd .mpt')?.focus()}else quick()}});
+const prev=X.onView;X.onView=v=>{prev&&prev(v);fab();if(v==='mom'){document.getElementById('momPop')?.remove();render();load(true).then(()=>{if(X.view()==='mom')render(true)})}};
+load().then(()=>{if(X.view()==='mom')render()});
+if(X.view()==='mom')render();
+};
+</script>
+<script>
 (function(){
 const TK='sfx_pd_token';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3230,19 +3393,19 @@ const gate=document.getElementById('gate');
 function showGate(html){document.body.classList.add('gated');gate.hidden=false;gate.innerHTML=`<div class="gate-card"><div class="eyebrow">Shadowfax · Network Pendency Review</div><h1>Pendency Dashboard</h1>${html}</div>`}
 function hideGate(){document.body.classList.remove('gated');gate.hidden=true;gate.innerHTML=''}
 let lastEmail='';
-function showLogin(err){
-  showGate(`<p class="note" style="margin:4px 0 16px">Sign in with your Shadowfax work email and the access code shared by the central team.</p>
+function showLogin(err,info){
+  showGate(`<p class="note" style="margin:4px 0 16px">Sign in with your Shadowfax work email. DC POCs use the access code from the central team. Anyone else at Shadowfax: leave the code empty and press Sign in, and we will email you a code.</p>
    <form class="form" id="loginForm" style="background:none;border:0;padding:0">
     <label>Work email<input type="text" id="lgEmail" inputmode="email" autocomplete="username" placeholder="name@shadowfax.in" value="${esc(lastEmail)}"></label>
-    <label>Access code<input type="text" id="lgCode" autocomplete="one-time-code" placeholder="XXXX-XXXX" style="text-transform:uppercase;letter-spacing:.12em"></label>
-    ${err?`<div class="err">${esc(err)}</div>`:''}
+    <label>Access code<input type="text" id="lgCode" autocomplete="one-time-code" placeholder="XXXX-XXXX or 6-digit code" style="text-transform:uppercase;letter-spacing:.12em"></label>
+    ${err?`<div class="${info?'note ok-note':'err'}">${esc(err)}</div>`:''}
     <div><button class="btn" type="submit" id="lgBtn" style="width:100%;padding:10px">Sign in</button></div></form>
    <p class="note" style="margin-top:14px">Lost your code? Ask the central team for a new one.</p>`);
   document.getElementById('loginForm').onsubmit=async e=>{e.preventDefault();
     const email=document.getElementById('lgEmail').value.trim().toLowerCase(),code=document.getElementById('lgCode').value;lastEmail=email;
     if(!email)return showLogin('Enter your work email.');
     const b=document.getElementById('lgBtn');b.disabled=true;b.textContent='Signing in…';
-    try{const r=await window.API('login',{email,code});saveToken(r.token);location.reload()}catch(x){if(x.code!=='auth')showLogin(x.code==='bad_login'?'That email and access code don’t match. Check both and try again.':x.code==='need_code'?'Enter your access code.':x.message)}};
+    try{const r=await window.API('login',{email,code});saveToken(r.token);location.reload()}catch(x){if(x.code!=='auth')showLogin(x.code==='code_sent'?x.message:x.code==='bad_login'?(x.message&&!/match\.$/.test(x.message)&&x.message.indexOf('code')>=0?x.message:'That email and access code don’t match. Check both and try again.'):x.code==='need_code'?'Enter your access code.':x.message,x.code==='code_sent')}};
   setTimeout(()=>document.getElementById(lastEmail?'lgCode':'lgEmail')?.focus(),0);
 }
 window.APP={logout:async()=>{try{await window.API('logout')}catch(e){}saveToken(null);location.hash='';location.reload()}};
@@ -3266,6 +3429,7 @@ async function boot(){
   try{window.startTasks(B)}catch(e){console.error('tasks',e)}
   try{window.startReports&&window.startReports(B)}catch(e){console.error('reports',e)}
   try{window.startFun&&window.startFun(B)}catch(e){console.error('fun',e)}
+  try{window.startMom&&window.startMom(B)}catch(e){console.error('mom',e)}
   if(!window.SFX){showGate('<p class="err">The dashboard could not start. Refresh the page; if it keeps happening, upload the base again.</p>');return}
   const X=window.SFX;const prev=X.onView;X.onView=v=>{prev&&prev(v);if(v==='upload')renderUpload(B)};
   document.querySelectorAll('.side-nav [data-upload]').forEach(a=>a.hidden=!B.me.admin);
